@@ -1,0 +1,1391 @@
+<title>Mesa de Intermediación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style id="css">
+:root {
+  --papel: #EFF2EB;
+  --superficie: #FBFCF9;
+  --franja: #E4E9DD;
+  --tinta: #1A211B;
+  --tinta-suave: #5B6559;
+  --linea: #D0D7C8;
+  --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F;
+  --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C;
+  --ambar: #8E5D0B;
+  --rojo: #A2321F;
+  --verde-tenue: #DFEDE3;
+  --ambar-tenue: #F5E8CE;
+  --rojo-tenue: #F6DFD9;
+  --sombra: 0 1px 2px rgba(26,33,27,.06), 0 6px 18px rgba(26,33,27,.05);
+  --r: 3px;
+}
+:root:not([data-theme="light"]) {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310;
+    --superficie: #161C17;
+    --franja: #1D251F;
+    --tinta: #E2E8DF;
+    --tinta-suave: #94A092;
+    --linea: #29322A;
+    --linea-fuerte: #3B463C;
+    --acento: #74C293;
+    --acento-tenue: #16261C;
+    --verde: #74C293;
+    --ambar: #D9A441;
+    --rojo: #E3826B;
+    --verde-tenue: #152318;
+    --ambar-tenue: #2A2113;
+    --rojo-tenue: #2B1815;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310;
+  --superficie: #161C17;
+  --franja: #1D251F;
+  --tinta: #E2E8DF;
+  --tinta-suave: #94A092;
+  --linea: #29322A;
+  --linea-fuerte: #3B463C;
+  --acento: #74C293;
+  --acento-tenue: #16261C;
+  --verde: #74C293;
+  --ambar: #D9A441;
+  --rojo: #E3826B;
+  --verde-tenue: #152318;
+  --ambar-tenue: #2A2113;
+  --rojo-tenue: #2B1815;
+  --sombra: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: Faustina, Georgia, serif; text-wrap: balance; margin: 0; font-weight: 600; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.etiqueta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+
+/* ---------- estructura ---------- */
+.marco { min-height: 100vh; display: flex; flex-direction: column; }
+
+.barra {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--linea);
+  background: var(--superficie);
+  position: sticky; top: 0; z-index: 20;
+}
+.barra h1 { font-size: 20px; letter-spacing: -.01em; }
+.barra .folio { color: var(--tinta-suave); }
+.crece { flex: 1; }
+
+.btn {
+  border: 1px solid var(--linea-fuerte);
+  background: var(--superficie);
+  color: var(--tinta);
+  padding: 7px 13px;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-size: 13.5px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: background .12s ease, border-color .12s ease;
+}
+.btn:hover { background: var(--franja); border-color: var(--acento); }
+.btn.primario { background: var(--acento); border-color: var(--acento); color: var(--superficie); }
+.btn.primario:hover { filter: brightness(1.08); }
+.btn.fantasma { border-color: transparent; background: transparent; color: var(--tinta-suave); }
+.btn.fantasma:hover { background: var(--franja); color: var(--tinta); }
+.btn.chico { padding: 4px 9px; font-size: 12px; }
+.btn[disabled] { opacity: .45; cursor: default; }
+
+.aviso {
+  padding: 8px 20px; font-size: 13px;
+  background: var(--ambar-tenue); color: var(--tinta);
+  border-bottom: 1px solid var(--linea);
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+
+.cuerpo { flex: 1; display: grid; grid-template-columns: minmax(300px, 360px) 1fr; }
+@media (max-width: 900px) { .cuerpo { grid-template-columns: 1fr; } }
+
+/* ---------- panel izquierdo ---------- */
+.rail { border-right: 1px solid var(--linea); display: flex; flex-direction: column; min-width: 0; }
+@media (max-width: 900px) { .rail { border-right: none; border-bottom: 1px solid var(--linea); } }
+
+.resumen { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--linea); }
+.cifra { padding: 12px 14px; border-right: 1px solid var(--linea); }
+.cifra:last-child { border-right: none; }
+.cifra .valor { font-family: "IBM Plex Mono", monospace; font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; display: block; }
+
+.lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+.fila {
+  width: 100%; text-align: left; background: transparent; border: none;
+  border-bottom: 1px solid var(--linea);
+  padding: 13px 16px; cursor: pointer; display: grid; gap: 5px;
+}
+.fila:nth-child(even) { background: color-mix(in srgb, var(--franja) 45%, transparent); }
+.fila:hover { background: var(--franja); }
+.fila[aria-current="true"] { background: var(--acento-tenue); box-shadow: inset 3px 0 0 var(--acento); }
+.fila .titulo { font-family: Faustina, Georgia, serif; font-size: 17px; font-weight: 600; line-height: 1.25; }
+.fila .meta { font-size: 12.5px; color: var(--tinta-suave); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.chip {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+  border: 1px solid var(--linea-fuerte); color: var(--tinta-suave); white-space: nowrap;
+}
+.chip.verde { background: var(--verde-tenue); border-color: transparent; color: var(--verde); }
+.chip.amarillo { background: var(--ambar-tenue); border-color: transparent; color: var(--ambar); }
+.chip.rojo { background: var(--rojo-tenue); border-color: transparent; color: var(--rojo); }
+
+.vacio { padding: 34px 22px; color: var(--tinta-suave); display: grid; gap: 12px; justify-items: start; }
+
+/* ---------- panel derecho ---------- */
+.hoja { min-width: 0; display: flex; flex-direction: column; }
+.hoja-cabeza { padding: 20px 24px 0; display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.hoja-cabeza h2 { font-size: 27px; line-height: 1.15; }
+.hoja-cabeza .ruta { color: var(--tinta-suave); font-size: 14px; margin-top: 3px; }
+
+/* el sello: el unico elemento fuerte de la pagina */
+.sello {
+  flex-shrink: 0;
+  border: 2.5px solid currentColor; border-radius: 5px;
+  padding: 6px 12px 5px; transform: rotate(-4deg);
+  text-align: center; font-family: "IBM Plex Mono", monospace;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  opacity: .92;
+}
+.sello .puntos { font-size: 25px; font-weight: 600; line-height: 1; display: block; letter-spacing: -.02em; }
+.sello .rotulo { font-size: 9px; letter-spacing: .17em; text-transform: uppercase; display: block; margin-top: 3px; }
+.sello.verde { color: var(--verde); }
+.sello.amarillo { color: var(--ambar); }
+.sello.rojo { color: var(--rojo); }
+
+.pestanas { display: flex; gap: 2px; padding: 16px 24px 0; border-bottom: 1px solid var(--linea); overflow-x: auto; }
+.pestana {
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  padding: 8px 12px; cursor: pointer; color: var(--tinta-suave);
+  font-size: 13.5px; font-weight: 500; white-space: nowrap;
+}
+.pestana:hover { color: var(--tinta); }
+.pestana[aria-selected="true"] { color: var(--acento); border-bottom-color: var(--acento); }
+
+.panel { padding: 22px 24px 60px; display: grid; gap: 20px; max-width: 860px; }
+
+.tarjeta { border: 1px solid var(--linea); background: var(--superficie); border-radius: var(--r); overflow: hidden; }
+.tarjeta > header {
+  padding: 10px 14px; border-bottom: 1px solid var(--linea);
+  background: var(--franja); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.tarjeta > .contenido { padding: 14px; display: grid; gap: 11px; }
+
+.datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 20px; }
+.dato { display: grid; gap: 2px; align-content: start; }
+.dato .v { font-size: 14.5px; }
+.dato .v.falta { color: var(--tinta-suave); font-style: italic; }
+
+.bandera { display: grid; grid-template-columns: auto 1fr; gap: 11px; align-items: start; padding: 11px 0; border-bottom: 1px dashed var(--linea); }
+.bandera:last-child { border-bottom: none; }
+.bandera p { font-size: 14px; }
+.sev {
+  font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 7px; border-radius: var(--r); white-space: nowrap; margin-top: 1px;
+}
+.sev.stop { background: var(--rojo); color: var(--superficie); }
+.sev.alta { background: var(--rojo-tenue); color: var(--rojo); }
+.sev.media { background: var(--ambar-tenue); color: var(--ambar); }
+.sev.info { background: var(--franja); color: var(--tinta-suave); }
+
+.pasos { margin: 0; padding-left: 19px; display: grid; gap: 7px; font-size: 14px; }
+.pasos li::marker { color: var(--acento); }
+
+.fuente { padding: 11px 0; border-bottom: 1px dashed var(--linea); display: grid; gap: 3px; }
+.fuente:last-child { border-bottom: none; }
+.fuente .n { font-weight: 600; font-size: 14.5px; }
+.fuente .r { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--acento); }
+.fuente .q { font-size: 13.5px; color: var(--tinta-suave); }
+
+.consulta { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--linea); }
+.consulta:last-child { border-bottom: none; }
+.consulta a {
+  flex: 1; color: var(--tinta); text-decoration: none; font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px; word-break: break-word;
+}
+.consulta a:hover { color: var(--acento); text-decoration: underline; }
+
+pre.doc {
+  margin: 0; padding: 14px; background: var(--papel); border-top: 1px solid var(--linea);
+  font-family: "IBM Plex Mono", monospace; font-size: 12px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow-y: auto;
+}
+
+.nota { padding: 10px 0; border-bottom: 1px dashed var(--linea); }
+.nota:last-child { border-bottom: none; }
+.nota .f { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-suave); }
+
+label.campo { display: grid; gap: 5px; }
+input[type="text"], input[type="number"], input[type="date"], select, textarea {
+  border: 1px solid var(--linea-fuerte); background: var(--superficie);
+  border-radius: var(--r); padding: 8px 10px; width: 100%; font-size: 14px;
+}
+textarea { resize: vertical; min-height: 70px; }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 13px; }
+.ancho { grid-column: 1 / -1; }
+.check { display: flex; gap: 9px; align-items: center; font-size: 14px; }
+
+/* ---------- modal ---------- */
+.velo {
+  position: fixed; inset: 0; background: rgba(12,18,13,.5); z-index: 50;
+  display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto;
+}
+.modal {
+  background: var(--superficie); border: 1px solid var(--linea-fuerte); border-radius: var(--r);
+  width: min(720px, 100%); box-shadow: var(--sombra); margin: auto;
+}
+.modal > header { padding: 15px 20px; border-bottom: 1px solid var(--linea); display: flex; align-items: center; gap: 12px; }
+.modal > header h2 { font-size: 20px; }
+.modal form { padding: 20px; display: grid; gap: 14px; }
+.modal footer { display: flex; gap: 9px; justify-content: flex-end; padding-top: 4px; }
+
+.brindis {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--tinta); color: var(--papel); padding: 9px 17px;
+  border-radius: 999px; font-size: 13.5px; z-index: 90; box-shadow: var(--sombra);
+}
+.solo-movil { display: none; }
+@media (max-width: 900px) {
+  .solo-movil { display: inline-flex; }
+  .rail.oculta, .hoja.oculta { display: none; }
+}
+</style>
+
+<div id="raiz"></div>
+<script type="application/json" id="estado">{"perfil":{},"deals":[],"actualizado":""}</script>
+<script id="app" data-src>
+"use strict";
+
+/* ============================================================
+   Mesa de Intermediación
+   Todo el conocimiento del oficio vive en estas tablas: el rubro
+   de banderas rojas, el directorio de dónde buscar y verificar, y
+   las plantillas. La UI de abajo sólo las muestra.
+   ============================================================ */
+
+const ETAPAS = [
+  ["captada", "Captada"],
+  ["validada", "Validada"],
+  ["proveedor", "Proveedor identificado"],
+  ["firmado", "Acuerdo firmado"],
+  ["presentada", "Presentación hecha"],
+  ["negociacion", "En negociación"],
+  ["cerrada", "Cerrada"],
+  ["descartada", "Descartada"],
+];
+const ORDEN_ETAPA = ETAPAS.map(function (e) { return e[0]; });
+const NOMBRE_ETAPA = Object.fromEntries(ETAPAS);
+
+const SIGUIENTE_PASO = {
+  captada: "Exigí primero: LOI o ICPO firmada del comprador final, especificaciones completas y prueba de fondos. No busques proveedor hasta tenerlas.",
+  validada: "Armá una lista corta de 5 a 10 exportadores reales y verificá cada uno en el registro fiscal y mercantil del país de origen.",
+  proveedor: "Firmá el NCND antes de dar nombres. Generalo en la pestaña Documentos y mandalo a las dos partes.",
+  firmado: "Presentá a las partes en un solo hilo de correo, con vos siempre en copia. Nada por teléfono sin resumen escrito.",
+  presentada: "Quedate en copia de todo y anotá cada avance en la bitácora: esa es tu prueba si te quieren brincar.",
+  negociacion: "Confirmá que tu comisión quedó dentro de la carta de crédito o en un IMFPA aceptado por el banco, no en un apretón de manos.",
+  cerrada: "Cobrá, archivá el expediente y pedile una referencia al comprador.",
+  descartada: "Nada. Dejá anotado el porqué para no repetir el error.",
+};
+
+// Anclas gruesas USD por tonelada, sólo para estimar el valor de la
+// carga cuando no cargás precio. Envejecen: si te importa, poné el precio.
+const PRECIOS_REF = {
+  cacao: 6000, cafe: 5500, azucar: 550, banano: 700, aguacate: 2200,
+  tabaco: 5000, arroz: 600, maiz: 250, soya: 450, cobre: 9000,
+};
+const A_TONELADA = { t: 1, tm: 1, tonelada: 1, toneladas: 1, kg: 0.001, lb: 0.000453592, qq: 0.0454 };
+
+// Jerga de las cadenas de fraude en comercio internacional.
+const JERGA_FRAUDE = ["sblc", "standby letter of credit", "bank guarantee", "bg ",
+  "mt103", "mt760", "mt799", "pof", "proof of funds provider", "bcl",
+  "leased instrument", "monetizar", "monetization", "fresh cut paper"];
+const SENALES_ADELANTO = ["pago por adelantado", "cuota de registro", "registration fee",
+  "membership fee", "pagar para acceder", "fee para recibir el contacto", "deposito de garantia"];
+
+// Exportación anual aproximada, en toneladas. Órdenes de magnitud.
+const CAPACIDAD = [
+  ["republica dominicana", "cacao", 70000],
+  ["republica dominicana", "tabaco", 30000],
+  ["republica dominicana", "aguacate", 60000],
+  ["ecuador", "cacao", 400000],
+  ["colombia", "cafe", 700000],
+  ["peru", "cafe", 250000],
+  ["honduras", "cafe", 300000],
+];
+
+const AGENCIAS = {
+  "republica dominicana": ["ProDominicana (CEI-RD)", "prodominicana.gob.do", "Directorio oficial de exportadores dominicanos; su área de inteligencia de mercados responde consultas de compradores."],
+  colombia: ["ProColombia", "procolombia.co", "Directorio de exportadores colombianos por sector."],
+  peru: ["PromPerú", "promperu.gob.pe", "Directorio de exportadores peruanos."],
+  ecuador: ["ProEcuador", "proecuador.gob.ec", "Directorio de exportadores ecuatorianos."],
+  mexico: ["COMCE", "comce.org.mx", "Consejo empresarial de comercio exterior mexicano."],
+  "costa rica": ["PROCOMER", "procomer.com", "Directorio de exportadores costarricenses."],
+  guatemala: ["AGEXPORT", "agexport.org.gt", "Gremial de exportadores, muy activa y accesible."],
+  honduras: ["ProHonduras", "prohonduras.hn", "Agencia de promoción de exportaciones."],
+  chile: ["ProChile", "prochile.gob.cl", "Directorio de exportadores chilenos."],
+  brasil: ["ApexBrasil", "apexbrasil.com.br", "Agencia brasileña de promoción de exportaciones."],
+  espana: ["ICEX", "icex.es", "Directorio de exportadores españoles."],
+};
+
+const VERIFICACION = {
+  "republica dominicana": [
+    ["DGII — consulta de RNC", "dgii.gov.do", "Confirmá que el RNC existe, a quién pertenece y si está activo. Si no te dan RNC, no sigas."],
+    ["Cámara de Comercio de Santo Domingo", "camarasantodomingo.do", "Registro Mercantil: constitución, socios, capital. Una empresa de tres meses no exporta 5.000 t."],
+    ["Dirección General de Aduanas", "aduanas.gob.do", "Registro de exportadores y estadísticas de embarques."],
+  ],
+  colombia: [["RUES", "rues.org.co", "Registro único empresarial: existencia y representante legal."]],
+  peru: [["SUNAT — consulta RUC", "sunat.gob.pe", "Estado del RUC y actividad declarada."]],
+  ecuador: [["Superintendencia de Compañías", "supercias.gob.ec", "Constitución, socios y estados financieros."]],
+  mexico: [["SAT — constancia de situación fiscal", "sat.gob.mx", "Verificación del RFC del proveedor."]],
+};
+
+const GREMIOS = [
+  ["republica dominicana", "cacao", [
+    ["CONACADO", "conacado.com.do", "Confederación Nacional de Cacaocultores. Es la vía realista para volumen grande de cacao dominicano, con certificación orgánica y Fairtrade."],
+    ["Departamento de Cacao — Ministerio de Agricultura", "agricultura.gob.do", "Lleva el registro de fermentadoras y exportadoras de cacao."],
+    ["Junta Agroempresarial Dominicana (JAD)", "jad.org.do", "Agrupa a los agroexportadores formales del país."],
+  ]],
+  ["colombia", "cafe", [
+    ["Federación Nacional de Cafeteros", "federaciondecafeteros.org", "Controla buena parte de la exportación de café colombiano."],
+  ]],
+  ["ecuador", "cacao", [
+    ["ANECACAO", "anecacao.com", "Asociación nacional de exportadores de cacao del Ecuador."],
+  ]],
+];
+
+const GLOBALES = [
+  ["ITC Trade Map", "trademap.org", "Quién exporta qué, a dónde y cuánto. Cuenta gratuita. Te dice en un minuto si el volumen del anuncio es realista."],
+  ["UN Comtrade", "comtrade.un.org", "Estadísticas oficiales de comercio por partida arancelaria."],
+  ["Registros de bills of lading (ImportGenius, Panjiva)", "servicio de pago", "Embarques reales por empresa: la prueba más dura de que un exportador de verdad embarca ese producto a ese destino."],
+];
+
+const PARTIDAS_HS = {
+  cacao: "1801 — cacao en grano", cafe: "0901 — café", azucar: "1701 — azúcar de caña",
+  banano: "0803 — bananos", aguacate: "0804.40 — aguacates", tabaco: "2401 — tabaco en rama",
+  ron: "2208.40 — ron", camaron: "0306 — crustáceos", arroz: "1006 — arroz",
+};
+
+/* ---------------- lógica pura ---------------- */
+
+function norm(s) {
+  return (s || "").toString().trim().toLowerCase()
+    .replace(/[áàä]/g, "a").replace(/[éèë]/g, "e").replace(/[íìï]/g, "i")
+    .replace(/[óòö]/g, "o").replace(/[úùü]/g, "u").replace(/ñ/g, "n");
+}
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function usd(n) { return "USD " + Math.round(n).toLocaleString("es-DO"); }
+
+function toneladas(d) {
+  const f = A_TONELADA[norm(d.unidad)];
+  return f && num(d.cantidad) ? num(d.cantidad) * f : null;
+}
+
+function valorCarga(d) {
+  if (num(d.precio) && num(d.cantidad)) return { valor: num(d.cantidad) * num(d.precio), estimado: false };
+  const t = toneladas(d);
+  if (t === null) return { valor: null, estimado: false };
+  const p = norm(d.producto);
+  for (const clave in PRECIOS_REF) if (p.includes(clave)) return { valor: t * PRECIOS_REF[clave], estimado: true };
+  return { valor: null, estimado: false };
+}
+
+function capacidadPais(d) {
+  const pais = norm(d.paisOrigen), prod = norm(d.producto);
+  for (const [p, k, t] of CAPACIDAD) if (pais.includes(p) && prod.includes(k)) return t;
+  return null;
+}
+
+const PESOS = { stop: 40, alta: 20, media: 10, info: 0 };
+
+function evaluar(d) {
+  const b = [];
+  const push = function (sev, texto) { b.push({ sev: sev, texto: texto }); };
+
+  // Comisión contra el valor real de la carga.
+  if (!num(d.fee)) {
+    push("alta", "No hay comisión definida por escrito. Definila en número y en porcentaje antes de mover nada.");
+  } else {
+    const { valor, estimado } = valorCarga(d);
+    if (valor === null) {
+      push("info", "No se puede calcular el valor de la carga. Cargá el precio por unidad para revisar si la comisión es realista.");
+    } else {
+      const r = num(d.fee) / valor;
+      const det = "comisión " + usd(num(d.fee)) + " sobre una carga de ~" + usd(valor) +
+        " (" + (r * 100).toFixed(2) + "%, " + (estimado ? "estimado grueso" : "precio que cargaste") + ")";
+      if (r > 0.05) push("stop", "La comisión se come más del 5% de la carga: " + det + ". En commodities los márgenes no dan para eso; casi siempre significa que el volumen o el precio del anuncio es inventado.");
+      else if (r > 0.02) push("alta", "Comisión por encima del 2% de la carga: " + det + ". Pedí que te expliquen de dónde sale ese dinero.");
+      else if (r < 0.0005) push("media", "Comisión muy chica para el trabajo que implica: " + det + ".");
+    }
+  }
+
+  // Volumen contra lo que el país realmente exporta.
+  const t = toneladas(d), cap = capacidadPais(d);
+  if (t !== null && cap) {
+    const prop = t / cap;
+    if (prop >= 0.5) push("stop", Math.round(t).toLocaleString("es-DO") + " t es ~" + Math.round(prop * 100) + "% de lo que " + d.paisOrigen + " exporta al año de " + d.producto + ". Ese volumen no existe disponible en spot.");
+    else if (prop >= 0.03) push("media", Math.round(t).toLocaleString("es-DO") + " t es ~" + Math.round(prop * 100) + "% de la exportación anual de " + d.paisOrigen + ". Ningún exportador individual lo cubre solo: apuntá a cooperativas o a entregas parciales durante la cosecha.");
+  }
+
+  // Contraparte.
+  if (!(d.comprador || "").trim()) push("alta", "No hay comprador final identificado. Sin razón social verificable no hay trato, sólo un anuncio.");
+  const fuente = norm(d.fuente);
+  if (["instagram", "facebook", "tiktok", "whatsapp", "telegram", "grupo"].some(function (p) { return fuente.includes(p); }))
+    push("media", "La oportunidad viene de un anuncio público: asumí que hay una cadena de intermediarios delante tuyo. Pedí que te muestren el mandato o la LOI firmada del comprador final.");
+
+  // Términos de pago.
+  const pago = norm(d.pago);
+  const jerga = JERGA_FRAUDE.filter(function (j) { return pago.includes(j); });
+  if (jerga.length) push("stop", "Los términos de pago usan jerga de cadena de fraude (" + jerga.join(", ").trim() + "). En comercio real se paga con carta de crédito irrevocable a la vista o contra documentos. Salite.");
+  const todo = norm(d.pago + " " + (d.requisitos || []).join(" "));
+  if (SENALES_ADELANTO.some(function (s) { return todo.includes(s); }))
+    push("stop", "Te están pidiendo pagar algo por adelantado. Un intermediario cobra al cierre, nunca paga por entrar.");
+  if (!(d.pago || "").trim()) push("media", "Faltan los términos de pago. Preguntalos antes de buscar proveedor: definen si el exportador puede siquiera participar.");
+  if (!(d.incoterm || "").trim()) push("media", "Falta el Incoterm (FOB, CIF, EXW…). Sin eso el precio no significa nada y no podés comparar ofertas.");
+
+  // Proceso.
+  if (ORDEN_ETAPA.indexOf(d.etapa) >= ORDEN_ETAPA.indexOf("presentada") && !d.acuerdoFirmado)
+    push("stop", "Vas a presentar (o ya presentaste) sin acuerdo NCND firmado. Así es como te sacan del trato. Generalo en Documentos y firmá primero.");
+  if (d.fechaLimite) {
+    const dias = Math.round((new Date(d.fechaLimite + "T12:00:00") - new Date()) / 86400000);
+    if (dias < 0) push("media", "El plazo venció hace " + Math.abs(dias) + " días.");
+    else if (dias <= 7) push("media", "Quedan " + dias + " días. La urgencia extrema es una táctica clásica para que no verifiques: no apures la revisión.");
+  }
+
+  const orden = { stop: 0, alta: 1, media: 2, info: 3 };
+  b.sort(function (x, y) { return orden[x.sev] - orden[y.sev]; });
+  const score = Math.max(0, 100 - b.reduce(function (s, x) { return s + PESOS[x.sev]; }, 0));
+  const nivel = b.some(function (x) { return x.sev === "stop"; }) ? "rojo" : score >= 70 ? "verde" : score >= 40 ? "amarillo" : "rojo";
+  return { score: score, nivel: nivel, banderas: b };
+}
+
+function exigencias(d) {
+  const base = [
+    "LOI o ICPO del comprador final, firmada, con razón social y número fiscal.",
+    "Especificaciones completas por escrito: calidad, empaque, entrega.",
+    "Prueba de capacidad de pago: carta de crédito preavisada o referencia bancaria.",
+    "Acuerdo NCND firmado por ambas partes ANTES de dar nombres o poner a nadie en contacto.",
+    "Un solo hilo de correo con vos siempre en copia. Nada por teléfono sin resumen escrito.",
+  ];
+  if ((d.requisitos || []).length) base.push("Documentación técnica que pidió el comprador: " + d.requisitos.join("; ") + ".");
+  return base;
+}
+
+function fuentesDe(d) {
+  const out = [], vistos = new Set();
+  const add = function (f) { if (f && !vistos.has(f[0])) { vistos.add(f[0]); out.push(f); } };
+  const pais = norm(d.paisOrigen), prod = norm(d.producto);
+  for (const [p, k, lista] of GREMIOS) if (pais.includes(p) && prod.includes(k)) lista.forEach(add);
+  for (const clave in AGENCIAS) if (pais.includes(clave)) add(AGENCIAS[clave]);
+  for (const clave in VERIFICACION) if (pais.includes(clave)) VERIFICACION[clave].forEach(add);
+  const destino = norm(d.paisDestino);
+  for (const clave in AGENCIAS) if (destino && destino.includes(clave)) add(AGENCIAS[clave]);
+  GLOBALES.forEach(add);
+  return out;
+}
+
+function consultasDe(d) {
+  const prod = d.producto || "producto", pais = d.paisOrigen || "";
+  const lugar = ((d.ciudadOrigen || "") + " " + pais).trim();
+  const q = [
+    '"exportador de ' + prod + '" ' + lugar,
+    '"' + prod + '" exportador ' + pais + ' "FOB" contacto correo',
+    prod + " exporter " + pais + ' wholesale "metric tons"',
+    prod + ' "cooperativa" OR "asociación de productores" ' + pais,
+    prod + " exporter " + pais + " site:linkedin.com/in",
+    '"' + prod + '" ' + pais + ' "gerente de exportaciones" OR "export manager"',
+  ];
+  for (const clave in AGENCIAS) if (norm(pais).includes(clave)) q.push(prod + " exportadores site:" + AGENCIAS[clave][1]);
+  if ((d.requisitos || []).length) q.push(prod + " " + pais + " " + d.requisitos.slice(0, 2).join(" "));
+  return q.map(function (s) { return s.replace(/\s+/g, " ").trim(); });
+}
+
+function partidaHS(producto) {
+  const p = norm(producto);
+  for (const clave in PARTIDAS_HS) if (p.includes(clave)) return PARTIDAS_HS[clave];
+  return null;
+}
+</script>
+<script id="docs" data-src>
+"use strict";
+
+/* Documentos que salen del deal. Devuelven Markdown listo para copiar. */
+
+function o(v, alt) { return (v || "").toString().trim() || (alt === undefined ? "__________" : alt); }
+function cant(d) { return num(d.cantidad) ? num(d.cantidad).toLocaleString("es-DO") + " " + (d.unidad || "t") : "por definir"; }
+
+function docFicha(d) {
+  const ev = evaluar(d);
+  const { valor, estimado } = valorCarga(d);
+  return [
+    "# Ficha de oportunidad — " + d.id, "",
+    "- **Producto:** " + o(d.producto),
+    "- **Cantidad:** " + cant(d),
+    "- **Origen:** " + (o(d.ciudadOrigen, "") + " " + o(d.paisOrigen)).trim(),
+    "- **Destino:** " + (o(d.ciudadDestino, "") + " " + o(d.paisDestino)).trim(),
+    "- **Comprador:** " + o(d.comprador, "no identificado todavía"),
+    "- **Incoterm:** " + o(d.incoterm, "por definir"),
+    "- **Términos de pago:** " + o(d.pago, "por definir"),
+    "- **Fecha límite:** " + o(d.fechaLimite, "sin plazo declarado"),
+    valor ? "- **Valor aproximado de la carga:** " + usd(valor) + (estimado ? " (estimado)" : "") : "",
+    "- **Comisión:** " + (num(d.fee) ? usd(num(d.fee)) : "por definir"),
+    "", "## Requisitos del comprador", "",
+    (d.requisitos || []).length ? d.requisitos.map(function (r) { return "- " + r; }).join("\n") : "- Por confirmar",
+    "", "## Estado", "",
+    "- Etapa: **" + (NOMBRE_ETAPA[d.etapa] || d.etapa) + "**",
+    "- Acuerdo NCND firmado: **" + (d.acuerdoFirmado ? "sí" : "no") + "**",
+    "- Confianza de la oportunidad: **" + ev.score + "/100 (" + ev.nivel + ")**", "",
+  ].filter(function (l) { return l !== ""; }).join("\n");
+}
+
+function docNCND(d, perfil) {
+  perfil = perfil || {};
+  const hoy = new Date().toISOString().slice(0, 10);
+  return `# Acuerdo de No Elusión, No Divulgación y Comisión de Intermediación
+
+**Referencia:** ${d.id} · **Fecha:** ${hoy}
+
+> **Aviso.** Plantilla de trabajo, no asesoría legal. Antes de usarla por
+> primera vez, que la revise un abogado de tu jurisdicción. Las cláusulas
+> a ajustar son la de comisión y la de ley aplicable.
+
+## Partes
+
+**EL INTERMEDIARIO**
+
+- Nombre: ${o(perfil.nombre)}
+- Empresa: ${o(perfil.empresa)}
+- Documento / RNC: ${o(perfil.documento)}
+- Domicilio: ${o(perfil.domicilio)}
+- Correo: ${o(perfil.email)}
+- Teléfono: ${o(perfil.telefono)}
+
+**LA PARTE CONTRATANTE**
+
+- Nombre / Razón social: __________
+- Documento fiscal: __________
+- Domicilio: __________
+- Representante legal: __________
+- Correo: __________
+
+## 1. Antecedente
+
+EL INTERMEDIARIO posee información, contactos y relaciones comerciales que
+permiten identificar y poner en contacto a proveedores y compradores respecto
+de la siguiente operación:
+
+- Producto: ${o(d.producto)}
+- Cantidad: ${cant(d)}
+- Origen: ${o(d.paisOrigen)}
+- Destino: ${o(d.paisDestino)}
+
+LA PARTE CONTRATANTE desea acceder a dicha información con el fin de concretar
+la operación descrita.
+
+## 2. Confidencialidad
+
+LA PARTE CONTRATANTE se obliga a mantener bajo estricta reserva la identidad de
+las contrapartes, los datos de contacto, precios, condiciones y cualquier
+documento que EL INTERMEDIARIO le revele. No podrá divulgarlos a terceros sin
+autorización previa y por escrito, salvo a empleados o asesores que necesiten
+conocerlos para ejecutar la operación, quienes quedarán sujetos a esta misma
+obligación.
+
+## 3. No elusión
+
+LA PARTE CONTRATANTE se obliga a no contactar, negociar ni contratar, de forma
+directa o a través de terceros, filiales, sociedades vinculadas, empleados o
+familiares, con ninguna de las contrapartes presentadas por EL INTERMEDIARIO,
+sin la participación de éste y sin el reconocimiento de la comisión pactada en
+la cláusula 4.
+
+Esta obligación rige durante **veinticuatro (24) meses** contados desde la fecha
+de la presentación, y alcanza tanto a la operación descrita como a cualquier
+operación posterior, ampliación, renovación o sustitución celebrada con la misma
+contraparte.
+
+## 4. Comisión
+
+Concretada la operación, EL INTERMEDIARIO tendrá derecho a una comisión de
+**${num(d.fee) ? usd(num(d.fee)) : "USD __________"}**, pagadera así:
+
+- Se devenga cuando el vendedor reciba el pago o se negocien los documentos de
+  embarque bajo la carta de crédito correspondiente.
+- Se paga dentro de los **cinco (5) días hábiles** siguientes, mediante
+  transferencia a la cuenta que EL INTERMEDIARIO indique por escrito.
+- En operaciones con entregas parciales, la comisión se devenga y paga a
+  prorrata de cada embarque.
+- Las partes podrán acordar que la comisión se instrumente mediante un IMFPA
+  irrevocable incorporado a la carta de crédito; dicho instrumento no sustituye
+  ni limita las obligaciones de este acuerdo.
+
+## 5. Incumplimiento
+
+El incumplimiento de las cláusulas 2 o 3 obliga a LA PARTE CONTRATANTE a pagar a
+EL INTERMEDIARIO, como pena convencional y sin perjuicio de los daños
+adicionales que se acrediten, una suma equivalente al **doble de la comisión**
+pactada en la cláusula 4.
+
+## 6. Naturaleza de la relación
+
+Este acuerdo no crea sociedad, mandato, agencia ni relación laboral. EL
+INTERMEDIARIO actúa como facilitador independiente, no asume responsabilidad por
+el cumplimiento de las obligaciones comerciales entre comprador y vendedor, ni
+garantiza calidad, cantidad o entrega de la mercancía.
+
+## 7. Ley aplicable y controversias
+
+Este acuerdo se rige por las leyes de __________. Toda controversia se resolverá
+de forma definitiva mediante arbitraje conforme al Reglamento de Arbitraje de la
+Cámara de Comercio Internacional (CCI), por un árbitro único, con sede en
+__________ y en idioma español.
+
+## 8. Vigencia
+
+Entra en vigor a la fecha de firma y permanece vigente por **veinticuatro (24)
+meses**. Las obligaciones de confidencialidad y no elusión sobreviven a su
+terminación por el plazo indicado en cada cláusula.
+
+---
+
+**EL INTERMEDIARIO**
+
+Firma: ______________________   Nombre: ${o(perfil.nombre)}
+
+**LA PARTE CONTRATANTE**
+
+Firma: ______________________   Nombre: __________
+
+Cargo: __________   Fecha: __________
+`;
+}
+
+function docChecklist(d) {
+  const extra = (d.requisitos || []).length
+    ? "\n## Requisitos específicos de este comprador\n\n" + d.requisitos.map(function (r) { return "- [ ] " + r; }).join("\n") + "\n"
+    : "";
+  return `# Verificación del proveedor — ${d.id}
+
+Producto: ${o(d.producto)} · Origen: ${o(d.paisOrigen)}
+
+No presentes a nadie hasta tener marcado todo el bloque de existencia legal.
+Los demás bloques se pueden completar en paralelo.
+
+## Existencia legal (obligatorio antes de presentar)
+
+- [ ] Razón social completa y número fiscal (RNC / RUC / NIT)
+- [ ] Verificado por mí en el registro fiscal del país, no sólo lo que me dijeron
+- [ ] Registro mercantil vigente y fecha de constitución
+- [ ] Registro de exportador ante la aduana del país
+- [ ] Nombre y cargo de quien firma, con poder para obligar a la empresa
+
+## Capacidad real
+
+- [ ] Volumen exportado en los últimos 12 meses, con destinos
+- [ ] Historial de embarques verificado por fuente independiente
+- [ ] Capacidad de planta, almacenamiento y procesamiento
+- [ ] Calendario de cosecha y disponibilidad real en la fecha pedida
+- [ ] Si no cubre el volumen solo: con qué cooperativas consolida
+
+## Producto y calidad
+
+- [ ] Ficha técnica con especificaciones medibles
+- [ ] Análisis de laboratorio reciente de un lote representativo
+- [ ] Certificaciones vigentes, con número y fecha de vencimiento
+- [ ] Trazabilidad hasta finca o zona de origen
+- [ ] Muestra física enviada al comprador y acuse de recibo
+
+## Documentación de exportación
+
+- [ ] Certificado fitosanitario o sanitario según el producto
+- [ ] Certificado de origen
+- [ ] Empaque y marcado conforme a lo que exige el país destino
+- [ ] Experiencia previa exportando a ${o(d.paisDestino, "ese destino")}
+
+## Comercial
+
+- [ ] Precio en firme con Incoterm y validez de la oferta
+- [ ] Términos de pago que acepta
+- [ ] Dos referencias comerciales contactables, y las contacté
+- [ ] Aceptó firmar el NCND antes de la presentación
+${extra}
+## Banderas rojas del proveedor
+
+- [ ] No pide ningún pago por adelantado para "reservar" el lote
+- [ ] No se niega a dar el número fiscal
+- [ ] Usa correo de dominio propio, no una cuenta gratuita
+- [ ] El nombre del registro coincide con el de la cuenta bancaria
+`;
+}
+
+function docProveedor(d) {
+  const destino = d.paisDestino || "mercado internacional";
+  const reqs = (d.requisitos || []).length
+    ? d.requisitos.map(function (r) { return "- " + r; }).join("\n")
+    : "- Ficha técnica y análisis de laboratorio\n- Trazabilidad de origen\n- Certificaciones vigentes\n- Documentación de exportación completa";
+  return `# Primer contacto con el proveedor — ${d.id}
+
+**Asunto:** Consulta de compra: ${o(d.producto)} — ${cant(d)} para ${destino}
+
+Buenos días,
+
+Represento a un comprador de ${destino} que busca proveedor de ${o(d.producto)}.
+Antes de avanzar quiero confirmar si el volumen y las condiciones les encajan.
+
+La operación, en resumen:
+
+- Producto: ${o(d.producto)}
+- Cantidad: ${cant(d)}
+- Destino: ${(o(d.ciudadDestino, "") + " " + destino).trim()}
+- Incoterm: ${o(d.incoterm, "a acordar (FOB o CIF)")}
+- Pago: ${o(d.pago, "carta de crédito irrevocable a la vista")}
+
+Lo que el comprador va a pedir:
+
+${reqs}
+
+Si les interesa, ¿me confirman estos cuatro puntos?
+
+1. ¿Pueden cubrir el volumen, completo o en entregas parciales? ¿En qué plazo?
+2. ¿Precio indicativo con Incoterm y validez de la oferta?
+3. ¿Han exportado antes a ${destino}?
+4. ¿Con qué certificaciones cuentan hoy?
+
+Trabajo como intermediario comercial: mi comisión la asume la parte compradora y
+no afecta su precio de venta. Antes de presentarlos formalmente firmamos un
+acuerdo simple de confidencialidad y no elusión, que protege a las dos partes.
+
+Quedo atento.
+
+---
+
+**Notas para vos, no las mandes:**
+
+- No des el nombre del comprador en el primer correo.
+- Si te piden pagar algo para "apartar" el lote, cortá ahí.
+- Pedí el número fiscal en la primera respuesta y verificalo el mismo día.
+`;
+}
+
+function docComprador(d) {
+  return `# Reply to the buyer / posting party — ${d.id}
+
+**Subject:** ${o(d.producto)} — ${cant(d)} from ${o(d.paisOrigen)}: supplier sourcing
+
+Hello,
+
+I saw your requirement for ${o(d.producto)} (${cant(d)}) from ${o(d.paisOrigen)}
+for delivery to ${o(d.paisDestino)}. I can work this: I have access to registered
+exporters and producer cooperatives at origin.
+
+Before I approach suppliers on your behalf, I need four things:
+
+1. **A signed LOI or ICPO from the end buyer**, on company letterhead, with full
+   legal name, registration number and signatory.
+2. **Full specifications**: quality parameters, packaging, delivery schedule,
+   target price range and Incoterm.
+3. **Evidence of payment capability** — a preadvised letter of credit or a bank
+   reference from the buyer's bank.
+4. **A signed NCND / fee agreement** covering my commission of
+   ${num(d.fee) ? usd(num(d.fee)) : "the agreed amount"}, payable on payment to
+   the seller. I have a draft ready to send.
+
+To be direct about how I work: I don't circulate supplier names before the fee
+agreement is signed, and I don't work with SBLC, BG, MT103 or leased-instrument
+structures — letter of credit at sight or cash against documents only.
+
+If that works, send the LOI and I'll come back with a shortlist of vetted
+exporters, each verified against the national company and customs registries.
+
+Best regards,
+
+---
+
+**Notas para vos, no las mandes:**
+
+- Si esquivan la LOI o el NCND, es cadena de brokers: no gastes tiempo.
+- Guardá cada respuesta: es tu prueba de que vos originaste el contacto.
+`;
+}
+
+const DOCUMENTOS = [
+  ["ficha", "Ficha de la oportunidad", "Resumen de una página para mandar a un proveedor.", function (d, p) { return docFicha(d); }],
+  ["ncnd", "Acuerdo NCND", "No elusión, no divulgación y comisión. Fírmalo antes de dar nombres.", docNCND],
+  ["checklist", "Verificación del proveedor", "Qué documentos exigirle antes de presentarlo.", function (d, p) { return docChecklist(d); }],
+  ["proveedor", "Mensaje al proveedor", "Primer contacto, en español.", function (d, p) { return docProveedor(d); }],
+  ["comprador", "Mensaje al comprador", "Respuesta a quien publicó, en inglés.", function (d, p) { return docComprador(d); }],
+];
+</script>
+<script id="ui" data-src>
+"use strict";
+
+/* ---------------- estado ---------------- */
+
+const CLAVE_LOCAL = "mesa-intermediacion-v1";
+let estado = { perfil: {}, deals: [], actualizado: "" };
+let ui = { sel: null, tab: "riesgo", modal: null, sucio: false, soloLocal: false, docAbierto: null };
+let publicar = null;   // capacidad artifact
+let bajar = null;      // capacidad downloads
+
+function esc(s) {
+  return (s === null || s === undefined ? "" : String(s))
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function cargarEstado() {
+  try {
+    const incrustado = JSON.parse(document.getElementById("estado").textContent || "{}");
+    estado = Object.assign({ perfil: {}, deals: [], actualizado: "" }, incrustado);
+  } catch (e) { /* página nueva */ }
+  try {
+    const local = JSON.parse(localStorage.getItem(CLAVE_LOCAL) || "null");
+    if (local && (local.actualizado || "") > (estado.actualizado || "")) {
+      estado = local;
+      ui.sucio = true;
+    }
+  } catch (e) { /* sin almacenamiento local: seguimos igual */ }
+}
+
+function tocar() {
+  estado.actualizado = new Date().toISOString();
+  ui.sucio = true;
+  try { localStorage.setItem(CLAVE_LOCAL, JSON.stringify(estado)); } catch (e) { /* modo privado */ }
+}
+
+function nuevoId(producto, pais) {
+  const trozo = function (t, n) {
+    return norm(t).replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).slice(0, n).join("-");
+  };
+  const base = [trozo(producto, 2), trozo(pais, 2)].filter(Boolean).join("-") || "deal";
+  const usados = new Set(estado.deals.map(function (d) { return d.id; }));
+  let n = 1;
+  while (usados.has(base + "-" + n)) n++;
+  return base + "-" + n;
+}
+
+function dealActual() {
+  return estado.deals.find(function (d) { return d.id === ui.sel; }) || null;
+}
+
+/* ---------------- guardado ---------------- */
+
+function documentoCompleto() {
+  const css = document.getElementById("css").textContent;
+  const fuentes = Array.prototype.map.call(document.querySelectorAll("script[data-src]"), function (s) {
+    return '<script id="' + s.id + '" data-src>' + s.textContent + "<\/script>";
+  }).join("\n");
+  const json = JSON.stringify(estado).replace(/</g, "\\u003c");
+  return [
+    "<!doctype html>",
+    '<html lang="es"><head><meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    "<title>Mesa de Intermediación</title>",
+    '<link rel="preconnect" href="https://fonts.googleapis.com">',
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">',
+    '<style id="css">' + css + "</style></head><body>",
+    '<div id="raiz"></div>',
+    '<script type="application/json" id="estado">' + json + "<\/script>",
+    fuentes,
+    "</body></html>",
+  ].join("\n");
+}
+
+async function guardar() {
+  if (!publicar) { brindis("Guardado sólo en este dispositivo: la nube no está disponible acá."); return; }
+  const boton = document.getElementById("btn-guardar");
+  if (boton) { boton.disabled = true; boton.textContent = "Guardando…"; }
+  try {
+    await publicar.publish(documentoCompleto());
+    // La vista se recarga sola a la versión nueva.
+  } catch (error) {
+    const codigo = (error && error.code) || "upstream_error";
+    if (codigo === "conflict") return;           // ya viene la recarga con la versión ganadora
+    if (codigo === "not_writer" || codigo === "not_granted" || codigo === "not_declared") {
+      ui.soloLocal = true;
+      brindis("Esta vista es de sólo lectura. Tus cambios quedan en este dispositivo.");
+    } else if (codigo === "too_large") {
+      brindis("El expediente ya no cabe en una versión. Archivá deals cerrados.");
+    } else if (codigo === "rate_limited") {
+      brindis("Demasiados guardados seguidos. Esperá unos segundos y volvé a intentar.");
+    } else {
+      brindis("No se pudo guardar en la nube. Tus cambios siguen en este dispositivo.");
+    }
+    render();
+  }
+}
+
+let temporizadorBrindis = null;
+function brindis(texto) {
+  let n = document.getElementById("brindis");
+  if (!n) {
+    n = document.createElement("div");
+    n.id = "brindis";
+    n.className = "brindis";
+    n.setAttribute("role", "status");
+    document.body.appendChild(n);
+  }
+  n.textContent = texto;
+  clearTimeout(temporizadorBrindis);
+  temporizadorBrindis = setTimeout(function () { n.remove(); }, 3200);
+}
+
+async function copiar(texto) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    brindis("Copiado");
+  } catch (e) {
+    const a = document.createElement("textarea");
+    a.value = texto;
+    a.style.position = "fixed";
+    a.style.opacity = "0";
+    document.body.appendChild(a);
+    a.select();
+    try { document.execCommand("copy"); brindis("Copiado"); }
+    catch (e2) { brindis("No se pudo copiar. Seleccioná el texto a mano."); }
+    a.remove();
+  }
+}
+
+async function descargar(nombre, texto) {
+  if (!bajar) { copiar(texto); return; }
+  try { await bajar.save({ filename: nombre, data: texto }); }
+  catch (error) {
+    const c = (error && error.code) || "unavailable";
+    if (c === "declined") return;
+    brindis("No se pudo descargar. Copiá el texto y pegalo en un documento.");
+  }
+}
+</script>
+<script id="vista" data-src>
+"use strict";
+
+/* ---------------- vistas ---------------- */
+
+function vistaBarra() {
+  const guardado = ui.soloLocal
+    ? '<span class="etiqueta">sólo en este dispositivo</span>'
+    : ui.sucio
+      ? '<span class="etiqueta" style="color:var(--ambar)">cambios sin guardar</span>'
+      : '<span class="etiqueta">al día</span>';
+  return '<header class="barra">' +
+    "<h1>Mesa de Intermediación</h1>" +
+    '<span class="etiqueta folio">' + estado.deals.length + " deal" + (estado.deals.length === 1 ? "" : "s") + "</span>" +
+    '<span class="crece"></span>' + guardado +
+    '<button class="btn fantasma" data-accion="perfil">Mis datos</button>' +
+    '<button class="btn" id="btn-guardar" data-accion="guardar"' + (ui.sucio ? "" : " disabled") + ">Guardar</button>" +
+    '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>' +
+    "</header>";
+}
+
+function vistaResumen() {
+  const vivos = estado.deals.filter(function (d) { return d.etapa !== "descartada" && d.etapa !== "cerrada"; });
+  const potencial = vivos.reduce(function (s, d) { return s + num(d.fee); }, 0);
+  const rojos = vivos.filter(function (d) { return evaluar(d).nivel === "rojo"; }).length;
+  const cifra = function (rot, val) {
+    return '<div class="cifra"><span class="etiqueta">' + rot + '</span><span class="valor">' + val + "</span></div>";
+  };
+  return '<div class="resumen">' +
+    cifra("activos", vivos.length) +
+    cifra("comisión en juego", potencial ? usd(potencial).replace("USD ", "$") : "—") +
+    cifra("en rojo", rojos) +
+    "</div>";
+}
+
+function vistaLista() {
+  if (!estado.deals.length) {
+    return '<div class="vacio"><p>Todavía no hay nada acá. Cuando veas un anuncio de finder’s fee, cargalo y la mesa te dice si vale la pena antes de que le metas horas.</p>' +
+      '<button class="btn primario" data-accion="nuevo">Cargar la primera</button></div>';
+  }
+  const filas = estado.deals.map(function (d) {
+    const ev = evaluar(d);
+    const sel = d.id === ui.sel ? ' aria-current="true"' : "";
+    return '<button class="fila" data-accion="sel:' + esc(d.id) + '"' + sel + ">" +
+      '<span class="titulo">' + esc(d.producto || "Sin producto") + "</span>" +
+      '<span class="meta"><span class="chip ' + ev.nivel + '">' + ev.score + "/100</span>" +
+      '<span class="chip">' + esc(NOMBRE_ETAPA[d.etapa] || d.etapa) + "</span>" +
+      "<span>" + esc((d.paisOrigen || "?") + " → " + (d.paisDestino || "?")) + "</span></span>" +
+      (num(d.fee) ? '<span class="meta mono">' + usd(num(d.fee)) + "</span>" : "") +
+      "</button>";
+  }).join("");
+  return '<div class="lista">' + filas + "</div>";
+}
+
+function vistaVacioHoja() {
+  return '<div class="vacio"><p>Elegí una oportunidad de la lista para verla.</p></div>';
+}
+
+function vistaCabeza(d) {
+  const ev = evaluar(d);
+  return '<div class="hoja-cabeza">' +
+    '<button class="btn fantasma chico solo-movil" data-accion="volver">← Lista</button>' +
+    "<div class=\"crece\"><h2>" + esc(d.producto || "Sin producto") + "</h2>" +
+    '<p class="ruta">' + esc(cant(d)) + " · " +
+    esc([d.ciudadOrigen, d.paisOrigen].filter(Boolean).join(", ") || "origen sin definir") + " → " +
+    esc([d.ciudadDestino, d.paisDestino].filter(Boolean).join(", ") || "destino sin definir") + "</p>" +
+    '<p class="etiqueta" style="margin-top:6px">' + esc(d.id) + "</p></div>" +
+    '<div class="sello ' + ev.nivel + '"><span class="puntos">' + ev.score + '</span><span class="rotulo">confianza</span></div>' +
+    "</div>";
+}
+
+function vistaPestanas() {
+  const tabs = [["riesgo", "Riesgo"], ["proveedor", "Buscar proveedor"], ["docs", "Documentos"], ["bitacora", "Bitácora"]];
+  return '<div class="pestanas" role="tablist">' + tabs.map(function (t) {
+    return '<button class="pestana" role="tab" aria-selected="' + (ui.tab === t[0]) + '" data-accion="tab:' + t[0] + '">' + t[1] + "</button>";
+  }).join("") + "</div>";
+}
+
+function tarjeta(titulo, contenido, extra) {
+  return '<section class="tarjeta"><header><span class="etiqueta">' + titulo + "</span>" +
+    (extra || "") + '</header><div class="contenido">' + contenido + "</div></section>";
+}
+
+function panelRiesgo(d) {
+  const ev = evaluar(d);
+  const { valor, estimado } = valorCarga(d);
+  const dato = function (rot, v, falta) {
+    return '<div class="dato"><span class="etiqueta">' + rot + "</span>" +
+      '<span class="v' + (v ? "" : " falta") + '">' + esc(v || falta) + "</span></div>";
+  };
+  const ficha = '<div class="datos">' +
+    dato("comprador", d.comprador, "sin identificar") +
+    dato("comisión", num(d.fee) ? usd(num(d.fee)) : "", "sin definir") +
+    dato("valor de la carga", valor ? usd(valor) + (estimado ? " (estimado)" : "") : "", "no calculable") +
+    dato("incoterm", d.incoterm, "sin definir") +
+    dato("pago", d.pago, "sin definir") +
+    dato("fecha límite", d.fechaLimite, "sin plazo") +
+    dato("fuente", d.fuente, "sin anotar") +
+    dato("partida arancelaria", partidaHS(d.producto), "sin identificar") +
+    "</div>" +
+    ((d.requisitos || []).length ? '<div class="dato"><span class="etiqueta">requisitos del comprador</span><span class="v">' + esc(d.requisitos.join(" · ")) + "</span></div>" : "");
+
+  const banderas = ev.banderas.length
+    ? ev.banderas.map(function (b) {
+        return '<div class="bandera"><span class="sev ' + b.sev + '">' + b.sev + "</span><p>" + esc(b.texto) + "</p></div>";
+      }).join("")
+    : "<p>Sin banderas. Eso no la vuelve real: igual exigí la documentación de abajo antes de mover nada.</p>";
+
+  return '<div class="panel">' +
+    tarjeta("siguiente paso", "<p>" + esc(SIGUIENTE_PASO[d.etapa] || "") + "</p>") +
+    tarjeta("banderas", banderas) +
+    tarjeta("qué exigir antes de mover un dedo",
+      '<ol class="pasos">' + exigencias(d).map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ol>") +
+    tarjeta("la oportunidad", ficha,
+      '<span class="crece"></span><button class="btn chico" data-accion="editar">Editar</button>') +
+    "</div>";
+}
+
+function panelProveedor(d) {
+  const fs = fuentesDe(d).map(function (f) {
+    return '<div class="fuente"><span class="n">' + esc(f[0]) + '</span><span class="r">' + esc(f[1]) +
+      '</span><span class="q">' + esc(f[2]) + "</span></div>";
+  }).join("");
+  const cs = consultasDe(d).map(function (q) {
+    return '<div class="consulta"><a href="https://www.google.com/search?q=' + encodeURIComponent(q) +
+      '" target="_blank" rel="noopener noreferrer">' + esc(q) + "</a>" +
+      '<button class="btn fantasma chico" data-accion="copiar-texto" data-texto="' + esc(q) + '">Copiar</button></div>';
+  }).join("");
+  const hs = partidaHS(d.producto);
+  return '<div class="panel">' +
+    tarjeta("dónde buscar y dónde verificar", fs || "<p>Cargá el país de origen para ver el directorio.</p>") +
+    tarjeta("consultas listas para buscar", cs) +
+    (hs ? tarjeta("partida arancelaria", "<p>Buscá <strong>" + esc(hs) + "</strong> en ITC Trade Map o UN Comtrade filtrando por " +
+      esc(d.paisOrigen || "el país de origen") + ": ahí ves quién exporta de verdad ese producto y a qué destinos.</p>") : "") +
+    "</div>";
+}
+
+function panelDocs(d) {
+  const cuerpo = DOCUMENTOS.map(function (doc) {
+    const clave = doc[0], abierto = ui.docAbierto === clave;
+    const texto = abierto ? doc[3](d, estado.perfil) : "";
+    return '<section class="tarjeta"><header><span class="etiqueta">' + doc[1] + "</span>" +
+      '<span class="crece"></span>' +
+      '<button class="btn chico" data-accion="doc:' + clave + '">' + (abierto ? "Ocultar" : "Ver") + "</button>" +
+      '<button class="btn chico" data-accion="copiar-doc:' + clave + '">Copiar</button>' +
+      (bajar ? '<button class="btn chico" data-accion="bajar-doc:' + clave + '">Descargar</button>' : "") +
+      '</header><div class="contenido"><p style="color:var(--tinta-suave);font-size:13.5px">' + esc(doc[2]) + "</p></div>" +
+      (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
+  }).join("");
+  const perfilIncompleto = !((estado.perfil || {}).nombre || "").trim();
+  return '<div class="panel">' +
+    (perfilIncompleto ? tarjeta("antes de usar el acuerdo",
+      '<p>El NCND sale con tus datos en blanco. Cargalos una vez en <strong>Mis datos</strong> y quedan puestos en todos los acuerdos.</p>' +
+      '<div><button class="btn" data-accion="perfil">Cargar mis datos</button></div>') : "") +
+    cuerpo + "</div>";
+}
+
+function panelBitacora(d) {
+  const opciones = ETAPAS.map(function (e) {
+    return '<option value="' + e[0] + '"' + (d.etapa === e[0] ? " selected" : "") + ">" + e[1] + "</option>";
+  }).join("");
+  const notas = (d.notas || []).length
+    ? d.notas.slice().reverse().map(function (n) {
+        return '<div class="nota"><span class="f">' + esc(n.fecha) + "</span><p>" + esc(n.texto) + "</p></div>";
+      }).join("")
+    : "<p>Sin anotaciones. Anotá cada llamada y cada correo: esa bitácora es tu prueba si después te quieren brincar.</p>";
+
+  return '<div class="panel">' +
+    tarjeta("estado del deal",
+      '<label class="campo"><span class="etiqueta">etapa</span><select data-accion="etapa">' + opciones + "</select></label>" +
+      '<label class="check"><input type="checkbox" data-accion="firmado"' + (d.acuerdoFirmado ? " checked" : "") +
+      "> Acuerdo NCND firmado por ambas partes</label>" +
+      '<div><button class="btn fantasma chico" data-accion="borrar">Borrar esta oportunidad</button></div>') +
+    tarjeta("anotar",
+      '<form data-accion="nota"><label class="campo"><span class="etiqueta">qué pasó</span>' +
+      '<textarea name="texto" placeholder="Llamé a CONACADO. Piden la LOI antes de cotizar." required></textarea></label>' +
+      '<div style="margin-top:10px"><button class="btn" type="submit">Guardar anotación</button></div></form>') +
+    tarjeta("bitácora", notas) +
+    "</div>";
+}
+
+function vistaHoja(clase) {
+  const d = dealActual();
+  const abre = '<main class="hoja' + (clase || "") + '">';
+  if (!d) return abre + vistaVacioHoja() + "</main>";
+  const panel = ui.tab === "proveedor" ? panelProveedor(d)
+    : ui.tab === "docs" ? panelDocs(d)
+    : ui.tab === "bitacora" ? panelBitacora(d)
+    : panelRiesgo(d);
+  return abre + vistaCabeza(d) + vistaPestanas() + panel + "</main>";
+}
+
+function vistaAviso() {
+  if (ui.soloLocal) {
+    return '<div class="aviso">Esta vista no puede publicar cambios. Lo que cargues queda guardado en este navegador.</div>';
+  }
+  if (ui.sucio && publicar) {
+    return '<div class="aviso">Tenés cambios que sólo están en este dispositivo.' +
+      '<button class="btn chico" data-accion="guardar">Guardar ahora</button></div>';
+  }
+  return "";
+}
+
+function render() {
+  const movil = window.matchMedia("(max-width: 900px)").matches;
+  const ocultaRail = movil && ui.sel ? " oculta" : "";
+  const ocultaHoja = movil && !ui.sel ? " oculta" : "";
+  document.getElementById("raiz").innerHTML =
+    '<div class="marco">' + vistaBarra() + vistaAviso() +
+    '<div class="cuerpo"><aside class="rail' + ocultaRail + '">' + vistaResumen() + vistaLista() + "</aside>" +
+    vistaHoja(ocultaHoja) + "</div></div>" +
+    (ui.modal ? vistaModal() : "");
+}
+</script>
+<script id="eventos" data-src>
+"use strict";
+
+/* ---------------- modales ---------------- */
+
+function campo(rot, nombre, valor, tipo, ancho, extra) {
+  return '<label class="campo' + (ancho ? " ancho" : "") + '"><span class="etiqueta">' + rot + "</span>" +
+    '<input type="' + (tipo || "text") + '" name="' + nombre + '" value="' + esc(valor || "") + '" ' + (extra || "") + "></label>";
+}
+
+function vistaModal() {
+  if (ui.modal === "perfil") {
+    const p = estado.perfil || {};
+    return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
+      "<header><h2>Mis datos</h2><span class=\"crece\"></span>" +
+      '<button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
+      '<form data-accion="guardar-perfil"><p style="color:var(--tinta-suave);font-size:13.5px">' +
+      "Van en el acuerdo NCND cada vez que lo generes. Se cargan una sola vez.</p>" +
+      '<div class="rejilla">' +
+      campo("nombre completo", "nombre", p.nombre) +
+      campo("empresa", "empresa", p.empresa) +
+      campo("documento / RNC", "documento", p.documento) +
+      campo("teléfono", "telefono", p.telefono) +
+      campo("correo", "email", p.email) +
+      campo("domicilio", "domicilio", p.domicilio, "text", true) +
+      "</div><footer>" +
+      '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
+      '<button class="btn primario" type="submit">Guardar datos</button></footer></form></div></div>';
+  }
+
+  const editando = ui.modal === "editar";
+  const d = editando ? dealActual() : { unidad: "t", etapa: "captada", requisitos: [] };
+  if (!d) return "";
+  return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
+    "<header><h2>" + (editando ? "Editar oportunidad" : "Nueva oportunidad") + "</h2>" +
+    '<span class="crece"></span><button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
+    '<form data-accion="guardar-deal"><div class="rejilla">' +
+    campo("producto", "producto", d.producto, "text", true, "required placeholder=\"cacao en grano\"") +
+    campo("cantidad", "cantidad", d.cantidad, "number", false, 'step="any" min="0"') +
+    '<label class="campo"><span class="etiqueta">unidad</span><select name="unidad">' +
+      ["t", "kg", "lb", "qq", "unidades", "contenedores"].map(function (u) {
+        return '<option value="' + u + '"' + ((d.unidad || "t") === u ? " selected" : "") + ">" + u + "</option>";
+      }).join("") + "</select></label>" +
+    campo("precio por unidad (USD)", "precio", d.precio, "number", false, 'step="any" min="0" placeholder="opcional"') +
+    campo("comisión para vos (USD)", "fee", d.fee, "number", false, 'step="any" min="0"') +
+    campo("país de origen", "paisOrigen", d.paisOrigen, "text", false, 'placeholder="República Dominicana"') +
+    campo("ciudad de origen", "ciudadOrigen", d.ciudadOrigen) +
+    campo("país de destino", "paisDestino", d.paisDestino) +
+    campo("ciudad de destino", "ciudadDestino", d.ciudadDestino) +
+    campo("comprador final", "comprador", d.comprador, "text", true, 'placeholder="razón social, si te la dieron"') +
+    campo("incoterm", "incoterm", d.incoterm, "text", false, 'placeholder="FOB, CIF, EXW…"') +
+    campo("términos de pago", "pago", d.pago, "text", false, 'placeholder="carta de crédito a la vista"') +
+    campo("fecha límite", "fechaLimite", d.fechaLimite, "date") +
+    campo("dónde lo viste", "fuente", d.fuente, "text", false, 'placeholder="Instagram @cuenta"') +
+    '<label class="campo ancho"><span class="etiqueta">requisitos del comprador (uno por línea)</span>' +
+    '<textarea name="requisitos" placeholder="Trazabilidad&#10;Especificaciones de fermentación">' +
+    esc((d.requisitos || []).join("\n")) + "</textarea></label>" +
+    "</div><footer>" +
+    '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
+    '<button class="btn primario" type="submit">' + (editando ? "Guardar cambios" : "Crear oportunidad") + "</button>" +
+    "</footer></form></div></div>";
+}
+
+/* ---------------- eventos ---------------- */
+
+function accionDe(nodo) {
+  const el = nodo.closest("[data-accion]");
+  return el ? { el: el, valor: el.getAttribute("data-accion") } : null;
+}
+
+document.addEventListener("click", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a) return;
+  const [verbo, arg] = a.valor.split(":");
+
+  if (verbo === "velo" && evento.target !== a.el) return; // clic dentro del modal
+
+  switch (verbo) {
+    case "nuevo": ui.modal = "nuevo"; render(); break;
+    case "editar": ui.modal = "editar"; render(); break;
+    case "perfil": ui.modal = "perfil"; render(); break;
+    case "cerrar": case "velo": ui.modal = null; render(); break;
+    case "guardar": guardar(); break;
+    case "volver": ui.sel = null; render(); break;
+    case "sel": ui.sel = arg; ui.tab = "riesgo"; ui.docAbierto = null; render(); break;
+    case "tab": ui.tab = arg; render(); break;
+    case "doc": ui.docAbierto = ui.docAbierto === arg ? null : arg; render(); break;
+    case "copiar-texto": copiar(a.el.getAttribute("data-texto")); break;
+    case "copiar-doc": {
+      const doc = DOCUMENTOS.find(function (x) { return x[0] === arg; });
+      if (doc) copiar(doc[3](dealActual(), estado.perfil));
+      break;
+    }
+    case "bajar-doc": {
+      const doc = DOCUMENTOS.find(function (x) { return x[0] === arg; });
+      if (doc) descargar(arg + "-" + dealActual().id + ".md", doc[3](dealActual(), estado.perfil));
+      break;
+    }
+    case "borrar": {
+      const d = dealActual();
+      if (d && confirm("¿Borrar “" + (d.producto || d.id) + "” y toda su bitácora?")) {
+        estado.deals = estado.deals.filter(function (x) { return x.id !== d.id; });
+        ui.sel = null;
+        tocar(); render();
+      }
+      break;
+    }
+  }
+});
+
+document.addEventListener("submit", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a) return;
+  evento.preventDefault();
+  const datos = Object.fromEntries(new FormData(evento.target).entries());
+
+  if (a.valor === "guardar-perfil") {
+    estado.perfil = datos;
+    ui.modal = null;
+    tocar(); render();
+    brindis("Datos guardados");
+    return;
+  }
+
+  if (a.valor === "guardar-deal") {
+    const requisitos = (datos.requisitos || "").split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+    if (ui.modal === "editar") {
+      const d = dealActual();
+      Object.assign(d, datos, { requisitos: requisitos });
+    } else {
+      const id = nuevoId(datos.producto, datos.paisOrigen);
+      estado.deals.unshift(Object.assign({
+        id: id, etapa: "captada", acuerdoFirmado: false, notas: [],
+        creado: new Date().toISOString().slice(0, 10),
+      }, datos, { requisitos: requisitos }));
+      ui.sel = id;
+      ui.tab = "riesgo";
+    }
+    ui.modal = null;
+    tocar(); render();
+    return;
+  }
+
+  if (a.valor === "nota") {
+    const d = dealActual();
+    if (d && (datos.texto || "").trim()) {
+      d.notas = d.notas || [];
+      d.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: datos.texto.trim() });
+      tocar(); render();
+    }
+  }
+});
+
+document.addEventListener("change", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a) return;
+  const d = dealActual();
+  if (!d) return;
+  if (a.valor === "etapa") { d.etapa = evento.target.value; tocar(); render(); }
+  if (a.valor === "firmado") { d.acuerdoFirmado = evento.target.checked; tocar(); render(); }
+});
+
+document.addEventListener("keydown", function (evento) {
+  if (evento.key === "Escape" && ui.modal) { ui.modal = null; render(); }
+});
+
+window.addEventListener("resize", function () { render(); });
+
+/* ---------------- arranque ---------------- */
+
+cargarEstado();
+render();
+
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("artifact").then(function (cap) {
+    publicar = cap;
+    if (!cap) ui.soloLocal = true;
+    render();
+  });
+  window.claude.use("downloads").then(function (cap) { bajar = cap; render(); });
+} else {
+  ui.soloLocal = true;
+  render();
+}
+</script>
