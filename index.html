@@ -104,6 +104,30 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .barra .folio { color: var(--tinta-suave); }
 .crece { flex: 1; }
 
+.secciones { display: flex; gap: 2px; padding: 0 20px; border-bottom: 1px solid var(--linea); background: var(--superficie); overflow-x: auto; }
+.seccion {
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  padding: 9px 14px; cursor: pointer; color: var(--tinta-suave);
+  font-size: 14px; font-weight: 500; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.seccion:hover { color: var(--tinta); }
+.seccion[aria-current="true"] { color: var(--acento); border-bottom-color: var(--acento); }
+.seccion .cuenta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-suave); }
+
+.barra-cruce { height: 5px; border-radius: 999px; background: var(--franja); overflow: hidden; }
+.barra-cruce span { display: block; height: 100%; }
+.barra-cruce.verde span { background: var(--verde); }
+.barra-cruce.amarillo span { background: var(--ambar); }
+.barra-cruce.rojo span { background: var(--rojo); }
+
+.match { padding: 12px 0; border-bottom: 1px dashed var(--linea); display: grid; gap: 6px; }
+.match:last-child { border-bottom: none; }
+.match .cab { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.match .cab .n { font-weight: 600; font-size: 14.5px; }
+.match .porque { font-size: 13px; color: var(--tinta-suave); }
+.match .hueco { font-size: 13px; color: var(--ambar); }
+
 .btn {
   border: 1px solid var(--linea-fuerte);
   background: var(--superficie);
@@ -619,6 +643,182 @@ function consultasDe(d) {
   return q.map(function (s) { return s.replace(/\s+/g, " ").trim(); });
 }
 
+/* ---------------- el libro: compradores y proveedores ----------------
+   El activo del negocio no es el deal suelto: es la gente fichada que
+   queda cuando el deal termina, cierre o no. Un comprador con mandato
+   firmado es lo escaso; proveedores hay miles. Los dos lados viven en
+   la misma tabla porque comparten casi todos los campos, y se
+   distinguen por `lado`. */
+
+const LADOS = { comprador: "Comprador", proveedor: "Proveedor" };
+
+const ESTADOS_CONTACTO = [
+  ["nuevo", "Sin contactar"],
+  ["contactado", "Contactado"],
+  ["respondio", "Respondió"],
+  ["verificado", "Verificado"],
+  ["activo", "Activo"],
+  ["descartado", "Descartado"],
+];
+const NOMBRE_ESTADO = Object.fromEntries(ESTADOS_CONTACTO);
+
+// Los checks de verificación pesan distinto: el fiscal y el mercantil
+// son los que separan una empresa real de una cuenta de correo.
+const CHECKS_VERIFICACION = [
+  ["fiscal", "Número fiscal verificado en el registro del país", 30],
+  ["mercantil", "Registro mercantil vigente y fecha de constitución", 25],
+  ["exportador", "Registrado como exportador ante la aduana", 20],
+  ["embarques", "Historial de embarques confirmado por fuente independiente", 15],
+  ["referencias", "Dos referencias comerciales contactadas por mí", 10],
+];
+
+function lista(texto) {
+  if (Array.isArray(texto)) return texto.slice();
+  return (texto || "").split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+}
+
+function contactoNuevo(lado) {
+  return {
+    lado: lado, nombre: "", pais: "", ciudad: "", persona: "", cargo: "",
+    email: "", telefono: "", web: "", fiscal: "", productos: [], volumen: 0,
+    unidad: "t", certificaciones: [], incoterms: [], pagos: [], mercados: [],
+    mandato: "", mandatoVence: "", verif: {}, estado: "nuevo", notas: [],
+  };
+}
+
+function puntosVerificacion(contacto) {
+  const v = contacto.verif || {};
+  return CHECKS_VERIFICACION.reduce(function (s, c) { return s + (v[c[0]] ? c[2] : 0); }, 0);
+}
+
+function contactosDe(lado) {
+  return (estado.contactos || []).filter(function (c) { return c.lado === lado; });
+}
+
+function contactoPorId(id) {
+  return (estado.contactos || []).find(function (c) { return c.id === id; }) || null;
+}
+
+// "Premium cocoa beans" y "cacao en grano" son el mismo negocio. Se
+// compara por la mercancía de fondo, no por como la escribió cada uno.
+const VOCABULARIO_PRODUCTO = Array.from(new Set(
+  Object.keys(PRECIOS_REF).concat(Object.keys(PARTIDAS_HS)).concat([
+    "camaron", "atun", "tilapia", "carne", "pollo", "leche", "queso", "miel",
+    "coco", "jengibre", "curcuma", "vainilla", "pimienta", "cardamomo",
+    "algodon", "madera", "carbon", "chatarra", "aluminio", "litio", "niquel",
+    "urea", "fertilizante", "cemento", "acero",
+  ])
+));
+
+const RELLENO_PRODUCTO = ["premium", "beans", "bean", "grano", "granos", "seco",
+  "seca", "secos", "crudo", "raw", "bulk", "granel", "calidad", "quality",
+  "alta", "grade", "natural", "fresco", "frescos", "fresh", "organic",
+  "del", "los", "las", "the", "and", "for"];
+
+function nucleoProducto(texto) {
+  const s = clave(texto);
+  for (const palabra of VOCABULARIO_PRODUCTO) if (s.includes(palabra)) return palabra;
+  return null;
+}
+
+function tokensProducto(texto) {
+  return clave(texto).split(/[^a-z0-9]+/).filter(function (w) {
+    return w.length > 2 && RELLENO_PRODUCTO.indexOf(w) < 0;
+  });
+}
+
+function coincideProducto(unos, otros) {
+  for (const x of (unos || [])) {
+    for (const y of (otros || [])) {
+      if (!x || !y) continue;
+      const nx = nucleoProducto(x), ny = nucleoProducto(y);
+      if (nx && ny) {
+        if (nx === ny) return true;
+        continue;   // dos mercancías conocidas y distintas: no es el mismo negocio
+      }
+      const tx = tokensProducto(x), ty = tokensProducto(y);
+      if (tx.some(function (w) { return ty.indexOf(w) >= 0; })) return true;
+    }
+  }
+  return false;
+}
+
+function interseccion(unos, otros) {
+  const b = (otros || []).map(norm);
+  return (unos || []).filter(function (x) { return b.includes(norm(x)); });
+}
+
+function faltantes(pedidos, tenidos) {
+  const b = (tenidos || []).map(norm);
+  return (pedidos || []).filter(function (x) { return !b.includes(norm(x)); });
+}
+
+/* Cruce entre un comprador y un proveedor. Devuelve null si ni siquiera
+   coinciden en producto: eso no es un mal match, es otro negocio. */
+function cruzar(comprador, proveedor) {
+  if (!coincideProducto(comprador.productos, proveedor.productos)) return null;
+
+  const razones = [], huecos = [];
+  let puntos = 25;   // coincidir en producto ya vale
+
+  const pedido = num(comprador.volumen), ofrece = num(proveedor.volumen);
+  if (pedido && ofrece) {
+    const cubre = ofrece / pedido;
+    if (cubre >= 1) { puntos += 20; razones.push("cubre el volumen completo"); }
+    else if (cubre >= 0.3) { puntos += 10; razones.push("cubre ~" + Math.round(cubre * 100) + "% del volumen: habría que consolidar con otro"); }
+    else huecos.push("sólo cubre ~" + Math.round(cubre * 100) + "% del volumen que pide");
+  }
+
+  const faltanCerts = faltantes(comprador.certificaciones, proveedor.certificaciones);
+  if ((comprador.certificaciones || []).length) {
+    if (!faltanCerts.length) { puntos += 15; razones.push("tiene todas las certificaciones que pide"); }
+    else huecos.push("le faltan: " + faltanCerts.join(", "));
+  }
+
+  if (comprador.pais && (proveedor.mercados || []).some(function (m) { return clave(m).includes(clave(comprador.pais)); })) {
+    puntos += 15; razones.push("ya exportó a " + comprador.pais);
+  }
+
+  const inc = interseccion(comprador.incoterms, proveedor.incoterms);
+  if (inc.length) { puntos += 5; razones.push("coinciden en " + inc.join("/")); }
+  const pag = interseccion(comprador.pagos, proveedor.pagos);
+  if (pag.length) { puntos += 5; razones.push("aceptan el mismo pago"); }
+
+  const verif = Math.round(puntosVerificacion(proveedor) * 0.15);
+  puntos += verif;
+  if (verif < 8) huecos.push("proveedor sin verificar del todo");
+
+  puntos = Math.max(0, Math.min(100, puntos));
+  return {
+    puntos: puntos,
+    nivel: puntos >= 70 ? "verde" : puntos >= 45 ? "amarillo" : "rojo",
+    razones: razones,
+    huecos: huecos,
+  };
+}
+
+/* Contrapartes ordenadas por qué tan bien cruzan con este contacto. */
+function contrapartes(contacto) {
+  const otroLado = contacto.lado === "comprador" ? "proveedor" : "comprador";
+  return contactosDe(otroLado).map(function (otro) {
+    const par = contacto.lado === "comprador" ? cruzar(contacto, otro) : cruzar(otro, contacto);
+    return par ? { contacto: otro, cruce: par } : null;
+  }).filter(Boolean).sort(function (a, b) { return b.cruce.puntos - a.cruce.puntos; });
+}
+
+/* Proveedores del libro que sirven para un deal concreto. */
+function proveedoresPara(deal) {
+  const comoComprador = {
+    productos: [deal.producto], volumen: num(deal.cantidad), unidad: deal.unidad,
+    certificaciones: deal.requisitos || [], pais: deal.paisDestino,
+    incoterms: deal.incoterm ? [deal.incoterm] : [], pagos: deal.pago ? [deal.pago] : [],
+  };
+  return contactosDe("proveedor").map(function (prov) {
+    const par = cruzar(comoComprador, prov);
+    return par ? { contacto: prov, cruce: par } : null;
+  }).filter(Boolean).sort(function (a, b) { return b.cruce.puntos - a.cruce.puntos; });
+}
+
 /* ---------------- lector de anuncios ----------------
    Estos posts casi siempre vienen con la misma estructura de etiquetas,
    en inglés o en español. Leerlas evita teclear el anuncio entero, que
@@ -782,6 +982,22 @@ function docFicha(d) {
   ].filter(function (l) { return l !== ""; }).join("\n");
 }
 
+function bloqueContraparte(d) {
+  const c = d.contraparteId ? contactoPorId(d.contraparteId) : null;
+  if (!c) {
+    return "- Nombre / Razón social: __________\n" +
+      "- Documento fiscal: __________\n" +
+      "- Domicilio: __________\n" +
+      "- Representante legal: __________\n" +
+      "- Correo: __________";
+  }
+  return "- Nombre / Razón social: " + o(c.nombre) + "\n" +
+    "- Documento fiscal: " + o(c.fiscal) + "\n" +
+    "- Domicilio: " + o([c.ciudad, c.pais].filter(Boolean).join(", ")) + "\n" +
+    "- Representante legal: " + o([c.persona, c.cargo].filter(Boolean).join(", ")) + "\n" +
+    "- Correo: " + o(c.email);
+}
+
 function docNCND(d, perfil) {
   perfil = perfil || {};
   const hoy = new Date().toISOString().slice(0, 10);
@@ -806,11 +1022,7 @@ function docNCND(d, perfil) {
 
 **LA PARTE CONTRATANTE**
 
-- Nombre / Razón social: __________
-- Documento fiscal: __________
-- Domicilio: __________
-- Representante legal: __________
-- Correo: __________
+${bloqueContraparte(d)}
 
 ## 1. Antecedente
 
@@ -898,7 +1110,7 @@ Firma: ______________________   Nombre: ${o(perfil.nombre)}
 
 **LA PARTE CONTRATANTE**
 
-Firma: ______________________   Nombre: __________
+Firma: ______________________   Nombre: ${d.contraparteId && contactoPorId(d.contraparteId) ? o((contactoPorId(d.contraparteId).persona || contactoPorId(d.contraparteId).nombre)) : "__________"}
 
 Cargo: __________   Fecha: __________
 `;
@@ -1073,8 +1285,14 @@ const DOCUMENTOS = [
 /* ---------------- estado ---------------- */
 
 const CLAVE_LOCAL = "mesa-intermediacion-v1";
-let estado = { perfil: {}, deals: [], actualizado: "" };
-let ui = { sel: null, tab: "riesgo", modal: null, sucio: false, soloLocal: false, docAbierto: null, borrador: null };
+let estado = { perfil: {}, deals: [], contactos: [], actualizado: "" };
+let ui = {
+  seccion: "deals",        // deals | comprador | proveedor
+  sel: null, tab: "riesgo",
+  selContacto: null, tabContacto: "ficha",
+  modal: null, modalLado: null, borrador: null,
+  sucio: false, soloLocal: false, docAbierto: null,
+};
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
 
@@ -1087,7 +1305,7 @@ function esc(s) {
 function cargarEstado() {
   try {
     const incrustado = JSON.parse(document.getElementById("estado").textContent || "{}");
-    estado = Object.assign({ perfil: {}, deals: [], actualizado: "" }, incrustado);
+    estado = Object.assign({ perfil: {}, deals: [], contactos: [], actualizado: "" }, incrustado);
   } catch (e) { /* página nueva */ }
   try {
     const local = JSON.parse(localStorage.getItem(CLAVE_LOCAL) || "null");
@@ -1115,8 +1333,21 @@ function nuevoId(producto, pais) {
   return base + "-" + n;
 }
 
+function nuevoIdContacto(nombre, lado) {
+  const trozo = norm(nombre).replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join("-");
+  const base = (lado === "comprador" ? "c-" : "p-") + (trozo || "contacto");
+  const usados = new Set((estado.contactos || []).map(function (c) { return c.id; }));
+  let n = 1;
+  while (usados.has(base + "-" + n)) n++;
+  return base + "-" + n;
+}
+
 function dealActual() {
   return estado.deals.find(function (d) { return d.id === ui.sel; }) || null;
+}
+
+function contactoActual() {
+  return contactoPorId(ui.selContacto);
 }
 
 /* ---------------- guardado ---------------- */
@@ -1220,14 +1451,28 @@ function vistaBarra() {
     : ui.sucio
       ? '<span class="etiqueta" style="color:var(--ambar)">cambios sin guardar</span>'
       : '<span class="etiqueta">al día</span>';
+  const alta = ui.seccion === "deals"
+    ? '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>'
+    : '<button class="btn primario" data-accion="nuevo-contacto:' + ui.seccion + '">Fichar ' +
+      (ui.seccion === "comprador" ? "comprador" : "proveedor") + "</button>";
   return '<header class="barra">' +
     "<h1>Mesa de Intermediación</h1>" +
-    '<span class="etiqueta folio">' + estado.deals.length + " deal" + (estado.deals.length === 1 ? "" : "s") + "</span>" +
     '<span class="crece"></span>' + guardado +
     '<button class="btn fantasma" data-accion="perfil">Mis datos</button>' +
     '<button class="btn" id="btn-guardar" data-accion="guardar"' + (ui.sucio ? "" : " disabled") + ">Guardar</button>" +
-    '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>' +
-    "</header>";
+    alta + "</header>";
+}
+
+function vistaSecciones() {
+  const item = function (clave, rotulo, cuenta) {
+    return '<button class="seccion" data-accion="seccion:' + clave + '" aria-current="' + (ui.seccion === clave) + '">' +
+      rotulo + '<span class="cuenta">' + cuenta + "</span></button>";
+  };
+  return '<nav class="secciones">' +
+    item("deals", "Oportunidades", estado.deals.length) +
+    item("comprador", "Compradores", contactosDe("comprador").length) +
+    item("proveedor", "Proveedores", contactosDe("proveedor").length) +
+    "</nav>";
 }
 
 function vistaResumen() {
@@ -1242,6 +1487,45 @@ function vistaResumen() {
     cifra("comisión en juego", potencial ? usd(potencial).replace("USD ", "$") : "—") +
     cifra("en rojo", rojos) +
     "</div>";
+}
+
+function vistaResumenLibro(lado) {
+  const gente = contactosDe(lado);
+  const verificados = gente.filter(function (c) { return puntosVerificacion(c) >= 55; }).length;
+  const conMandato = gente.filter(function (c) { return (c.mandato || "").trim(); }).length;
+  const cifra = function (rot, val) {
+    return '<div class="cifra"><span class="etiqueta">' + rot + '</span><span class="valor">' + val + "</span></div>";
+  };
+  return '<div class="resumen">' +
+    cifra("fichados", gente.length) +
+    cifra("verificados", verificados) +
+    cifra(lado === "comprador" ? "con mandato" : "activos",
+      lado === "comprador" ? conMandato : gente.filter(function (c) { return c.estado === "activo"; }).length) +
+    "</div>";
+}
+
+function vistaListaLibro(lado) {
+  const gente = contactosDe(lado);
+  if (!gente.length) {
+    const texto = lado === "comprador"
+      ? "Acá van los compradores. Es el lado que de verdad vale: un comprador con mandato firmado es lo escaso del negocio, los proveedores se consiguen en una tarde."
+      : "Acá van los exportadores que vayas fichando. Cada uno que verifiques queda para siempre, y se cruza solo contra los compradores que cargues.";
+    return '<div class="vacio"><p>' + texto + "</p>" +
+      '<button class="btn primario" data-accion="nuevo-contacto:' + lado + '">Fichar el primero</button></div>';
+  }
+  const filas = gente.map(function (c) {
+    const v = puntosVerificacion(c);
+    const nivel = v >= 55 ? "verde" : v >= 25 ? "amarillo" : "rojo";
+    const sel = c.id === ui.selContacto ? ' aria-current="true"' : "";
+    return '<button class="fila" data-accion="sel-contacto:' + esc(c.id) + '"' + sel + ">" +
+      '<span class="titulo">' + esc(c.nombre || "Sin nombre") + "</span>" +
+      '<span class="meta"><span class="chip ' + nivel + '">' + v + "% verificado</span>" +
+      '<span class="chip">' + esc(NOMBRE_ESTADO[c.estado] || c.estado) + "</span>" +
+      "<span>" + esc([c.ciudad, c.pais].filter(Boolean).join(", ") || "sin ubicación") + "</span></span>" +
+      ((c.productos || []).length ? '<span class="meta">' + esc(c.productos.join(" · ")) + "</span>" : "") +
+      "</button>";
+  }).join("");
+  return '<div class="lista">' + filas + "</div>";
 }
 
 function vistaLista() {
@@ -1339,7 +1623,22 @@ function panelProveedor(d) {
       '<button class="btn fantasma chico" data-accion="copiar-texto" data-texto="' + esc(q) + '">Copiar</button></div>';
   }).join("");
   const hs = partidaHS(d.producto);
-  return '<div class="panel">' +
+  const delLibro = proveedoresPara(d);
+  const libro = delLibro.length
+    ? tarjeta("de tu libro", delLibro.map(function (par) {
+        const x = par.cruce;
+        return '<div class="match"><div class="cab"><span class="n">' + esc(par.contacto.nombre || par.contacto.id) + "</span>" +
+          '<span class="chip ' + x.nivel + '">' + x.puntos + "/100</span>" +
+          '<span class="crece"></span>' +
+          '<button class="btn fantasma chico" data-accion="ver-contacto:' + esc(par.contacto.id) + '">Ver ficha</button></div>' +
+          '<div class="barra-cruce ' + x.nivel + '"><span style="width:' + x.puntos + '%"></span></div>' +
+          (x.razones.length ? '<p class="porque">' + esc(x.razones.join(" · ")) + "</p>" : "") +
+          (x.huecos.length ? '<p class="hueco">Falta: ' + esc(x.huecos.join(" · ")) + "</p>" : "") + "</div>";
+      }).join(""))
+    : tarjeta("de tu libro",
+        "<p>Ningún proveedor de tu libro coincide con este producto todavía. Cada exportador que fiches queda para siempre y aparece solo acá la próxima vez.</p>" +
+        '<div><button class="btn" data-accion="ir:proveedor">Fichar un proveedor</button></div>');
+  return '<div class="panel">' + libro +
     tarjeta("dónde buscar y dónde verificar", fs || "<p>Cargá el país de origen para ver el directorio.</p>") +
     tarjeta("consultas listas para buscar", cs) +
     (hs ? tarjeta("partida arancelaria", "<p>Buscá <strong>" + esc(hs) + "</strong> en ITC Trade Map o UN Comtrade filtrando por " +
@@ -1360,13 +1659,23 @@ function panelDocs(d) {
       (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
   }).join("");
   const perfilIncompleto = !((estado.perfil || {}).nombre || "").trim();
+  const opciones = ['<option value="">— la lleno a mano —</option>'].concat(
+    (estado.contactos || []).map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (d.contraparteId === c.id ? " selected" : "") + ">" +
+        esc(c.nombre || c.id) + " (" + LADOS[c.lado].toLowerCase() + ")</option>";
+    })).join("");
+  const conQuien = tarjeta("con quién firmás",
+    '<label class="campo"><span class="etiqueta">contraparte del acuerdo</span>' +
+    '<select data-accion="contraparte">' + opciones + "</select></label>" +
+    '<p style="color:var(--tinta-suave);font-size:13.5px">Si elegís una ficha del libro, el acuerdo sale con su razón social, número fiscal y representante ya puestos.' +
+    ((estado.contactos || []).length ? "" : " Todavía no tenés a nadie fichado.") + "</p>");
   const todo = tarjeta("expediente completo",
     '<p style="color:var(--tinta-suave);font-size:13.5px">Los cinco documentos en un solo archivo, para archivar el deal o mandárselo a tu abogado.</p>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<button class="btn" data-accion="copiar-expediente">Copiar todo</button>' +
     (bajar ? '<button class="btn" data-accion="bajar-expediente">Descargar .md</button>' : "") +
     "</div>");
-  return '<div class="panel">' + todo +
+  return '<div class="panel">' + conQuien + todo +
     (perfilIncompleto ? tarjeta("antes de usar el acuerdo",
       '<p>El NCND sale con tus datos en blanco. Cargalos una vez en <strong>Mis datos</strong> y quedan puestos en todos los acuerdos.</p>' +
       '<div><button class="btn" data-accion="perfil">Cargar mis datos</button></div>') : "") +
@@ -1397,6 +1706,152 @@ function panelBitacora(d) {
     "</div>";
 }
 
+function vistaCabezaContacto(c) {
+  const v = puntosVerificacion(c);
+  const nivel = v >= 55 ? "verde" : v >= 25 ? "amarillo" : "rojo";
+  return '<div class="hoja-cabeza">' +
+    '<button class="btn fantasma chico solo-movil" data-accion="volver">← Lista</button>' +
+    '<div class="crece"><h2>' + esc(c.nombre || "Sin nombre") + "</h2>" +
+    '<p class="ruta">' + esc(LADOS[c.lado]) + " · " +
+    esc([c.ciudad, c.pais].filter(Boolean).join(", ") || "sin ubicación") +
+    ((c.productos || []).length ? " · " + esc(c.productos.join(", ")) : "") + "</p>" +
+    '<p class="etiqueta" style="margin-top:6px">' + esc(c.id) + "</p></div>" +
+    '<div class="sello ' + nivel + '"><span class="puntos">' + v + '</span><span class="rotulo">verificado</span></div>' +
+    "</div>";
+}
+
+function vistaPestanasContacto() {
+  const tabs = [["ficha", "Ficha"], ["verif", "Verificación"], ["cruce", "Cruce"], ["bitacora", "Bitácora"]];
+  return '<div class="pestanas" role="tablist">' + tabs.map(function (x) {
+    return '<button class="pestana" role="tab" aria-selected="' + (ui.tabContacto === x[0]) +
+      '" data-accion="tab-contacto:' + x[0] + '">' + x[1] + "</button>";
+  }).join("") + "</div>";
+}
+
+function panelFichaContacto(c) {
+  const esComprador = c.lado === "comprador";
+  const dato = function (rot, v, falta) {
+    return '<div class="dato"><span class="etiqueta">' + rot + "</span>" +
+      '<span class="v' + (v ? "" : " falta") + '">' + esc(v || falta) + "</span></div>";
+  };
+  const volumen = num(c.volumen) ? num(c.volumen).toLocaleString("es-DO") + " " + (c.unidad || "t") : "";
+
+  const contacto = '<div class="datos">' +
+    dato("persona", c.persona, "sin nombre") +
+    dato("cargo", c.cargo, "sin cargo") +
+    dato("correo", c.email, "sin correo") +
+    dato("teléfono", c.telefono, "sin teléfono") +
+    dato("sitio web", c.web, "sin sitio") +
+    dato("número fiscal", c.fiscal, "no lo dieron") +
+    "</div>";
+
+  const comercial = '<div class="datos">' +
+    dato("productos", (c.productos || []).join(", "), "sin cargar") +
+    dato(esComprador ? "volumen que necesita" : "capacidad anual", volumen, "sin cargar") +
+    dato("certificaciones" + (esComprador ? " que exige" : ""), (c.certificaciones || []).join(", "), "ninguna") +
+    dato("incoterms", (c.incoterms || []).join(", "), "sin definir") +
+    dato("formas de pago", (c.pagos || []).join(", "), "sin definir") +
+    dato(esComprador ? "orígenes que le interesan" : "destinos a los que ya exportó", (c.mercados || []).join(", "), "sin cargar") +
+    "</div>";
+
+  const mandato = esComprador
+    ? tarjeta("mandato",
+        (c.mandato || "").trim()
+          ? "<p>" + esc(c.mandato) + "</p>" + (c.mandatoVence ? '<p class="etiqueta">vence ' + esc(c.mandatoVence) + "</p>" : "")
+          : "<p>Sin mandato. Esto es lo único que separa un comprador real de alguien preguntando precios: pedile la LOI o el ICPO firmado antes de moverte por él.</p>")
+    : "";
+
+  return '<div class="panel">' +
+    tarjeta("contacto", contacto, '<span class="crece"></span><button class="btn chico" data-accion="editar-contacto">Editar</button>') +
+    tarjeta("qué mueve", comercial) +
+    mandato +
+    "</div>";
+}
+
+function panelVerifContacto(c) {
+  const v = c.verif || {};
+  const checks = CHECKS_VERIFICACION.map(function (x) {
+    return '<label class="check"><input type="checkbox" data-accion="verif:' + x[0] + '"' +
+      (v[x[0]] ? " checked" : "") + "> " + esc(x[1]) +
+      ' <span class="etiqueta">' + x[2] + " pts</span></label>";
+  }).join("");
+
+  const dondeVerificar = fuentesDe({ paisOrigen: c.pais, producto: (c.productos || [])[0] || "", paisDestino: "" })
+    .filter(function (f) { return f[2].toLowerCase().includes("registro") || f[2].toLowerCase().includes("existe") ||
+      f[2].toLowerCase().includes("rnc") || f[2].toLowerCase().includes("confirm") || f[2].toLowerCase().includes("cnpj") ||
+      f[2].toLowerCase().includes("ruc") || f[2].toLowerCase().includes("rut") || f[2].toLowerCase().includes("cuit") ||
+      f[2].toLowerCase().includes("rtn") || f[2].toLowerCase().includes("personería") || f[2].toLowerCase().includes("embarques"); })
+    .map(function (f) {
+      return '<div class="fuente"><span class="n">' + esc(f[0]) + '</span><span class="r">' + esc(f[1]) +
+        '</span><span class="q">' + esc(f[2]) + "</span></div>";
+    }).join("");
+
+  return '<div class="panel">' +
+    tarjeta("qué comprobé", '<div style="display:grid;gap:10px">' + checks + "</div>" +
+      '<p style="color:var(--tinta-suave);font-size:13.5px;margin-top:4px">Marcá sólo lo que comprobaste vos en la fuente. Lo que te dijeron por teléfono no cuenta.</p>') +
+    (dondeVerificar ? tarjeta("dónde comprobarlo", dondeVerificar) :
+      tarjeta("dónde comprobarlo", "<p>Cargá el país en la ficha para que te muestre los registros de ese país.</p>")) +
+    "</div>";
+}
+
+function panelCruceContacto(c) {
+  const pares = contrapartes(c);
+  const otroLado = c.lado === "comprador" ? "proveedor" : "comprador";
+  if (!pares.length) {
+    return '<div class="panel">' + tarjeta("cruce",
+      "<p>Todavía no hay ningún " + (otroLado === "comprador" ? "comprador" : "proveedor") +
+      " en el libro que coincida en producto. Fichá el otro lado y el cruce sale solo.</p>" +
+      '<div><button class="btn" data-accion="ir:' + otroLado + '">Ir a ' + (otroLado === "comprador" ? "compradores" : "proveedores") + "</button></div>") +
+      "</div>";
+  }
+  const filas = pares.map(function (par) {
+    const x = par.cruce;
+    return '<div class="match">' +
+      '<div class="cab"><span class="n">' + esc(par.contacto.nombre || par.contacto.id) + "</span>" +
+      '<span class="chip ' + x.nivel + '">' + x.puntos + "/100</span>" +
+      '<span class="crece"></span>' +
+      '<button class="btn fantasma chico" data-accion="sel-contacto:' + esc(par.contacto.id) + '">Ver ficha</button></div>' +
+      '<div class="barra-cruce ' + x.nivel + '"><span style="width:' + x.puntos + '%"></span></div>' +
+      (x.razones.length ? '<p class="porque">' + esc(x.razones.join(" · ")) + "</p>" : "") +
+      (x.huecos.length ? '<p class="hueco">Falta: ' + esc(x.huecos.join(" · ")) + "</p>" : "") +
+      "</div>";
+  }).join("");
+  return '<div class="panel">' + tarjeta("quién encaja con " + esc(c.nombre || "este contacto"), filas) + "</div>";
+}
+
+function panelBitacoraContacto(c) {
+  const opciones = ESTADOS_CONTACTO.map(function (e) {
+    return '<option value="' + e[0] + '"' + (c.estado === e[0] ? " selected" : "") + ">" + e[1] + "</option>";
+  }).join("");
+  const notas = (c.notas || []).length
+    ? c.notas.slice().reverse().map(function (n) {
+        return '<div class="nota"><span class="f">' + esc(n.fecha) + "</span><p>" + esc(n.texto) + "</p></div>";
+      }).join("")
+    : "<p>Sin anotaciones. Anotá qué te dijo y cuándo: dentro de seis meses no te vas a acordar de cuál de veinte exportadores era éste.</p>";
+
+  return '<div class="panel">' +
+    tarjeta("estado",
+      '<label class="campo"><span class="etiqueta">en qué va</span><select data-accion="estado-contacto">' + opciones + "</select></label>" +
+      '<div><button class="btn fantasma chico" data-accion="borrar-contacto">Borrar del libro</button></div>') +
+    tarjeta("anotar",
+      '<form data-accion="nota-contacto"><label class="campo"><span class="etiqueta">qué pasó</span>' +
+      '<textarea name="texto" placeholder="Llamé. Piden la LOI antes de cotizar. Mandan ficha técnica el lunes." required></textarea></label>' +
+      '<div style="margin-top:10px"><button class="btn" type="submit">Guardar anotación</button></div></form>') +
+    tarjeta("bitácora", notas) +
+    "</div>";
+}
+
+function vistaHojaContacto(clase) {
+  const c = contactoActual();
+  const abre = '<main class="hoja' + (clase || "") + '">';
+  if (!c) return abre + '<div class="vacio"><p>Elegí una ficha de la lista para verla.</p></div></main>';
+  const panel = ui.tabContacto === "verif" ? panelVerifContacto(c)
+    : ui.tabContacto === "cruce" ? panelCruceContacto(c)
+    : ui.tabContacto === "bitacora" ? panelBitacoraContacto(c)
+    : panelFichaContacto(c);
+  return abre + vistaCabezaContacto(c) + vistaPestanasContacto() + panel + "</main>";
+}
+
 function vistaHoja(clase) {
   const d = dealActual();
   const abre = '<main class="hoja' + (clase || "") + '">';
@@ -1421,12 +1876,18 @@ function vistaAviso() {
 
 function render() {
   const movil = window.matchMedia("(max-width: 900px)").matches;
-  const ocultaRail = movil && ui.sel ? " oculta" : "";
-  const ocultaHoja = movil && !ui.sel ? " oculta" : "";
+  const enDeals = ui.seccion === "deals";
+  const abierto = enDeals ? ui.sel : ui.selContacto;
+  const ocultaRail = movil && abierto ? " oculta" : "";
+  const ocultaHoja = movil && !abierto ? " oculta" : "";
+  const rail = enDeals
+    ? vistaResumen() + vistaLista()
+    : vistaResumenLibro(ui.seccion) + vistaListaLibro(ui.seccion);
+  const hoja = enDeals ? vistaHoja(ocultaHoja) : vistaHojaContacto(ocultaHoja);
   document.getElementById("raiz").innerHTML =
-    '<div class="marco">' + vistaBarra() + vistaAviso() +
-    '<div class="cuerpo"><aside class="rail' + ocultaRail + '">' + vistaResumen() + vistaLista() + "</aside>" +
-    vistaHoja(ocultaHoja) + "</div></div>" +
+    '<div class="marco">' + vistaBarra() + vistaSecciones() + vistaAviso() +
+    '<div class="cuerpo"><aside class="rail' + ocultaRail + '">' + rail + "</aside>" +
+    hoja + "</div></div>" +
     (ui.modal ? vistaModal() : "");
 }
 </script>
@@ -1458,6 +1919,53 @@ function vistaModal() {
       "</div><footer>" +
       '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
       '<button class="btn primario" type="submit">Guardar datos</button></footer></form></div></div>';
+  }
+
+  if (ui.modal === "contacto") {
+    const editandoC = !!ui.selContactoEditando;
+    const c = editandoC ? contactoActual() : (ui.borrador || contactoNuevo(ui.modalLado));
+    if (!c) return "";
+    const esComprador = c.lado === "comprador";
+    return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
+      "<header><h2>" + (editandoC ? "Editar ficha" : "Fichar " + (esComprador ? "comprador" : "proveedor")) + "</h2>" +
+      '<span class="crece"></span><button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
+      '<form data-accion="guardar-contacto"><div class="rejilla">' +
+      campo("razón social", "nombre", c.nombre, "text", true, "required") +
+      campo("país", "pais", c.pais) +
+      campo("ciudad", "ciudad", c.ciudad) +
+      campo("número fiscal (RNC / RUC / NIT)", "fiscal", c.fiscal) +
+      campo("persona de contacto", "persona", c.persona) +
+      campo("cargo", "cargo", c.cargo) +
+      campo("correo", "email", c.email) +
+      campo("teléfono", "telefono", c.telefono) +
+      campo("sitio web", "web", c.web) +
+      '<label class="campo ancho"><span class="etiqueta">productos (separados por coma)</span>' +
+      '<input type="text" name="productos" value="' + esc((c.productos || []).join(", ")) + '" placeholder="cacao en grano, manteca de cacao"></label>' +
+      campo(esComprador ? "volumen que necesita" : "capacidad anual", "volumen", c.volumen, "number", false, 'step="any" min="0"') +
+      '<label class="campo"><span class="etiqueta">unidad</span><select name="unidad">' +
+      ["t", "kg", "lb", "qq", "unidades", "contenedores"].map(function (u) {
+        return '<option value="' + u + '"' + ((c.unidad || "t") === u ? " selected" : "") + ">" + u + "</option>";
+      }).join("") + "</select></label>" +
+      '<label class="campo ancho"><span class="etiqueta">certificaciones' + (esComprador ? " que exige" : " que tiene") + ' (separadas por coma)</span>' +
+      '<input type="text" name="certificaciones" value="' + esc((c.certificaciones || []).join(", ")) + '" placeholder="orgánico, Fairtrade, Rainforest"></label>' +
+      '<label class="campo"><span class="etiqueta">incoterms (coma)</span>' +
+      '<input type="text" name="incoterms" value="' + esc((c.incoterms || []).join(", ")) + '" placeholder="FOB, CIF"></label>' +
+      '<label class="campo"><span class="etiqueta">formas de pago (coma)</span>' +
+      '<input type="text" name="pagos" value="' + esc((c.pagos || []).join(", ")) + '" placeholder="carta de crédito a la vista"></label>' +
+      '<label class="campo ancho"><span class="etiqueta">' +
+      (esComprador ? "orígenes que le interesan" : "destinos a los que ya exportó") + ' (coma)</span>' +
+      '<input type="text" name="mercados" value="' + esc((c.mercados || []).join(", ")) + '" placeholder="' +
+      (esComprador ? "República Dominicana, Ecuador" : "Canadá, Alemania") + '"></label>' +
+      (esComprador
+        ? '<label class="campo ancho"><span class="etiqueta">mandato: qué firmó y por cuánto</span>' +
+          '<textarea name="mandato" placeholder="LOI firmada 12/03 por 5.000 t de cacao, con prueba de fondos del banco.">' +
+          esc(c.mandato || "") + "</textarea></label>" +
+          campo("el mandato vence", "mandatoVence", c.mandatoVence, "date")
+        : "") +
+      "</div><footer>" +
+      '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
+      '<button class="btn primario" type="submit">' + (editandoC ? "Guardar cambios" : "Fichar") + "</button>" +
+      "</footer></form></div></div>";
   }
 
   const editando = ui.modal === "editar";
@@ -1514,9 +2022,35 @@ document.addEventListener("click", function (evento) {
 
   switch (verbo) {
     case "nuevo": ui.modal = "nuevo"; ui.borrador = null; render(); break;
+    case "seccion": ui.seccion = arg; render(); break;
+    case "ir": ui.seccion = arg; ui.selContacto = null; render(); break;
+    case "ver-contacto": ui.seccion = contactoPorId(arg).lado; ui.selContacto = arg; ui.tabContacto = "ficha"; render(); break;
+    case "sel-contacto": {
+      const c = contactoPorId(arg);
+      if (c) { ui.seccion = c.lado; ui.selContacto = arg; ui.tabContacto = "ficha"; render(); }
+      break;
+    }
+    case "tab-contacto": ui.tabContacto = arg; render(); break;
+    case "nuevo-contacto":
+      ui.modal = "contacto"; ui.modalLado = arg; ui.borrador = null;
+      ui.selContactoEditando = null; render();
+      break;
+    case "editar-contacto":
+      ui.modal = "contacto"; ui.modalLado = contactoActual().lado;
+      ui.selContactoEditando = ui.selContacto; ui.borrador = null; render();
+      break;
+    case "borrar-contacto": {
+      const c = contactoActual();
+      if (c && confirm("¿Borrar la ficha de “" + (c.nombre || c.id) + "”?")) {
+        estado.contactos = estado.contactos.filter(function (x) { return x.id !== c.id; });
+        ui.selContacto = null;
+        tocar(); render();
+      }
+      break;
+    }
     case "editar": ui.modal = "editar"; render(); break;
     case "perfil": ui.modal = "perfil"; render(); break;
-    case "cerrar": case "velo": ui.modal = null; ui.borrador = null; render(); break;
+    case "cerrar": case "velo": ui.modal = null; ui.borrador = null; ui.selContactoEditando = null; render(); break;
     case "leer-anuncio": {
       const form = a.el.closest("form");
       const actuales = Object.fromEntries(new FormData(form).entries());
@@ -1538,7 +2072,7 @@ document.addEventListener("click", function (evento) {
     case "copiar-expediente": copiar(expediente(dealActual(), estado.perfil)); break;
     case "bajar-expediente": descargar("expediente-" + dealActual().id + ".md", expediente(dealActual(), estado.perfil)); break;
     case "guardar": guardar(); break;
-    case "volver": ui.sel = null; render(); break;
+    case "volver": if (ui.seccion === "deals") ui.sel = null; else ui.selContacto = null; render(); break;
     case "sel": ui.sel = arg; ui.tab = "riesgo"; ui.docAbierto = null; render(); break;
     case "tab": ui.tab = arg; render(); break;
     case "doc": ui.docAbierto = ui.docAbierto === arg ? null : arg; render(); break;
@@ -1599,6 +2133,37 @@ document.addEventListener("submit", function (evento) {
     return;
   }
 
+  if (a.valor === "guardar-contacto") {
+    const campos = ["productos", "certificaciones", "incoterms", "pagos", "mercados"];
+    const limpio = Object.assign({}, datos);
+    campos.forEach(function (k) { limpio[k] = lista(datos[k]); });
+    if (ui.selContactoEditando) {
+      Object.assign(contactoActual(), limpio);
+    } else {
+      const lado = ui.modalLado;
+      const id = nuevoIdContacto(datos.nombre, lado);
+      estado.contactos.push(Object.assign(contactoNuevo(lado), limpio, {
+        id: id, lado: lado, creado: new Date().toISOString().slice(0, 10),
+      }));
+      ui.seccion = lado;
+      ui.selContacto = id;
+      ui.tabContacto = "ficha";
+    }
+    ui.modal = null; ui.borrador = null; ui.selContactoEditando = null;
+    tocar(); render();
+    return;
+  }
+
+  if (a.valor === "nota-contacto") {
+    const c = contactoActual();
+    if (c && (datos.texto || "").trim()) {
+      c.notas = c.notas || [];
+      c.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: datos.texto.trim() });
+      tocar(); render();
+    }
+    return;
+  }
+
   if (a.valor === "nota") {
     const d = dealActual();
     if (d && (datos.texto || "").trim()) {
@@ -1612,8 +2177,22 @@ document.addEventListener("submit", function (evento) {
 document.addEventListener("change", function (evento) {
   const a = accionDe(evento.target);
   if (!a) return;
+  const [verbo, arg] = a.valor.split(":");
+
+  if (verbo === "verif") {
+    const c = contactoActual();
+    if (c) { c.verif = c.verif || {}; c.verif[arg] = evento.target.checked; tocar(); render(); }
+    return;
+  }
+  if (verbo === "estado-contacto") {
+    const c = contactoActual();
+    if (c) { c.estado = evento.target.value; tocar(); render(); }
+    return;
+  }
+
   const d = dealActual();
   if (!d) return;
+  if (a.valor === "contraparte") { d.contraparteId = evento.target.value; tocar(); render(); }
   if (a.valor === "etapa") { d.etapa = evento.target.value; tocar(); render(); }
   if (a.valor === "firmado") { d.acuerdoFirmado = evento.target.checked; tocar(); render(); }
 });

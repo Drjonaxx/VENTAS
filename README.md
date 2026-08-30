@@ -42,6 +42,19 @@ todo** o **Descargar .md**.
 **5. Lleva la bitácora.** Etapa del embudo, siguiente paso concreto y las notas
 de cada llamada. Esa bitácora es la prueba de que vos originaste el contacto.
 
+**6. Acumula el libro de dos lados.** Compradores y proveedores fichados por
+separado, cada uno con su ficha, su capacidad, sus certificaciones y su estado
+de verificación. La app cruza los dos lados sola y te dice quién encaja con
+quién y qué le falta: *"cubre el volumen completo, tiene las certificaciones,
+ya exportó a Canadá"* contra *"sólo cubre 18%, le falta Fairtrade"*. Un deal
+suelto se pierde; el libro queda. Y cuando abrís una oportunidad nueva, los
+proveedores de tu libro que sirven ya aparecen ahí.
+
+Ese libro es el activo real del negocio. Un comprador con mandato firmado es lo
+escaso: proveedores se consiguen en una tarde, compradores con plata y una LOI
+no. Por eso los dos lados se fichan aparte y el comprador tiene su campo de
+mandato.
+
 ## Cómo se usa
 
 Es un archivo HTML sin dependencias ni servidor. Dos formas:
@@ -70,7 +83,7 @@ Todo vive en `index.html`, separado en bloques con `id`:
 | Bloque   | Qué tiene                                                        |
 |----------|------------------------------------------------------------------|
 | `css`    | Tokens de color para tema claro y oscuro, y los componentes.     |
-| `app`    | El rubro de banderas rojas y el directorio de fuentes.           |
+| `app`    | Banderas rojas, directorio, libro de contactos y motor de cruce. |
 | `docs`   | Las plantillas: NCND, checklist y mensajes.                      |
 | `ui`     | Estado, guardado y utilidades.                                   |
 | `vista`  | Render de las pantallas.                                         |
@@ -82,8 +95,9 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 
 ## Qué le falta
 
-- La verificación de proveedores es un checklist manual: la app te dice dónde
-  mirar, pero no consulta ningún registro por vos.
+- La verificación es un checklist manual: la app te dice dónde mirar y lleva la
+  cuenta de lo que comprobaste, pero no consulta ningún registro por vos.
+- No genera los anuncios: hoy lee los ajenos, no escribe los tuyos.
 - El directorio cubre América Latina y España. Para África y Asia caen sólo las
   fuentes globales, que igual sirven: Trade Map te dice quién exporta qué.
 - El lector de anuncios acierta con posts que traen etiquetas. Un texto corrido
