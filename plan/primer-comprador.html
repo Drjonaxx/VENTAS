@@ -1,0 +1,416 @@
+<title>El Primer Comprador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --papel: #EFF2EB; --superficie: #FBFCF9; --franja: #E4E9DD;
+  --tinta: #1A211B; --tinta-suave: #5B6559; --linea: #D0D7C8; --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F; --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C; --ambar: #8E5D0B; --rojo: #A2321F;
+  --verde-tenue: #DFEDE3; --ambar-tenue: #F5E8CE; --rojo-tenue: #F6DFD9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+    --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+    --acento: #74C293; --acento-tenue: #16261C;
+    --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+    --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+  --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+  --acento: #74C293; --acento-tenue: #16261C;
+  --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+  --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: Faustina, Georgia, serif; margin: 0; text-wrap: balance; font-weight: 600; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.etiqueta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-suave);
+}
+
+.hoja { max-width: 760px; margin: 0 auto; padding: 0 22px 90px; }
+
+header.tapa {
+  padding: 52px 0 30px; border-bottom: 2px solid var(--tinta); margin-bottom: 34px;
+}
+header.tapa h1 { font-size: clamp(34px, 6vw, 50px); line-height: 1.04; letter-spacing: -.02em; }
+header.tapa .bajada { font-size: 18px; color: var(--tinta-suave); margin-top: 14px; max-width: 60ch; }
+
+section { margin-top: 46px; }
+section > h2 {
+  font-size: 26px; line-height: 1.2; padding-bottom: 9px;
+  border-bottom: 1px solid var(--linea); margin-bottom: 18px;
+}
+section p + p, .bloque > * + * { margin-top: 13px; }
+.bloque { display: grid; gap: 13px; }
+h3 { font-size: 19px; margin-top: 26px; margin-bottom: 7px; }
+
+strong { font-weight: 600; }
+em { font-style: italic; color: var(--tinta-suave); }
+a { color: var(--acento); }
+
+.tesis {
+  background: var(--acento-tenue); border-left: 3px solid var(--acento);
+  padding: 20px 22px; margin: 26px 0; font-family: Faustina, Georgia, serif;
+  font-size: 21px; line-height: 1.4;
+}
+
+ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+li::marker { color: var(--acento); }
+
+.canal {
+  border: 1px solid var(--linea); background: var(--superficie);
+  border-radius: 3px; padding: 17px 19px; margin-top: 15px;
+}
+.canal .cab { display: flex; gap: 11px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+.canal .cab h3 { margin: 0; font-size: 20px; }
+.rinde {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+}
+.rinde.alto { background: var(--verde-tenue); color: var(--verde); }
+.rinde.medio { background: var(--ambar-tenue); color: var(--ambar); }
+.rinde.bajo { background: var(--franja); color: var(--tinta-suave); }
+.canal .como { margin-top: 10px; font-size: 15px; color: var(--tinta-suave); }
+
+.escalera { display: grid; gap: 0; margin-top: 16px; }
+.peldano {
+  display: grid; grid-template-columns: 92px 1fr; gap: 16px;
+  padding: 13px 0; border-bottom: 1px dashed var(--linea); align-items: start;
+}
+.peldano:last-child { border-bottom: none; }
+.peldano .fuerza {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 7px; border-radius: 3px; text-align: center;
+}
+.f0 { background: var(--rojo-tenue); color: var(--rojo); }
+.f1 { background: var(--ambar-tenue); color: var(--ambar); }
+.f2 { background: var(--verde-tenue); color: var(--verde); }
+.peldano .que { font-weight: 600; }
+.peldano .dice { color: var(--tinta-suave); font-size: 15px; }
+
+.tabla-envoltura { overflow-x: auto; margin-top: 16px; border: 1px solid var(--linea); border-radius: 3px; }
+table { border-collapse: collapse; width: 100%; background: var(--superficie); font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--linea); }
+th { background: var(--franja); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+     font-family: "IBM Plex Mono", monospace; font-weight: 500; color: var(--tinta-suave); }
+tr:last-child td { border-bottom: none; }
+td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.guion { border: 1px solid var(--linea-fuerte); border-radius: 3px; margin-top: 16px; background: var(--superficie); }
+.guion > header {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--linea); background: var(--franja);
+}
+.guion pre {
+  margin: 0; padding: 16px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+  line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+}
+.crece { flex: 1; }
+.btn {
+  border: 1px solid var(--linea-fuerte); background: var(--superficie); color: var(--tinta);
+  padding: 4px 10px; border-radius: 3px; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 500;
+}
+.btn:hover { background: var(--acento-tenue); border-color: var(--acento); }
+
+.semana { display: grid; grid-template-columns: 74px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--linea); }
+.semana:last-child { border-bottom: none; }
+.semana .n {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--acento); padding-top: 3px;
+}
+.semana h3 { margin: 0 0 7px; font-size: 18px; }
+
+.trampa { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px dashed var(--linea); }
+.trampa:last-child { border-bottom: none; }
+.marca {
+  font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; background: var(--rojo-tenue); color: var(--rojo);
+  padding: 3px 7px; border-radius: 3px; white-space: nowrap; height: fit-content; margin-top: 2px;
+}
+
+footer.cierre { margin-top: 54px; padding-top: 22px; border-top: 2px solid var(--tinta); color: var(--tinta-suave); font-size: 14.5px; }
+
+.brindis {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+  background: var(--tinta); color: var(--papel); padding: 9px 17px;
+  border-radius: 999px; font-size: 13.5px; z-index: 90;
+}
+</style>
+
+<div class="hoja">
+
+<header class="tapa">
+  <p class="etiqueta">Mesa de Intermediación · Plan de arranque</p>
+  <h1>El primer comprador</h1>
+  <p class="bajada">Cómo conseguir el único activo escaso de este negocio cuando todavía no sos nadie. Sin esto, todo lo demás gira en el aire.</p>
+</header>
+
+<section>
+  <h2>La verdad incómoda</h2>
+  <div class="bloque">
+    <p>Nadie te va a dar un mandato de compra porque se lo pidas. Un importador serio no le firma una LOI a un desconocido que le escribe preguntando qué necesita: le está entregando información competitiva a alguien sin historial. Vas a mandar cien correos y no te va a contestar nadie, y vas a concluir que el negocio no existe.</p>
+    <p>El negocio existe. Lo que está mal es el orden.</p>
+
+    <div class="tesis">No le preguntes a un comprador qué necesita. Llegale con carga concreta: producto verificado, volumen, precio, Incoterm y muestra lista. Lo primero es una molestia. Lo segundo es una oferta.</div>
+
+    <p>Esa cuenta de Instagram que viste puede darse el lujo de publicar “busco exportador de cacao” porque ya tiene el comprador. Vos todavía no. Y conseguir el comprador desde cero es más fácil si primero tenés algo real que ofrecerle — que es, además, el lado que sí podés tocar con la mano.</p>
+    <p><strong>El orden que funciona:</strong> conseguí dos o tres exportadores reales y verificados en tu país → armá una oferta concreta con uno de ellos → buscá compradores que <em>ya están importando ese producto</em> → llegales con la oferta. El mandato viene después, cuando el comprador ya te contestó porque le interesó la carga.</p>
+    <p>Eso también explica por qué el libro de proveedores de la Mesa es el punto de partida y no un accesorio: es lo que te da algo que decir.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Dónde están los compradores de verdad</h2>
+  <p>Ordenados por lo que rinden de verdad, no por lo fáciles que son.</p>
+
+  <div class="canal">
+    <div class="cab"><h3>Registros de importación</h3><span class="rinde alto">el que más rinde</span></div>
+    <p>Es la diferencia entre correo frío y correo dirigido. Los manifiestos de carga marítima de Estados Unidos son públicos: te dicen <strong>qué empresa importó qué producto, cuántas veces, en qué volumen y de qué proveedor</strong>. No estás adivinando quién compra cacao: estás viendo quién compró 18 contenedores el año pasado y a quién se los compró.</p>
+    <p class="como"><strong>Cómo:</strong> ImportYeti es gratis para datos de EE.UU. y alcanza para empezar. Panjiva e ImportGenius son de pago y cubren más países. Filtrás por partida arancelaria — la Mesa te la da en cada deal — y sacás una lista de 30 a 50 importadores reales con nombre y dirección. A esos les escribís, y les escribís sabiendo qué compran.</p>
+  </div>
+
+  <div class="canal">
+    <div class="cab"><h3>Ferias del sector</h3><span class="rinde alto">caro, pero cierra</span></div>
+    <p>Es donde los compradores van específicamente a comprar. Tres días de feria valen más que seis meses de correos, porque hablás cara a cara con la persona que firma. Un contacto de feria te contesta el correo; uno frío, no.</p>
+    <p class="como"><strong>Cuáles, según tu producto:</strong> Biofach en Núremberg para orgánico; Chocoa en Ámsterdam para cacao; Anuga en Colonia y SIAL en París para alimentos en general; Gulfood en Dubái para Medio Oriente; Summer Fancy Food en Nueva York para especialidades; la Specialty Coffee Expo para café. Confirmá fechas cada año, que se mueven. Andá con muestras físicas y con la ficha técnica de tus exportadores, no con tarjetas de presentación.</p>
+    <p class="como"><strong>Y el atajo:</strong> ProDominicana y las agencias equivalentes de otros países suelen cofinanciar el pabellón nacional y la participación de empresas del sector. Preguntá en el área de promoción de exportaciones antes de pagar el stand completo de tu bolsillo.</p>
+  </div>
+
+  <div class="canal">
+    <div class="cab"><h3>Agregados comerciales de las embajadas</h3><span class="rinde alto">gratis y subusado</span></div>
+    <p>Cada embajada tiene una oficina comercial cuyo trabajo literal es conectar empresas de los dos países. Es gratis, casi nadie la usa, y te pueden pasar contactos de importadores establecidos.</p>
+    <p class="como"><strong>Cómo:</strong> escribile a la oficina comercial de la embajada de tu país destino, y también a la sección comercial de tu propio país en ese destino. Presentate como intermediario con exportadores verificados y pediles específicamente: “¿qué importadores de este producto conocen y a quién me recomiendan contactar?” Sé concreto con el producto y el volumen o te mandan un folleto.</p>
+  </div>
+
+  <div class="canal">
+    <div class="cab"><h3>LinkedIn, pero al cargo correcto</h3><span class="rinde medio">rinde si apuntás bien</span></div>
+    <p>El error es escribirle al dueño o al CEO. Los que compran son <strong>Procurement Manager, Sourcing Manager, Category Buyer, Head of Raw Materials</strong>. Y escribile a fabricantes — chocolateras, tostadores, procesadores — no a otros traders, que son tu competencia disfrazada de oportunidad.</p>
+    <p class="como"><strong>Cómo:</strong> cruzá los nombres de empresas que te salieron en los registros de importación con LinkedIn, buscá esos cargos y mandá un mensaje corto con la oferta concreta. Sin PDF adjunto en el primer mensaje.</p>
+  </div>
+
+  <div class="canal">
+    <div class="cab"><h3>Grupos de WhatsApp y Telegram de brokers</h3><span class="rinde bajo">casi todo humo</span></div>
+    <p>Es donde todo el mundo empieza y donde casi nadie cierra. El 95% de lo que circula ahí son mandatos copiados, reenviados quince veces, sin nadie que tenga autoridad real. Si entrás, entrá a escuchar y a detectar quién sí tiene carga real — no a trabajar los “deals” que circulan.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Qué es un mandato de verdad</h2>
+  <p>La palabra “mandato” se usa para cualquier cosa. Esta es la escalera real, de lo que no vale nada a lo que sí:</p>
+
+  <div class="escalera">
+    <div class="peldano"><span class="fuerza f0">no vale</span><div><span class="que">Interés verbal</span><p class="dice">“Sí, nos interesaría ver una oferta.” No es nada. No muevas un dedo por esto.</p></div></div>
+    <div class="peldano"><span class="fuerza f0">no vale</span><div><span class="que">Un PDF reenviado</span><p class="dice">Un “mandato” que te llegó por WhatsApp sin nombre de firmante verificable. Es papel de circulación, no un compromiso.</p></div></div>
+    <div class="peldano"><span class="fuerza f1">algo vale</span><div><span class="que">RFQ o consulta formal</span><p class="dice">Te pidieron cotización por escrito, desde un correo corporativo. Es real pero no te reserva nada: están cotizando con cinco más.</p></div></div>
+    <div class="peldano"><span class="fuerza f1">algo vale</span><div><span class="que">LOI — carta de intención</span><p class="dice">Firmada, en papel membretado, con razón social y firmante identificado. Declara intención, no obliga. Es el mínimo para que salgas a buscar proveedor.</p></div></div>
+    <div class="peldano"><span class="fuerza f2">vale</span><div><span class="que">ICPO — orden de compra irrevocable</span><p class="dice">Con especificaciones, volumen, precio objetivo e Incoterm. Ya es una posición seria.</p></div></div>
+    <div class="peldano"><span class="fuerza f2">vale</span><div><span class="que">Contrato con carta de crédito abierta</span><p class="dice">El comprador puso el instrumento bancario. Acá el negocio existe de verdad y tu comisión tiene de dónde salir.</p></div></div>
+  </div>
+
+  <h3>La prueba de tres preguntas</h3>
+  <p>Antes de creerle a cualquier mandato, respondete estas tres. Si falla una, es humo:</p>
+  <ol>
+    <li>¿Puedo hablar <strong>directamente</strong> con la persona que firma, en un correo del dominio propio de la empresa? (No Gmail, no un intermediario que “transmite”.)</li>
+    <li>¿La empresa <strong>aparece en los registros de importación</strong> comprando de verdad ese producto?</li>
+    <li>¿Existe en el registro mercantil de su país, con años de operación y un giro que tenga sentido?</li>
+  </ol>
+  <p>Las tres se contestan en veinte minutos. Es el mejor uso de veinte minutos en este oficio.</p>
+</section>
+
+<section>
+  <h2>El primer deal que sí cierra</h2>
+  <div class="bloque">
+    <p>No persigas las 5.000 toneladas. Un volumen así implica financiamiento, consolidación de cooperativas, inspecciones y meses de proceso, con diez actores que pueden tumbarlo. La probabilidad de que un intermediario nuevo cierre eso es prácticamente cero.</p>
+    <p><strong>Perseguí un contenedor.</strong> Veinte a veinticinco toneladas, un comprador chico o mediano, un exportador que ya sabés que existe. Cierra en semanas, no en trimestres.</p>
+    <p>Hacé la cuenta: un contenedor de cacao especial a unos 6.000 dólares la tonelada son cerca de 150.000 dólares de carga. Al 2 o 3%, tu comisión son 3.000 a 4.500 dólares. No te cambia la vida — pero es real, cobrable, y sobre todo te deja <strong>dos referencias contactables</strong>. Esa es la verdadera ganancia del primer deal: dejás de ser un desconocido. El segundo comprador ya te contesta.</p>
+  </div>
+
+  <h3>Cuánto se cobra, para que no pidas de más ni de menos</h3>
+  <div class="tabla-envoltura">
+    <table>
+      <thead><tr><th>Tipo de mercancía</th><th>Comisión típica</th><th>Sobre qué</th></tr></thead>
+      <tbody>
+        <tr><td>Commodity agrícola a granel</td><td class="num">1 – 3%</td><td>Valor FOB de la carga</td></tr>
+        <tr><td>Especialidad o diferenciado (orgánico, origen)</td><td class="num">2 – 5%</td><td>Valor FOB de la carga</td></tr>
+        <tr><td>Metales e industriales</td><td class="num">0,5 – 2%</td><td>Valor de la carga</td></tr>
+        <tr><td>Producto terminado o de marca</td><td class="num">3 – 8%</td><td>Valor de la factura</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;font-size:14.5px;color:var(--tinta-suave)">Rangos orientativos de mercado, para calibrar. Arriba del 5% en commodities el comprador va a asumir que el precio viene inflado — y con razón. La Mesa te marca en rojo cualquier comisión que pase el 5% del valor de la carga por exactamente ese motivo.</p>
+</section>
+
+<section>
+  <h2>Qué decir</h2>
+  <p>Dos guiones. El primero es el que más vas a usar.</p>
+
+  <div class="guion">
+    <header><span class="etiqueta">A un importador que encontraste en los registros</span><span class="crece"></span><button class="btn" data-copiar="g1">Copiar</button></header>
+    <pre id="g1">Subject: Certified organic cocoa, Dominican Republic — 25 MT available, samples ready
+
+Hello [nombre],
+
+I work with certified cocoa exporters in the Dominican Republic. I'm
+reaching out because [empresa] imports cocoa regularly, and I have a lot
+that may fit your specification.
+
+What I have available now:
+
+- Product: fermented cocoa beans, [certificación] certified
+- Quantity: 25 MT (one container), further volume available in the
+  [mes] harvest
+- Origin: [zona], traceable to producer level
+- Incoterm: FOB [puerto], price on request
+- Documentation: phytosanitary certificate, certificate of origin,
+  recent lab analysis
+- Samples: can ship within one week of your request
+
+The exporter is a registered cooperative I have verified myself against
+the national tax and company registries, and they have shipped to
+[destino] before.
+
+If the specification is close to what you buy, I'll send the technical
+sheet and arrange a sample. If it isn't, tell me what you do need and
+I'll come back when I have it.
+
+Best regards,
+[tu nombre] — [tu empresa]
+[teléfono] · [correo]</pre>
+  </div>
+
+  <p style="margin-top:14px">Por qué funciona: no pide nada, ofrece algo específico, demuestra que verificaste, y cierra con una salida fácil que igual te deja información. Nunca mandes el nombre del exportador en este correo.</p>
+
+  <div class="guion">
+    <header><span class="etiqueta">Al agregado comercial de una embajada</span><span class="crece"></span><button class="btn" data-copiar="g2">Copiar</button></header>
+    <pre id="g2">Asunto: Consulta comercial — exportación de [producto] a [país]
+
+Estimados,
+
+Soy intermediario comercial radicado en [tu país] y trabajo con
+exportadores verificados de [producto]. Estoy buscando importadores
+establecidos en [país destino] y quisiera pedirles orientación.
+
+En concreto:
+
+- Producto: [producto], [certificaciones]
+- Volumen disponible: [volumen], con capacidad de ampliar en la próxima
+  cosecha
+- Los exportadores con los que trabajo están registrados ante la
+  aduana y verificados en el registro mercantil
+
+Mi consulta es puntual: ¿qué importadores de este producto tienen
+identificados en el mercado, y a quién me recomiendan contactar
+directamente? Si organizan misiones comerciales o participación en
+ferias del sector, también me interesa saber cómo sumarme.
+
+Quedo a disposición para cualquier dato adicional.
+
+Cordialmente,
+[tu nombre] — [tu empresa]
+[teléfono] · [correo]</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Treinta días</h2>
+  <p>Un plan que se puede ejecutar en las tardes, sin renunciar a nada todavía.</p>
+
+  <div class="semana">
+    <span class="n">Semana 1</span>
+    <div><h3>El lado que podés tocar</h3>
+    <p>Elegí <strong>un solo producto</strong> — el que tengas más cerca físicamente. Fichá cinco exportadores reales en la Mesa y verificá al menos tres: número fiscal, registro mercantil, registro de exportador. Llamalos. Preguntá capacidad, certificaciones y precio indicativo FOB. Al final de la semana tenés que poder decir una frase concreta: “tengo 25 toneladas de X certificado Y, FOB puerto Z”.</p></div>
+  </div>
+
+  <div class="semana">
+    <span class="n">Semana 2</span>
+    <div><h3>La lista de compradores</h3>
+    <p>Sacá la partida arancelaria de tu producto en la Mesa y buscá en los registros de importación quién compra eso en dos países destino. Armá una lista de <strong>40 importadores</strong> con nombre de empresa. Cruzá en LinkedIn para sacar el cargo de compras. Fichalos a todos como compradores en la Mesa, aunque todavía no los hayas contactado.</p></div>
+  </div>
+
+  <div class="semana">
+    <span class="n">Semana 3</span>
+    <div><h3>Mandar y escribirle a las embajadas</h3>
+    <p>Mandá el primer guión a los 40, personalizado uno por uno — el nombre de la empresa y qué importaron es lo que hace la diferencia. En paralelo, el segundo guión a las oficinas comerciales de las embajadas de los dos países. Anotá cada envío en la bitácora de la ficha.</p></div>
+  </div>
+
+  <div class="semana">
+    <span class="n">Semana 4</span>
+    <div><h3>Seguimiento y la primera muestra</h3>
+    <p>Seguimiento a los que no contestaron, una sola vez, a los siete días. A los que contestaron: pasales la ficha técnica, coordiná muestra, y <strong>antes de dar el nombre del exportador, firmá el NCND</strong> — lo genera la Mesa con los datos de la ficha. Esperá de dos a cinco respuestas de las 40. Con una que avance, la ronda valió.</p></div>
+  </div>
+
+  <p style="margin-top:18px">Si al día treinta tenés cero respuestas de 40 correos, el problema casi siempre es uno de dos: el correo pedía en vez de ofrecer, o le escribiste a traders en lugar de a fabricantes. Revisá eso antes de cambiar de producto.</p>
+</section>
+
+<section>
+  <h2>Trampas conocidas</h2>
+
+  <div class="trampa"><span class="marca">nunca</span><div><strong>Pagar por un mandato o por “acceso” a un comprador.</strong> No existe. El intermediario cobra al cierre; jamás paga por entrar. Cualquiera que te cobre una cuota de registro o de membresía para pasarte contactos está viviendo de eso, no del comercio.</div></div>
+  <div class="trampa"><span class="marca">nunca</span><div><strong>Trabajar con SBLC, BG, MT103, MT760 o instrumentos “en leasing”.</strong> El comercio real de commodities se paga con carta de crédito irrevocable a la vista o contra documentos. Esa jerga es la firma de una cadena de fraude, y la Mesa la marca en rojo automáticamente.</div></div>
+  <div class="trampa"><span class="marca">nunca</span><div><strong>Dar el nombre del exportador antes de que el NCND esté firmado.</strong> Es la forma número uno en que te sacan del trato. Una vez que tienen el nombre, no te necesitan.</div></div>
+  <div class="trampa"><span class="marca">cuidado</span><div><strong>El “comprador” que resulta ser otro broker.</strong> Si no puede mostrarte la empresa que consume la mercancía, estás en una cadena. Cada eslabón divide tu comisión y multiplica la probabilidad de que no cierre nada.</div></div>
+  <div class="trampa"><span class="marca">cuidado</span><div><strong>Exclusividad que te pide el exportador antes de que traigas nada.</strong> Al revés: la exclusividad se gana cuando le llevás el primer comprador, y se pacta por operación, no por vida.</div></div>
+  <div class="trampa"><span class="marca">cuidado</span><div><strong>La urgencia.</strong> “Cierra en 48 horas” es una táctica para que no verifiques. Un negocio real de comercio internacional tarda semanas y aguanta que preguntes.</div></div>
+</section>
+
+<section>
+  <h2>Antes de que puedas cobrar</h2>
+  <div class="bloque">
+    <p>Dos cosas prácticas que conviene resolver antes de que aparezca la primera comisión, no después:</p>
+    <ul>
+      <li><strong>Una empresa y un número fiscal a nombre del cual facturar.</strong> Nadie transfiere una comisión de cinco cifras a una cuenta personal sin preguntas, y el comprador necesita una factura para deducirla. En República Dominicana eso es constituir la sociedad y sacar el RNC.</li>
+      <li><strong>El NCND revisado una vez por un abogado.</strong> La Mesa te lo genera, pero es una plantilla de trabajo. Que un abogado de tu jurisdicción te lo mire una sola vez — sobre todo la cláusula de comisión y la de ley aplicable. Después lo reusás siempre y no lo tocás más.</li>
+    </ul>
+    <p>Con eso resuelto, cuando el primer trato cierre no vas a estar improvisando la parte que decide si te pagan.</p>
+  </div>
+</section>
+
+<footer class="cierre">
+  <p>Este plan asume que ya tenés la Mesa de Intermediación abierta: el libro de proveedores es la semana 1, el de compradores la semana 2, y el NCND la semana 4. Nada de esto reemplaza asesoría legal ni contable.</p>
+</footer>
+
+</div>
+
+<script>
+document.addEventListener("click", async function (evento) {
+  const boton = evento.target.closest("[data-copiar]");
+  if (!boton) return;
+  const texto = document.getElementById(boton.getAttribute("data-copiar")).textContent;
+  let listo = false;
+  try { await navigator.clipboard.writeText(texto); listo = true; }
+  catch (e) {
+    const caja = document.createElement("textarea");
+    caja.value = texto; caja.style.position = "fixed"; caja.style.opacity = "0";
+    document.body.appendChild(caja); caja.select();
+    try { listo = document.execCommand("copy"); } catch (e2) { listo = false; }
+    caja.remove();
+  }
+  const aviso = document.createElement("div");
+  aviso.className = "brindis";
+  aviso.setAttribute("role", "status");
+  aviso.textContent = listo ? "Guión copiado" : "No se pudo copiar. Seleccioná el texto a mano.";
+  document.body.appendChild(aviso);
+  setTimeout(function () { aviso.remove(); }, 2600);
+});
+</script>

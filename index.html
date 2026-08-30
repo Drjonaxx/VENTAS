@@ -511,7 +511,11 @@ const SINONIMOS = {
 function clave(texto) {
   let s = norm(texto);
   for (const ingles in SINONIMOS) {
-    s = s.replace(new RegExp("\\b" + ingles + "\\b", "g"), SINONIMOS[ingles]);
+    const destino = SINONIMOS[ingles];
+    // Si ya está en su forma final no se vuelve a tocar: sin esto
+    // "dominican republic" pasaba por dos reglas y quedaba duplicado.
+    if (s.includes(destino)) continue;
+    s = s.replace(new RegExp("\\b" + ingles + "\\b", "g"), destino);
   }
   return s;
 }
@@ -1292,6 +1296,7 @@ let ui = {
   selContacto: null, tabContacto: "ficha",
   modal: null, modalLado: null, borrador: null,
   sucio: false, soloLocal: false, docAbierto: null,
+  postAbierto: null, idiomaPost: "es",
 };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
@@ -1320,6 +1325,18 @@ function tocar() {
   estado.actualizado = new Date().toISOString();
   ui.sucio = true;
   try { localStorage.setItem(CLAVE_LOCAL, JSON.stringify(estado)); } catch (e) { /* modo privado */ }
+  refrescarBarraGuardado();
+}
+
+/* Para los cambios que no redibujan: que el botón Guardar se entere. */
+function refrescarBarraGuardado() {
+  const boton = document.getElementById("btn-guardar");
+  if (boton) boton.disabled = !ui.sucio;
+  const marca = document.getElementById("estado-guardado");
+  if (marca && ui.sucio && !ui.soloLocal) {
+    marca.textContent = "cambios sin guardar";
+    marca.style.color = "var(--ambar)";
+  }
 }
 
 function nuevoId(producto, pais) {
@@ -1440,6 +1457,248 @@ async function descargar(nombre, texto) {
   }
 }
 </script>
+<script id="anuncios" data-src>
+"use strict";
+
+/* ---------------- motor de anuncios ----------------
+   Lo inverso del lector: de una necesidad concreta sale el post. Este
+   es el motor de carnada del modelo — el anuncio no busca sólo un
+   exportador, junta contactos de los dos lados. Por eso lo que importa
+   de verdad es fichar a todo el que escriba, no cerrar ese deal. */
+
+const BANDERAS = {
+  "republica dominicana": "🇩🇴", canada: "🇨🇦", "estados unidos": "🇺🇸",
+  mexico: "🇲🇽", colombia: "🇨🇴", peru: "🇵🇪", ecuador: "🇪🇨", chile: "🇨🇱",
+  argentina: "🇦🇷", brasil: "🇧🇷", espana: "🇪🇸", alemania: "🇩🇪",
+  francia: "🇫🇷", italia: "🇮🇹", "reino unido": "🇬🇧", "paises bajos": "🇳🇱",
+  belgica: "🇧🇪", suiza: "🇨🇭", japon: "🇯🇵", china: "🇨🇳", corea: "🇰🇷",
+  guatemala: "🇬🇹", honduras: "🇭🇳", "costa rica": "🇨🇷", panama: "🇵🇦",
+  "puerto rico": "🇵🇷", emiratos: "🇦🇪",
+};
+
+const ICONOS_PRODUCTO = {
+  cacao: "🍫", cafe: "☕", azucar: "🍬", banano: "🍌", aguacate: "🥑",
+  tabaco: "🚬", arroz: "🌾", maiz: "🌽", camaron: "🦐", oro: "🥇",
+  flores: "💐", uva: "🍇", mango: "🥭", pina: "🍍", ron: "🥃", cobre: "🔩",
+};
+
+// El post es público: que no salga "Dominican Republic" en un anuncio
+// en español porque el anuncio original venía en inglés.
+const NOMBRE_PAIS = {
+  "republica dominicana": ["República Dominicana", "Dominican Republic"],
+  canada: ["Canadá", "Canada"], "estados unidos": ["Estados Unidos", "United States"],
+  mexico: ["México", "Mexico"], brasil: ["Brasil", "Brazil"], espana: ["España", "Spain"],
+  alemania: ["Alemania", "Germany"], francia: ["Francia", "France"],
+  italia: ["Italia", "Italy"], "reino unido": ["Reino Unido", "United Kingdom"],
+  "paises bajos": ["Países Bajos", "Netherlands"], belgica: ["Bélgica", "Belgium"],
+  suiza: ["Suiza", "Switzerland"], japon: ["Japón", "Japan"], china: ["China", "China"],
+  peru: ["Perú", "Peru"], panama: ["Panamá", "Panama"], colombia: ["Colombia", "Colombia"],
+  ecuador: ["Ecuador", "Ecuador"], chile: ["Chile", "Chile"], argentina: ["Argentina", "Argentina"],
+  guatemala: ["Guatemala", "Guatemala"], honduras: ["Honduras", "Honduras"],
+  "costa rica": ["Costa Rica", "Costa Rica"],
+};
+
+function paisMostrar(pais, idioma) {
+  const k = clave(pais);
+  for (const nombre in NOMBRE_PAIS) {
+    if (k.includes(nombre)) return NOMBRE_PAIS[nombre][idioma === "en" ? 1 : 0];
+  }
+  return pais || "___";
+}
+
+function bandera(pais) {
+  const k = clave(pais);
+  for (const nombre in BANDERAS) if (k.includes(nombre)) return BANDERAS[nombre];
+  return "📍";
+}
+
+function iconoProducto(producto) {
+  const k = clave(producto);
+  for (const nombre in ICONOS_PRODUCTO) if (k.includes(nombre)) return ICONOS_PRODUCTO[nombre];
+  return "📦";
+}
+
+/* Una necesidad es lo mínimo que un anuncio necesita saber. Sale de un
+   deal o de la ficha de un comprador: el post es el mismo. */
+function necesidadDeDeal(d) {
+  return {
+    producto: d.producto, cantidad: num(d.cantidad), unidad: d.unidad || "t",
+    paisOrigen: d.paisOrigen, ciudadOrigen: d.ciudadOrigen,
+    paisDestino: d.paisDestino, ciudadDestino: d.ciudadDestino,
+    fee: num(d.fee), requisitos: d.requisitos || [], incoterm: d.incoterm,
+    pago: d.pago, fechaLimite: d.fechaLimite,
+    valor: valorCarga(d).valor,
+  };
+}
+
+function necesidadDeComprador(c) {
+  const falso = { cantidad: num(c.volumen), unidad: c.unidad, producto: (c.productos || [])[0] || "", precio: 0 };
+  return {
+    producto: (c.productos || [])[0] || "", cantidad: num(c.volumen), unidad: c.unidad || "t",
+    paisOrigen: (c.mercados || [])[0] || "", ciudadOrigen: "",
+    paisDestino: c.pais, ciudadDestino: c.ciudad,
+    fee: 0, requisitos: c.certificaciones || [],
+    incoterm: (c.incoterms || [])[0] || "", pago: (c.pagos || [])[0] || "",
+    fechaLimite: "", valor: valorCarga(falso).valor,
+  };
+}
+
+/* La comisión que se publica NO es la tuya: es la tajada que le pagás a
+   quien te traiga el exportador, y sale de tu bolsillo si cierra. Y el
+   porcentaje baja cuando la carga sube: nadie paga 2% sobre 30 millones.
+   El anuncio que copiaste ofrecía 55.000 sobre una carga de 30 millones,
+   que es 0,18%. */
+function escalaFinder(valor) {
+  if (valor < 250000) return 0.03;
+  if (valor < 1000000) return 0.025;
+  if (valor < 5000000) return 0.015;
+  if (valor < 20000000) return 0.005;
+  return 0.0025;
+}
+
+function redondear(monto) {
+  const paso = monto >= 50000 ? 5000 : monto >= 10000 ? 1000 : 500;
+  return Math.max(paso, Math.round(monto / paso) * paso);
+}
+
+function comisionSugerida(n, duenio) {
+  const puesta = num((duenio || {}).feeAnuncio);
+  if (puesta) return { monto: puesta, base: "" };
+  if (n.fee) {
+    return {
+      monto: redondear(n.fee / 3),
+      base: "un tercio de tu comisión de " + usd(n.fee) + ", así te queda el resto",
+    };
+  }
+  if (!n.valor) return { monto: 0, base: "" };
+  const pct = escalaFinder(n.valor);
+  return {
+    monto: redondear(n.valor * pct),
+    base: (pct * 100).toFixed(2).replace(/\.?0+$/, "") + "% de una carga de ~" + usd(n.valor) +
+      ", que es lo que se paga en cargas de ese tamaño",
+  };
+}
+
+function cantidadTexto(n) {
+  return n.cantidad ? n.cantidad.toLocaleString("es-DO") + " " + n.unidad : "volumen por definir";
+}
+
+function etiquetas(n) {
+  const base = ["comercioexterior", "exportacion", "importacion", "trade", "sourcing", "findersfee"];
+  const prod = nucleoProducto(n.producto) ||
+    clave(n.producto).split(/[^a-z0-9]+/).filter(function (w) { return w.length > 3; })[0];
+  if (prod) base.unshift(prod);
+  const pais = clave(n.paisOrigen).replace(/[^a-z]/g, "");
+  if (pais) base.push(pais);
+  return base.slice(0, 8).map(function (h) { return "#" + h; }).join(" ");
+}
+
+function postInstagram(n, idioma, duenio) {
+  const c = comisionSugerida(n, duenio);
+  const monto = c.monto ? "USD " + c.monto.toLocaleString("es-DO") : "USD ______";
+  const en = idioma === "en";
+  const L = en ? {
+    alerta: "OPPORTUNITY", gana: "EARN", si: "IF YOU CONNECT US WITH A VERIFIED EXPORTER OF",
+    en: "IN", producto: "Product", cantidad: "Quantity", proveedor: "Supplier",
+    ciudad: "City", comprador: "Buyer", requisitos: "Requirements", incoterm: "Incoterm",
+    pago: "Payment", cierre: "Commission payable on completion of the transaction. DM us.",
+  } : {
+    alerta: "OPORTUNIDAD", gana: "GANÁ", si: "SI NOS CONECTÁS CON UN EXPORTADOR VERIFICADO DE",
+    en: "EN", producto: "Producto", cantidad: "Cantidad", proveedor: "Proveedor",
+    ciudad: "Ciudad", comprador: "Comprador", requisitos: "Requisitos", incoterm: "Incoterm",
+    pago: "Pago", cierre: "Comisión pagadera al cierre de la operación. Escribinos por DM.",
+  };
+
+  const donde = n.ciudadOrigen || n.paisOrigen || "";
+  const lineas = [
+    "🚨 " + L.alerta,
+    "",
+    "💰 " + L.gana + " " + monto + " " + L.si + " " +
+      (n.producto || "___").toUpperCase() + (donde ? " " + L.en + " " + donde.toUpperCase() : "") + ".",
+    "",
+    iconoProducto(n.producto) + " " + L.producto + ": " + (n.producto || "___"),
+    "📦 " + L.cantidad + ": " + cantidadTexto(n),
+    bandera(n.paisOrigen) + " " + L.proveedor + ": " + paisMostrar(n.paisOrigen, idioma),
+  ];
+  if (n.ciudadOrigen) lineas.push("📍 " + L.ciudad + ": " + n.ciudadOrigen);
+  lineas.push(bandera(n.paisDestino) + " " + L.comprador + ": " + paisMostrar(n.paisDestino, idioma));
+  if (n.ciudadDestino) lineas.push("📍 " + L.ciudad + ": " + n.ciudadDestino);
+  if (n.incoterm) lineas.push("🚢 " + L.incoterm + ": " + n.incoterm);
+  if (n.pago) lineas.push("🏦 " + L.pago + ": " + n.pago);
+  if ((n.requisitos || []).length) lineas.push("📋 " + L.requisitos + ": " + n.requisitos.join(", ") + ".");
+  lineas.push("", L.cierre, "", etiquetas(n));
+  return lineas.join("\n");
+}
+
+function postLinkedIn(n, idioma, duenio) {
+  const c = comisionSugerida(n, duenio);
+  const monto = c.monto ? "USD " + c.monto.toLocaleString("es-DO") : "USD ______";
+  if (idioma === "en") {
+    return `Sourcing request: ${n.producto || "___"} — ${cantidadTexto(n)}
+
+We are sourcing ${n.producto || "___"} from ${paisMostrar(n.paisOrigen, "en")} for a confirmed buyer in ${paisMostrar(n.paisDestino, "en")}.
+
+· Volume: ${cantidadTexto(n)}
+· Origin: ${[n.ciudadOrigen, paisMostrar(n.paisOrigen, "en")].filter(Boolean).join(", ")}
+· Destination: ${[n.ciudadDestino, paisMostrar(n.paisDestino, "en")].filter(Boolean).join(", ")}${n.incoterm ? "\n· Incoterm: " + n.incoterm : ""}${n.pago ? "\n· Payment: " + n.pago : ""}
+· Requirements: ${(n.requisitos || []).join(", ") || "traceability, quality documentation, export readiness"}
+
+A finder's fee of ${monto} is payable on completion of the transaction to whoever introduces us to the exporter that closes it. The introduction is formalised with a signed NCND agreement beforehand, so your position is protected.
+
+I work with registered exporters only: tax registry, company registry and customs registration verified before any introduction. No advance payments of any kind, at any stage.
+
+If you know a producer or cooperative that fits, message me directly.
+
+${etiquetas(n)}`;
+  }
+  return `Búsqueda de proveedor: ${n.producto || "___"} — ${cantidadTexto(n)}
+
+Estamos buscando ${n.producto || "___"} en ${paisMostrar(n.paisOrigen, "es")} para un comprador confirmado en ${paisMostrar(n.paisDestino, "es")}.
+
+· Volumen: ${cantidadTexto(n)}
+· Origen: ${[n.ciudadOrigen, paisMostrar(n.paisOrigen, "es")].filter(Boolean).join(", ")}
+· Destino: ${[n.ciudadDestino, paisMostrar(n.paisDestino, "es")].filter(Boolean).join(", ")}${n.incoterm ? "\n· Incoterm: " + n.incoterm : ""}${n.pago ? "\n· Pago: " + n.pago : ""}
+· Requisitos: ${(n.requisitos || []).join(", ") || "trazabilidad, documentación de calidad y capacidad de exportación"}
+
+Hay una comisión de ${monto} pagadera al cierre de la operación para quien nos presente al exportador que termine cerrando. La presentación se formaliza antes con un acuerdo NCND firmado, así que tu posición queda protegida.
+
+Trabajo únicamente con exportadores registrados: verifico registro fiscal, mercantil y de exportador antes de cualquier presentación. Sin pagos por adelantado de ningún tipo, en ninguna etapa.
+
+Si conocés un productor o una cooperativa que encaje, escribime directo.
+
+${etiquetas(n)}`;
+}
+
+function mensajeWhatsApp(n, idioma, duenio) {
+  const c = comisionSugerida(n, duenio);
+  const monto = c.monto ? "USD " + c.monto.toLocaleString("es-DO") : "USD ______";
+  if (idioma === "en") {
+    return `*${(n.producto || "___").toUpperCase()} — ${cantidadTexto(n)}*
+
+Buyer in ${paisMostrar(n.paisDestino, "en")}, sourcing from ${paisMostrar(n.paisOrigen, "en")}.
+${(n.requisitos || []).length ? "Requirements: " + n.requisitos.join(", ") + ".\n" : ""}
+Finder's fee: *${monto}*, payable on completion.
+NCND signed before any introduction. No advance payments.
+
+Know a serious exporter? Send them my way.`;
+  }
+  return `*${(n.producto || "___").toUpperCase()} — ${cantidadTexto(n)}*
+
+Comprador en ${paisMostrar(n.paisDestino, "es")}, buscando en ${paisMostrar(n.paisOrigen, "es")}.
+${(n.requisitos || []).length ? "Requisitos: " + n.requisitos.join(", ") + ".\n" : ""}
+Comisión: *${monto}*, pagadera al cierre.
+NCND firmado antes de cualquier presentación. Sin pagos por adelantado.
+
+¿Conocés un exportador serio? Pasámelo.`;
+}
+
+const FORMATOS = [
+  ["instagram", "Instagram · Reel o carrusel", "Líneas cortas, una por placa. Es el formato del anuncio que te llamó la atención.", postInstagram],
+  ["linkedin", "LinkedIn", "Donde están los compradores y los gerentes de exportación. Más largo y sin gritar.", postLinkedIn],
+  ["whatsapp", "WhatsApp", "Corto y reenviable. Para grupos de comercio y contactos directos.", mensajeWhatsApp],
+];
+</script>
+
 <script id="vista" data-src>
 "use strict";
 
@@ -1447,10 +1706,10 @@ async function descargar(nombre, texto) {
 
 function vistaBarra() {
   const guardado = ui.soloLocal
-    ? '<span class="etiqueta">sólo en este dispositivo</span>'
+    ? '<span class="etiqueta" id="estado-guardado">sólo en este dispositivo</span>'
     : ui.sucio
-      ? '<span class="etiqueta" style="color:var(--ambar)">cambios sin guardar</span>'
-      : '<span class="etiqueta">al día</span>';
+      ? '<span class="etiqueta" id="estado-guardado" style="color:var(--ambar)">cambios sin guardar</span>'
+      : '<span class="etiqueta" id="estado-guardado">al día</span>';
   const alta = ui.seccion === "deals"
     ? '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>'
     : '<button class="btn primario" data-accion="nuevo-contacto:' + ui.seccion + '">Fichar ' +
@@ -1565,7 +1824,7 @@ function vistaCabeza(d) {
 }
 
 function vistaPestanas() {
-  const tabs = [["riesgo", "Riesgo"], ["proveedor", "Buscar proveedor"], ["docs", "Documentos"], ["bitacora", "Bitácora"]];
+  const tabs = [["riesgo", "Riesgo"], ["proveedor", "Buscar proveedor"], ["publicar", "Publicar"], ["docs", "Documentos"], ["bitacora", "Bitácora"]];
   return '<div class="pestanas" role="tablist">' + tabs.map(function (t) {
     return '<button class="pestana" role="tab" aria-selected="' + (ui.tab === t[0]) + '" data-accion="tab:' + t[0] + '">' + t[1] + "</button>";
   }).join("") + "</div>";
@@ -1721,7 +1980,10 @@ function vistaCabezaContacto(c) {
 }
 
 function vistaPestanasContacto() {
-  const tabs = [["ficha", "Ficha"], ["verif", "Verificación"], ["cruce", "Cruce"], ["bitacora", "Bitácora"]];
+  const c = contactoActual();
+  const tabs = [["ficha", "Ficha"], ["verif", "Verificación"], ["cruce", "Cruce"]]
+    .concat(c && c.lado === "comprador" ? [["publicar", "Publicar"]] : [])
+    .concat([["bitacora", "Bitácora"]]);
   return '<div class="pestanas" role="tablist">' + tabs.map(function (x) {
     return '<button class="pestana" role="tab" aria-selected="' + (ui.tabContacto === x[0]) +
       '" data-accion="tab-contacto:' + x[0] + '">' + x[1] + "</button>";
@@ -1841,12 +2103,79 @@ function panelBitacoraContacto(c) {
     "</div>";
 }
 
+function pistaComision(c) {
+  if (c.base) return "Vacío publica <strong>" + usd(c.monto) + "</strong>: " + esc(c.base) + ".";
+  if (c.monto) return "Se publica <strong>" + usd(c.monto) + "</strong>.";
+  return "Cargá la cantidad y el precio en la ficha para que pueda sugerirte un número.";
+}
+
+/* Redibujar toda la app mientras escribís en un campo te arranca el
+   foco y se come el clic siguiente. Cuando cambia la comisión sólo se
+   actualiza lo que depende de ella. */
+function necesidadDe(duenio) {
+  return ui.seccion === "deals" ? necesidadDeDeal(duenio) : necesidadDeComprador(duenio);
+}
+
+function refrescarPublicar(duenio) {
+  if (!duenio) return;
+  const nec = necesidadDe(duenio);
+  const c = comisionSugerida(nec, duenio);
+  const pista = document.getElementById("pista-comision");
+  if (pista) pista.innerHTML = pistaComision(c);
+  if (ui.postAbierto) {
+    const formato = FORMATOS.find(function (f) { return f[0] === ui.postAbierto; });
+    const pre = document.querySelector("pre.doc");
+    if (formato && pre) pre.textContent = formato[3](nec, ui.idiomaPost || "es", duenio);
+  }
+}
+
+function panelPublicar(necesidad, origenTexto, duenio) {
+  const idioma = ui.idiomaPost || "es";
+  const c = comisionSugerida(necesidad, duenio);
+  const selector = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+    '<span class="etiqueta">idioma</span>' +
+    '<button class="btn chico' + (idioma === "es" ? " primario" : "") + '" data-accion="idioma:es">Español</button>' +
+    '<button class="btn chico' + (idioma === "en" ? " primario" : "") + '" data-accion="idioma:en">Inglés</button></div>';
+
+  const aviso = tarjeta("la comisión que va en el anuncio",
+    '<label class="campo" style="max-width:260px"><span class="etiqueta">lo que ofrecés a quien te traiga el exportador</span>' +
+    '<input type="number" step="any" min="0" data-accion="fee-anuncio" value="' +
+    (num((duenio || {}).feeAnuncio) || "") + '" placeholder="' + (c.monto || 0) + '"></label>' +
+    '<p id="pista-comision">' + pistaComision(c) + "</p>" +
+    '<p style="color:var(--ambar)">Esto no es tu comisión: es la tajada que pagás vos si alguien te trae al exportador que cierra. ' +
+    "No publiques un número que no puedas honrar — en este mercado todos se conocen y se quema rápido.</p>");
+
+  const cuerpo = FORMATOS.map(function (f) {
+    const clave = f[0], abierto = ui.postAbierto === clave;
+    const texto = f[3](necesidad, idioma, duenio);
+    return '<section class="tarjeta"><header><span class="etiqueta">' + f[1] + "</span>" +
+      '<span class="crece"></span>' +
+      '<button class="btn chico" data-accion="post:' + clave + '">' + (abierto ? "Ocultar" : "Ver") + "</button>" +
+      '<button class="btn chico" data-accion="copiar-post:' + clave + '">Copiar</button>' +
+      '</header><div class="contenido"><p style="color:var(--tinta-suave);font-size:13.5px">' + esc(f[2]) + "</p></div>" +
+      (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
+  }).join("");
+
+  return '<div class="panel">' +
+    tarjeta("para qué sirve publicarlo",
+      "<p>" + esc(origenTexto) + "</p>" +
+      "<p>El anuncio no es sólo para encontrar este exportador. Es una red: te van a escribir exportadores que se identifican solos y gente que quiere la comisión. " +
+      "<strong>Fichá a todos en el libro</strong>, cierre o no cierre este trato. Eso es lo que se acumula.</p>" +
+      "<p>Contá con que la mitad de los que respondan sean otros intermediarios sin carga real. Pediles el número fiscal del exportador en el primer mensaje: los filtra solos.</p>") +
+    aviso +
+    tarjeta("formato", selector) +
+    cuerpo + "</div>";
+}
+
 function vistaHojaContacto(clase) {
   const c = contactoActual();
   const abre = '<main class="hoja' + (clase || "") + '">';
   if (!c) return abre + '<div class="vacio"><p>Elegí una ficha de la lista para verla.</p></div></main>';
   const panel = ui.tabContacto === "verif" ? panelVerifContacto(c)
     : ui.tabContacto === "cruce" ? panelCruceContacto(c)
+    : ui.tabContacto === "publicar" && c.lado === "comprador"
+      ? panelPublicar(necesidadDeComprador(c),
+          "Publicás lo que necesita " + (c.nombre || "este comprador") + " sin decir quién es, para que aparezcan proveedores nuevos.", c)
     : ui.tabContacto === "bitacora" ? panelBitacoraContacto(c)
     : panelFichaContacto(c);
   return abre + vistaCabezaContacto(c) + vistaPestanasContacto() + panel + "</main>";
@@ -1857,6 +2186,8 @@ function vistaHoja(clase) {
   const abre = '<main class="hoja' + (clase || "") + '">';
   if (!d) return abre + vistaVacioHoja() + "</main>";
   const panel = ui.tab === "proveedor" ? panelProveedor(d)
+    : ui.tab === "publicar" ? panelPublicar(necesidadDeDeal(d),
+        "Publicás la necesidad de este deal para que aparezca el exportador que la cubre.", d)
     : ui.tab === "docs" ? panelDocs(d)
     : ui.tab === "bitacora" ? panelBitacora(d)
     : panelRiesgo(d);
@@ -2076,6 +2407,16 @@ document.addEventListener("click", function (evento) {
     case "sel": ui.sel = arg; ui.tab = "riesgo"; ui.docAbierto = null; render(); break;
     case "tab": ui.tab = arg; render(); break;
     case "doc": ui.docAbierto = ui.docAbierto === arg ? null : arg; render(); break;
+    case "post": ui.postAbierto = ui.postAbierto === arg ? null : arg; render(); break;
+    case "idioma": ui.idiomaPost = arg; render(); break;
+    case "copiar-post": {
+      const formato = FORMATOS.find(function (x) { return x[0] === arg; });
+      if (!formato) break;
+      const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+      const nec = ui.seccion === "deals" ? necesidadDeDeal(duenio) : necesidadDeComprador(duenio);
+      copiar(formato[3](nec, ui.idiomaPost || "es", duenio));
+      break;
+    }
     case "copiar-texto": copiar(a.el.getAttribute("data-texto")); break;
     case "copiar-doc": {
       const doc = DOCUMENTOS.find(function (x) { return x[0] === arg; });
@@ -2195,6 +2536,18 @@ document.addEventListener("change", function (evento) {
   if (a.valor === "contraparte") { d.contraparteId = evento.target.value; tocar(); render(); }
   if (a.valor === "etapa") { d.etapa = evento.target.value; tocar(); render(); }
   if (a.valor === "firmado") { d.acuerdoFirmado = evento.target.checked; tocar(); render(); }
+});
+
+// En `input` y sin redibujar: el campo conserva el foco y el clic
+// siguiente llega a su destino.
+document.addEventListener("input", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a || a.valor !== "fee-anuncio") return;
+  const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+  if (!duenio) return;
+  duenio.feeAnuncio = evento.target.value;
+  tocar();
+  refrescarPublicar(duenio);
 });
 
 document.addEventListener("keydown", function (evento) {

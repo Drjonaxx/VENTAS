@@ -50,6 +50,14 @@ ya exportó a Canadá"* contra *"sólo cubre 18%, le falta Fairtrade"*. Un deal
 suelto se pierde; el libro queda. Y cuando abrís una oportunidad nueva, los
 proveedores de tu libro que sirven ya aparecen ahí.
 
+**7. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
+necesidad de un comprador salen los tres posts listos — Instagram con el formato
+de placas, LinkedIn en tono profesional y WhatsApp corto y reenviable, en
+español o en inglés. La comisión que se publica no es la tuya: es la tajada que
+le pagás a quien te traiga el exportador, y la app la sugiere con una escala que
+baja cuando la carga sube (3% en cargas chicas, 0,25% arriba de veinte
+millones), porque nadie paga 2% sobre treinta millones.
+
 Ese libro es el activo real del negocio. Un comprador con mandato firmado es lo
 escaso: proveedores se consiguen en una tarde, compradores con plata y una LOI
 no. Por eso los dos lados se fichan aparte y el comprador tiene su campo de
@@ -65,6 +73,13 @@ Es un archivo HTML sin dependencias ni servidor. Dos formas:
   cambios; mientras tanto quedan en el navegador.
 - **Local**: abrí `index.html` en el navegador. Todo funciona igual salvo el
   guardado en la nube: los deals quedan en el `localStorage` de esa máquina.
+
+## El plan de arranque
+
+`plan/primer-comprador.html` es el documento aparte: de dónde salen los
+compradores con mandato real, qué es un mandato de verdad, cuánto se cobra por
+tipo de mercancía, los guiones de contacto y un plan de treinta días. Sin un
+comprador real, el resto de la app gira en el aire.
 
 ## El aviso que importa
 
@@ -85,6 +100,7 @@ Todo vive en `index.html`, separado en bloques con `id`:
 | `css`    | Tokens de color para tema claro y oscuro, y los componentes.     |
 | `app`    | Banderas rojas, directorio, libro de contactos y motor de cruce. |
 | `docs`   | Las plantillas: NCND, checklist y mensajes.                      |
+| `anuncios` | Los generadores de posts y la escala de comisión sugerida.     |
 | `ui`     | Estado, guardado y utilidades.                                   |
 | `vista`  | Render de las pantallas.                                         |
 | `eventos`| Modales y manejo de eventos.                                     |
@@ -97,7 +113,8 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 
 - La verificación es un checklist manual: la app te dice dónde mirar y lleva la
   cuenta de lo que comprobaste, pero no consulta ningún registro por vos.
-- No genera los anuncios: hoy lee los ajenos, no escribe los tuyos.
+- No publica sola: genera el texto, vos lo pegás en la red que sea.
+- No mide qué anuncio funcionó: no hay seguimiento de respuestas por post.
 - El directorio cubre América Latina y España. Para África y Asia caen sólo las
   fuentes globales, que igual sirven: Trade Map te dice quién exporta qué.
 - El lector de anuncios acierta con posts que traen etiquetas. Un texto corrido
