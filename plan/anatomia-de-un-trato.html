@@ -1,0 +1,369 @@
+<title>Anatomía de un Trato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --papel: #EFF2EB; --superficie: #FBFCF9; --franja: #E4E9DD;
+  --tinta: #1A211B; --tinta-suave: #5B6559; --linea: #D0D7C8; --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F; --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C; --ambar: #8E5D0B; --rojo: #A2321F;
+  --verde-tenue: #DFEDE3; --ambar-tenue: #F5E8CE; --rojo-tenue: #F6DFD9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+    --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+    --acento: #74C293; --acento-tenue: #16261C;
+    --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+    --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+  --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+  --acento: #74C293; --acento-tenue: #16261C;
+  --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+  --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: Faustina, Georgia, serif; margin: 0; text-wrap: balance; font-weight: 600; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.etiqueta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-suave);
+}
+.hoja { max-width: 780px; margin: 0 auto; padding: 0 22px 90px; }
+
+header.tapa { padding: 52px 0 30px; border-bottom: 2px solid var(--tinta); margin-bottom: 34px; }
+header.tapa h1 { font-size: clamp(34px, 6vw, 50px); line-height: 1.04; letter-spacing: -.02em; }
+header.tapa .bajada { font-size: 18px; color: var(--tinta-suave); margin-top: 14px; max-width: 62ch; }
+
+section { margin-top: 48px; }
+section > h2 { font-size: 26px; line-height: 1.2; padding-bottom: 9px; border-bottom: 1px solid var(--linea); margin-bottom: 18px; }
+.bloque { display: grid; gap: 13px; }
+h3 { font-size: 19px; margin-top: 24px; margin-bottom: 7px; }
+strong { font-weight: 600; }
+em { font-style: italic; color: var(--tinta-suave); }
+
+.tesis {
+  background: var(--acento-tenue); border-left: 3px solid var(--acento);
+  padding: 20px 22px; margin: 26px 0; font-family: Faustina, Georgia, serif;
+  font-size: 21px; line-height: 1.4;
+}
+ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+li::marker { color: var(--acento); }
+
+/* la columna vertebral: las etapas de una operación */
+.flujo { margin-top: 22px; }
+.etapa { display: grid; grid-template-columns: 46px 1fr; gap: 18px; position: relative; padding-bottom: 26px; }
+.etapa:last-child { padding-bottom: 0; }
+.etapa::before {
+  content: ""; position: absolute; left: 22px; top: 34px; bottom: -4px; width: 2px; background: var(--linea);
+}
+.etapa:last-child::before { display: none; }
+.etapa .n {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); color: var(--acento);
+  font-family: "IBM Plex Mono", monospace; font-size: 15px; font-weight: 600; z-index: 1;
+}
+.etapa.riesgo .n { border-color: var(--rojo); color: var(--rojo); }
+.etapa .cuerpo { padding-top: 8px; }
+.etapa h3 { margin: 0 0 6px; font-size: 19px; }
+.etapa .quien { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-suave); margin-bottom: 7px; }
+.muere {
+  margin-top: 10px; background: var(--rojo-tenue); border-radius: 3px; padding: 9px 12px;
+  font-size: 14.5px; color: var(--tinta);
+}
+.muere b { color: var(--rojo); font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: .1em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+
+.tabla-envoltura { overflow-x: auto; margin-top: 16px; border: 1px solid var(--linea); border-radius: 3px; }
+table { border-collapse: collapse; width: 100%; background: var(--superficie); font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { background: var(--franja); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+     font-family: "IBM Plex Mono", monospace; font-weight: 500; color: var(--tinta-suave); }
+tr:last-child td { border-bottom: none; }
+td.mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.opcion { border: 1px solid var(--linea); background: var(--superficie); border-radius: 3px; padding: 17px 19px; margin-top: 15px; }
+.opcion .cab { display: flex; gap: 11px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+.opcion .cab h3 { margin: 0; font-size: 19px; }
+.veredicto { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.veredicto.si { background: var(--verde-tenue); color: var(--verde); }
+.veredicto.quiza { background: var(--ambar-tenue); color: var(--ambar); }
+.veredicto.no { background: var(--rojo-tenue); color: var(--rojo); }
+
+.causa { display: grid; grid-template-columns: 58px 1fr; gap: 14px; padding: 13px 0; border-bottom: 1px dashed var(--linea); }
+.causa:last-child { border-bottom: none; }
+.causa .peso { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-suave); padding-top: 2px; }
+.causa .senal { color: var(--tinta-suave); font-size: 14.5px; margin-top: 4px; }
+
+.cierre-nota { background: var(--franja); border-radius: 3px; padding: 18px 20px; margin-top: 20px; font-size: 15px; }
+footer.cierre { margin-top: 54px; padding-top: 22px; border-top: 2px solid var(--tinta); color: var(--tinta-suave); font-size: 14.5px; }
+</style>
+
+<div class="hoja">
+
+<header class="tapa">
+  <p class="etiqueta">Mesa de Intermediación · Manual del oficio</p>
+  <h1>Anatomía de un trato</h1>
+  <p class="bajada">Cómo funciona por dentro una operación de comercio internacional, desde la primera carta hasta que el dinero llega a tu cuenta. Y dónde exactamente se muere cada trato que no llega.</p>
+</header>
+
+<section>
+  <h2>Qué vendés en realidad</h2>
+  <div class="bloque">
+    <p>No sos dueño de la mercancía. No la financiás, no la almacenás, no la embarcás. Entonces, ¿por qué te paga alguien?</p>
+    <p>Porque el comercio internacional funciona con desconocidos que se mandan cientos de miles de dólares a través de fronteras, con leyes distintas y sin poder mirarse a la cara. El problema real de ese negocio no es encontrar cacao: es <strong>saber a quién creerle</strong>.</p>
+
+    <div class="tesis">Lo que vendés es riesgo eliminado. Cada verificación que hacés y no le tocó hacer al comprador es la parte de tu comisión que te ganaste.</div>
+
+    <p>De ahí salen dos consecuencias prácticas. La primera: un intermediario que sólo reenvía correos no aporta nada y no le pagan — por eso el 95% de los que andan en grupos de WhatsApp nunca cobran. La segunda: <strong>la verificación no es burocracia, es el producto</strong>. Cuando la Mesa te lleva la cuenta de qué comprobaste de cada proveedor, no está haciendo papeleo: está midiendo cuánto valés en esa operación.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Quién es quién</h2>
+  <p>En una operación hay más gente de la que parece, y confundir los papeles es cómo terminás negociando con alguien que no decide nada.</p>
+  <div class="tabla-envoltura">
+    <table>
+      <thead><tr><th>Figura</th><th>Qué hace</th><th>Qué te importa a vos</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Exportador</strong></td><td>Produce o consolida y embarca. Firma el contrato de venta.</td><td>Es tu proveedor. Verificalo entero.</td></tr>
+        <tr><td><strong>Importador / comprador final</strong></td><td>Consume o distribuye la mercancía. Abre la carta de crédito.</td><td>Es el que paga. Si no lo podés nombrar, no existe.</td></tr>
+        <tr><td><strong>Trader</strong></td><td>Compra y revende por cuenta propia. Toma título y riesgo.</td><td>No es tu comprador final: es competencia con otro nombre.</td></tr>
+        <tr><td><strong>Agente o mandatario</strong></td><td>Representa formalmente a una de las partes, con poder escrito.</td><td>Si dice serlo, pedile el poder. Casi nunca lo tiene.</td></tr>
+        <tr><td><strong>Intermediario (vos)</strong></td><td>Presenta las partes y cobra comisión al cierre.</td><td>No firmás el contrato de compraventa. No querés firmarlo.</td></tr>
+        <tr><td><strong>Inspectora</strong></td><td>SGS, Bureau Veritas, Cotecna, Intertek. Certifica calidad y cantidad antes del embarque.</td><td>Es lo que evita el pleito de "no era lo que pedí".</td></tr>
+        <tr><td><strong>Agente de carga</strong></td><td>Contrata el flete y emite o gestiona el conocimiento de embarque.</td><td>Un buen forwarder te salva plazos. Conocé a uno.</td></tr>
+        <tr><td><strong>Bancos</strong></td><td>El emisor abre la carta de crédito; el avisador o confirmador la notifica y paga contra documentos.</td><td>El banco no revisa mercancía, sólo papeles. Eso lo cambia todo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cierre-nota"><strong>La regla que ahorra meses:</strong> nunca firmes el contrato de compraventa vos. Si lo firmás dejás de ser intermediario y pasás a ser trader: asumís el riesgo de la mercancía, el del cobro y el de la calidad, sin tener el capital para aguantarlos. Tu contrato es otro — el de comisión.</div>
+</section>
+
+<section>
+  <h2>Las nueve etapas</h2>
+  <p>Así se ve una operación completa con carta de crédito, que es la forma normal de pagar en comercio internacional. Marqué en rojo las etapas donde de verdad se mueren los tratos.</p>
+
+  <div class="flujo">
+    <div class="etapa riesgo">
+      <span class="n">1</span>
+      <div class="cuerpo">
+        <p class="quien">el comprador → todos</p>
+        <h3>LOI o ICPO</h3>
+        <p>El comprador pone por escrito qué quiere: producto, especificación, volumen, destino, rango de precio, Incoterm. Firmado, en membrete, con razón social y firmante.</p>
+        <div class="muere"><b>Acá muere la mayoría</b>No hay LOI, o la que hay viene reenviada sin firmante verificable. Si no podés hablar con quien firmó, no hay operación: hay una cadena de brokers pasándose un PDF.</div>
+      </div>
+    </div>
+
+    <div class="etapa">
+      <span class="n">2</span>
+      <div class="cuerpo">
+        <p class="quien">vos ↔ cada parte</p>
+        <h3>NCND firmado</h3>
+        <p>Antes de que nadie sepa el nombre de nadie, firmás el acuerdo de no elusión y comisión con la parte a la que le vas a presentar. La Mesa te lo genera con los datos de la ficha.</p>
+        <div class="muere" style="background:var(--ambar-tenue)"><b style="color:var(--ambar)">Error caro</b>Saltarse esta etapa "para no trabar el negocio". Es exactamente el momento en que se decide si vas a cobrar.</div>
+      </div>
+    </div>
+
+    <div class="etapa riesgo">
+      <span class="n">3</span>
+      <div class="cuerpo">
+        <p class="quien">el vendedor → el comprador</p>
+        <h3>Oferta en firme</h3>
+        <p>El exportador emite su oferta con precio, Incoterm, plazo de validez, calendario de entrega, condiciones de pago y especificación exacta.</p>
+        <div class="muere"><b>Acá muere el segundo grupo</b>No hay margen. El exportador quiere más de lo que el comprador paga y no hay nada en el medio. Averiguá el rango de precio de las dos partes <em>antes</em> de armar toda la carpeta.</div>
+      </div>
+    </div>
+
+    <div class="etapa">
+      <span class="n">4</span>
+      <div class="cuerpo">
+        <p class="quien">comprador ↔ vendedor</p>
+        <h3>Contrato de compraventa</h3>
+        <p>Negociación y firma. Lo que no puede faltar: especificación medible, tolerancia de peso, plazo y puerto de embarque, quién inspecciona, qué pasa si la calidad no da, ley aplicable y arbitraje. <strong>Y la cláusula que nombra tu comisión.</strong></p>
+      </div>
+    </div>
+
+    <div class="etapa riesgo">
+      <span class="n">5</span>
+      <div class="cuerpo">
+        <p class="quien">el banco del comprador</p>
+        <h3>Apertura de la carta de crédito</h3>
+        <p>El comprador instruye a su banco emitir un crédito documentario irrevocable, normalmente pagadero a la vista y sujeto a las UCP 600. El banco del vendedor la avisa, y si el vendedor no confía en el banco emisor, pide que la confirmen.</p>
+        <div class="muere"><b>El momento de la verdad</b>Muchos "compradores" nunca abren la carta, porque nunca tuvieron la línea de crédito. Hasta acá todo era conversación; esto cuesta dinero y separa a los reales del resto.</div>
+      </div>
+    </div>
+
+    <div class="etapa">
+      <span class="n">6</span>
+      <div class="cuerpo">
+        <p class="quien">la inspectora</p>
+        <h3>Inspección antes de embarcar</h3>
+        <p>Un tercero independiente verifica calidad, cantidad y empaque contra el contrato, y emite certificado. Lo paga quien diga el contrato — negocialo, no lo dejes ambiguo.</p>
+      </div>
+    </div>
+
+    <div class="etapa">
+      <span class="n">7</span>
+      <div class="cuerpo">
+        <p class="quien">el vendedor y el agente de carga</p>
+        <h3>Embarque y documentos</h3>
+        <p>Sale la carga y se emite el juego documental: conocimiento de embarque, factura comercial, lista de empaque, certificado de origen, fitosanitario o sanitario, certificado de inspección, póliza de seguro si el Incoterm lo exige.</p>
+      </div>
+    </div>
+
+    <div class="etapa riesgo">
+      <span class="n">8</span>
+      <div class="cuerpo">
+        <p class="quien">el banco</p>
+        <h3>Presentación y pago</h3>
+        <p>El vendedor presenta los documentos al banco. El banco <strong>no mira la mercancía: mira los papeles</strong>. Si están conformes con lo que dice la carta al pie de la letra, paga. Si no, los rechaza.</p>
+        <div class="muere"><b>El tropiezo más común</b>Discrepancias documentarias. Se cita habitualmente que más de la mitad de las presentaciones se rechazan la primera vez, por cosas tan chicas como un nombre escrito distinto o una fecha corrida. Se arreglan, pero cuestan semanas y a veces una comisión bancaria.</div>
+      </div>
+    </div>
+
+    <div class="etapa">
+      <span class="n">9</span>
+      <div class="cuerpo">
+        <p class="quien">vos, por fin</p>
+        <h3>Tu comisión</h3>
+        <p>Se devenga cuando el vendedor cobra. Cómo llega hasta vos depende de la estructura que hayas armado en la etapa 4 — y es lo que decide la sección siguiente.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Cómo cobrás de verdad</h2>
+  <p>Acá hay mucha mitología. Estas son las cuatro formas de instrumentar tu comisión, de la que menos sirve a la que más:</p>
+
+  <div class="opcion">
+    <div class="cab"><h3>Un apretón de manos</h3><span class="veredicto no">no sirve</span></div>
+    <p>"Tranquilo que cuando cerremos te arreglamos." Es la forma más común y la razón número uno por la que los intermediarios no cobran. No hay nada que reclamar y no hay dónde reclamarlo.</p>
+  </div>
+
+  <div class="opcion">
+    <div class="cab"><h3>NCND suelto</h3><span class="veredicto quiza">te protege, no te paga</span></div>
+    <p>Sirve para lo que fue hecho: probar que vos originaste el contacto y que hay una obligación de no eludirte. Es tu evidencia si hay pleito. Pero no crea un mecanismo de pago: ganar un arbitraje dos años después no es cobrar. <strong>Necesario, pero no suficiente.</strong></p>
+  </div>
+
+  <div class="opcion">
+    <div class="cab"><h3>IMFPA</h3><span class="veredicto quiza">depende del banco</span></div>
+    <p>El acuerdo irrevocable de protección de comisión es lo que todo el mundo pide en los grupos de brokers, y por eso está contaminado: la mayoría de los que circulan vienen de cadenas que no cierran nada. Un IMFPA <strong>sólo vale si el banco pagador lo acepta como instrucción</strong>, y muchos bancos no actúan sobre un acuerdo de comisión de un tercero que no es parte del crédito. Preguntá antes de confiar en él, no después.</p>
+  </div>
+
+  <div class="opcion">
+    <div class="cab"><h3>Cláusula de comisión en el contrato, o contrato de agencia con el vendedor</h3><span class="veredicto si">esto es lo que funciona</span></div>
+    <p>Que el contrato de compraventa te nombre y diga cuánto se te paga, cuándo y contra qué. O, más simple todavía y muy común en agro: un contrato de agencia comercial con el exportador, donde él te paga un porcentaje sobre cada embarque cobrado, contra tu factura. Es aburrido, es ejecutable, y es como cobra la gente que vive de esto.</p>
+  </div>
+
+  <div class="cierre-nota"><strong>La pregunta que decide todo:</strong> "cuando el dinero entre, ¿qué acto concreto y de quién hace que una parte de ese dinero salga hacia mí?" Si la respuesta es "hablamos", no tenés estructura. Si es "el vendedor me factura contra el aviso de cobro, según la cláusula 7", sí la tenés.</div>
+</section>
+
+<section>
+  <h2>Los Incoterms que importan</h2>
+  <p>Son las reglas de la Cámara de Comercio Internacional que definen quién paga qué y dónde pasa el riesgo. La versión vigente es Incoterms 2020. En la práctica vas a ver cinco:</p>
+  <div class="tabla-envoltura">
+    <table>
+      <thead><tr><th>Término</th><th>El vendedor entrega…</th><th>El riesgo pasa en…</th><th>Cuándo usarlo</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">EXW</td><td>en su propia puerta</td><td>origen</td><td>Casi nunca. El comprador tiene que hacer hasta la exportación.</td></tr>
+        <tr><td class="mono">FCA</td><td>al transportista, en el lugar pactado</td><td>origen</td><td><strong>El correcto para carga en contenedor.</strong></td></tr>
+        <tr><td class="mono">FOB</td><td>a bordo del buque</td><td>origen, a bordo</td><td>Sólo marítimo a granel. Es el más usado, muchas veces mal.</td></tr>
+        <tr><td class="mono">CFR / CIF</td><td>a bordo, pero paga el flete (y en CIF el seguro) hasta destino</td><td><strong>origen</strong></td><td>Cuando el comprador quiere precio puesto en su puerto.</td></tr>
+        <tr><td class="mono">DAP / DDP</td><td>en destino; DDP además paga aranceles</td><td>destino</td><td>Rara vez le conviene al exportador. Cuidado con DDP.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Los dos malentendidos que cuestan plata</h3>
+  <ul>
+    <li><strong>CIF no significa que el riesgo viaja con el vendedor.</strong> El vendedor paga el flete y el seguro hasta el puerto de destino, pero el riesgo pasó al comprador en el origen. Si la carga se pierde en el mar, el problema es del comprador — por eso existe el seguro. Casi todo el mundo cree lo contrario.</li>
+    <li><strong>FOB no es para contenedores.</strong> Con carga en contenedor, el vendedor la entrega en la terminal días antes de que suba al buque, y queda con el riesgo de algo que ya no controla. La Cámara de Comercio Internacional recomienda FCA para eso. Casi nadie le hace caso, por costumbre.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>La economía real</h2>
+  <div class="bloque">
+    <p>Los números que nadie dice en voz alta, para que no confundas un negocio lento con un negocio malo.</p>
+    <p><strong>El embudo.</strong> De unos 40 correos dirigidos salen 3 a 5 conversaciones. De esas, una avanza a oferta en firme. Y de cada tres que llegan a oferta, cierra una si tenés suerte. Es decir: <strong>una ronda de 40 contactos bien hechos rinde, en el mejor de los casos, un trato</strong> — y muchas rondas rinden cero.</p>
+    <p><strong>El reloj.</strong> De la LOI al pago, en agro, se va de seis a catorce semanas si todo va bien. Sumale el tiempo de conseguir la LOI. Desde que arrancás de cero hasta tu primera comisión cobrada, contá entre tres y seis meses. Quien te prometa menos te está vendiendo algo.</p>
+    <p><strong>La consecuencia.</strong> Este negocio no se sostiene con un trato: se sostiene con un flujo. Por eso importa más el libro que cualquier oportunidad individual, y por eso el error clásico es enamorarse de un deal grande y dejar de sembrar mientras lo esperás. Trabajá varios en paralelo, siempre.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Especializarte en un corredor</h2>
+  <div class="bloque">
+    <p>La tentación es tomar todo lo que aparezca: hoy cacao a Canadá, mañana chatarra a Turquía, pasado camarón a España. Es el camino más rápido a no ser nadie en ningún mercado.</p>
+    <p>Un <strong>corredor</strong> es un producto y una ruta: cacao dominicano a Europa, café centroamericano a Estados Unidos, aguacate mexicano a Canadá. Elegí uno y quedate ahí un año.</p>
+    <p>Todo se acumula dentro de un corredor y nada se acumula entre corredores: los exportadores que verificaste, los compradores que te contestaron, la partida arancelaria que ya sabés de memoria, los precios que reconocés cuando alguien te miente, el forwarder que te contesta el sábado, y la reputación de que sos el que sabe de eso. Al año, en un corredor sos alguien; saltando entre cinco, seguís siendo un correo más.</p>
+    <p>Elegí el corredor por dos cosas: <strong>qué exportadores podés visitar físicamente</strong> y qué producto tiene demanda estable en un destino que puedas estudiar. Lo primero es tu ventaja injusta y casi nadie la usa.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Por qué se mueren los tratos</h2>
+  <p>Ordenados por lo seguido que pasa, con la señal temprana que te habría avisado.</p>
+
+  <div class="causa"><span class="peso">1º</span><div><strong>El comprador no era el comprador.</strong><p class="senal">Señal: nunca te pasan el contacto directo, todo va "a través de mi mandante". Preguntá temprano quién consume la mercancía.</p></div></div>
+  <div class="causa"><span class="peso">2º</span><div><strong>No hay margen.</strong><p class="senal">Señal: nadie te quiere dar un rango de precio. Pedí el rango de las dos partes en la primera semana, antes de armar nada.</p></div></div>
+  <div class="causa"><span class="peso">3º</span><div><strong>La carta de crédito no se abre.</strong><p class="senal">Señal: el comprador esquiva la pregunta de con qué banco trabaja. Pedí referencia bancaria junto con la LOI.</p></div></div>
+  <div class="causa"><span class="peso">4º</span><div><strong>El volumen no existe en esa ventana.</strong><p class="senal">Señal: el exportador dice que sí a todo sin mencionar la cosecha. Preguntá siempre por el calendario de cosecha y por lo que ya tiene comprometido.</p></div></div>
+  <div class="causa"><span class="peso">5º</span><div><strong>Discrepancias documentarias.</strong><p class="senal">Señal: el exportador nunca embarcó a ese destino. Revisá el borrador de la carta de crédito con él antes de que el comprador la abra.</p></div></div>
+  <div class="causa"><span class="peso">6º</span><div><strong>La calidad no pasa la inspección.</strong><p class="senal">Señal: no hubo muestra aprobada por escrito antes del contrato. Sin muestra aceptada, no hay contrato.</p></div></div>
+  <div class="causa"><span class="peso">7º</span><div><strong>Te brincaron.</strong><p class="senal">Señal: te empiezan a copiar menos en los correos. Con NCND firmado y la bitácora al día, tenés con qué reclamar; sin eso, no.</p></div></div>
+</section>
+
+<section>
+  <h2>La estructura mínima</h2>
+  <div class="bloque">
+    <p>Lo que conviene tener resuelto antes de que aparezca la primera comisión, no después:</p>
+    <ul>
+      <li><strong>Una sociedad y un número fiscal.</strong> Nadie transfiere cinco cifras a una cuenta personal sin preguntas, y el que paga necesita una factura para deducirlo. En República Dominicana: constituir la sociedad y sacar el RNC.</li>
+      <li><strong>Una cuenta bancaria a nombre de la empresa</strong>, capaz de recibir transferencias internacionales. Averiguá los datos para transferencia y tenelos escritos: los vas a necesitar el día que menos tiempo tengas.</li>
+      <li><strong>El NCND revisado una vez por un abogado</strong> de tu jurisdicción, sobre todo la cláusula de comisión y la de ley aplicable. Después lo reusás siempre.</li>
+      <li><strong>Un modelo de contrato de agencia</strong> con el exportador, que es la estructura que de verdad te paga. Que salga del mismo abogado, en la misma sentada.</li>
+      <li><strong>Un forwarder y un despachante conocidos.</strong> No los necesitás para cobrar, pero poder contestar "sí, tengo con quién" en una llamada te cambia de categoría.</li>
+    </ul>
+    <p>Es medio día de trámites y una consulta legal. Es barato comparado con perder la primera comisión por no tener dónde recibirla.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Cómo encaja todo</h2>
+  <div class="bloque">
+    <p>Las tres piezas hacen una sola cosa:</p>
+    <ul>
+      <li><strong>El primer comprador</strong> es el plan de arranque: de dónde sale el lado escaso y qué decir para conseguirlo.</li>
+      <li><strong>Este manual</strong> es el mapa del oficio: qué pasa después de que alguien te dice que sí, y dónde se cae.</li>
+      <li><strong>La Mesa de Intermediación</strong> es donde se ejecuta: filtra lo que no es real, te dice dónde buscar y verificar, guarda el libro de las dos partes, genera los papeles y escribe los anuncios.</li>
+    </ul>
+    <p>El orden de trabajo, si arrancás mañana: elegí un corredor, fichá y verificá tres exportadores, armá la lista de compradores desde los registros de importación, mandá cuarenta correos dirigidos, y cuando uno conteste, volvé a las nueve etapas y andá marcando en cuál estás.</p>
+  </div>
+</section>
+
+<footer class="cierre">
+  <p>Este manual describe prácticas habituales del comercio internacional, no es asesoría legal, contable ni bancaria. Las reglas concretas de tu operación son las que digan tu contrato, tu carta de crédito y las leyes que apliquen. Antes de firmar el primer acuerdo, consultá a un abogado de tu jurisdicción.</p>
+</footer>
+
+</div>

@@ -74,12 +74,22 @@ Es un archivo HTML sin dependencias ni servidor. Dos formas:
 - **Local**: abrí `index.html` en el navegador. Todo funciona igual salvo el
   guardado en la nube: los deals quedan en el `localStorage` de esa máquina.
 
-## El plan de arranque
+## Los dos documentos
 
-`plan/primer-comprador.html` es el documento aparte: de dónde salen los
-compradores con mandato real, qué es un mandato de verdad, cuánto se cobra por
-tipo de mercancía, los guiones de contacto y un plan de treinta días. Sin un
-comprador real, el resto de la app gira en el aire.
+Van aparte de la app porque se leen, no se operan.
+
+`plan/primer-comprador.html` — **el plan de arranque.** De dónde salen los
+compradores con mandato real (los registros de importación primero, los grupos
+de WhatsApp último), qué es un mandato de verdad, cuánto se cobra por tipo de
+mercancía, dos guiones de contacto y un plan de treinta días. Sin un comprador
+real, el resto gira en el aire.
+
+`plan/anatomia-de-un-trato.html` — **el manual del oficio.** Las nueve etapas de
+una operación con carta de crédito, con las cuatro donde de verdad se mueren los
+tratos; quién es quién y por qué nunca firmás el contrato de compraventa; las
+cuatro formas de instrumentar tu comisión y cuál es la que cobra; los Incoterms
+que importan y los dos malentendidos que cuestan plata; el embudo y los tiempos
+reales; y por qué conviene especializarse en un corredor.
 
 ## El aviso que importa
 
