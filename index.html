@@ -244,6 +244,13 @@ pre.doc {
   white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow-y: auto;
 }
 
+pre.crudo {
+  margin: 0; font-family: "IBM Plex Mono", monospace; font-size: 12px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow-y: auto;
+  color: var(--tinta-suave);
+}
+.pegar { display: grid; gap: 9px; }
+
 .nota { padding: 10px 0; border-bottom: 1px dashed var(--linea); }
 .nota:last-child { border-bottom: none; }
 .nota .f { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-suave); }
@@ -344,6 +351,12 @@ const CAPACIDAD = [
   ["colombia", "cafe", 700000],
   ["peru", "cafe", 250000],
   ["honduras", "cafe", 300000],
+  ["guatemala", "cafe", 200000],
+  ["costa rica", "cafe", 60000],
+  ["brasil", "cafe", 2300000],
+  ["peru", "cacao", 90000],
+  ["ecuador", "banano", 7000000],
+  ["mexico", "aguacate", 1200000],
 ];
 
 const AGENCIAS = {
@@ -370,6 +383,13 @@ const VERIFICACION = {
   peru: [["SUNAT — consulta RUC", "sunat.gob.pe", "Estado del RUC y actividad declarada."]],
   ecuador: [["Superintendencia de Compañías", "supercias.gob.ec", "Constitución, socios y estados financieros."]],
   mexico: [["SAT — constancia de situación fiscal", "sat.gob.mx", "Verificación del RFC del proveedor."]],
+  guatemala: [["Registro Mercantil", "registromercantil.gob.gt", "Existencia legal, representante y patente de comercio."]],
+  honduras: [["SAR — Servicio de Administración de Rentas", "sar.gob.hn", "Estado del RTN del proveedor."]],
+  "costa rica": [["Registro Nacional", "registronacional.go.cr", "Personería jurídica y representante legal."]],
+  chile: [["SII — Servicio de Impuestos Internos", "sii.cl", "Situación tributaria y actividad declarada del RUT."]],
+  brasil: [["Receita Federal — consulta CNPJ", "gov.br/receitafederal", "Existencia, situación y actividad del CNPJ."]],
+  argentina: [["ARCA (ex AFIP) — constancia de inscripción", "arca.gob.ar", "Estado y actividad declarada del CUIT."]],
+  espana: [["Registro Mercantil Central", "rmc.es", "Constitución, administradores y cuentas depositadas."]],
 };
 
 const GREMIOS = [
@@ -384,6 +404,45 @@ const GREMIOS = [
   ["ecuador", "cacao", [
     ["ANECACAO", "anecacao.com", "Asociación nacional de exportadores de cacao del Ecuador."],
   ]],
+  ["peru", "cacao", [
+    ["APPCACAO", "appcacao.org", "Asociación peruana de productores de cacao: agrupa cooperativas, que es por donde salen los volúmenes."],
+  ]],
+  ["peru", "cafe", [
+    ["Junta Nacional del Café", "juntadelcafe.org.pe", "Agrupa a las cooperativas cafetaleras peruanas."],
+  ]],
+  ["guatemala", "cafe", [
+    ["ANACAFÉ", "anacafe.org", "Asociación Nacional del Café: registro y respaldo de los exportadores guatemaltecos."],
+  ]],
+  ["honduras", "cafe", [
+    ["IHCAFE", "ihcafe.hn", "Instituto Hondureño del Café: lleva el registro de exportadores."],
+  ]],
+  ["costa rica", "cafe", [
+    ["ICAFE", "icafe.cr", "Instituto del Café de Costa Rica: los exportadores están obligados a registrarse ahí."],
+  ]],
+  ["brasil", "cafe", [
+    ["Cecafé", "cecafe.com.br", "Consejo de exportadores de café de Brasil, con estadísticas por empresa."],
+  ]],
+  ["ecuador", "banano", [
+    ["AEBE", "aebe.com.ec", "Asociación de Exportadores de Banano del Ecuador."],
+  ]],
+  ["colombia", "banano", [
+    ["AUGURA", "augura.com.co", "Asociación de bananeros de Colombia."],
+  ]],
+  ["mexico", "aguacate", [
+    ["APEAM", "apeam.com", "Productores y empacadores exportadores de aguacate de México; controlan la exportación a Estados Unidos."],
+  ]],
+  ["republica dominicana", "tabaco", [
+    ["INTABACO", "intabaco.gob.do", "Instituto del Tabaco: registro de productores y exportadores."],
+  ]],
+  ["republica dominicana", "banano", [
+    ["ADOBANANO", "adobanano.com", "Asociación dominicana de productores de banano, fuerte en orgánico y Fairtrade."],
+  ]],
+  ["chile", "fruta", [
+    ["ASOEX", "asoex.cl", "Asociación de exportadores de frutas de Chile."],
+  ]],
+  ["colombia", "flores", [
+    ["Asocolflores", "asocolflores.org", "Asociación colombiana de exportadores de flores."],
+  ]],
 ];
 
 const GLOBALES = [
@@ -396,6 +455,8 @@ const PARTIDAS_HS = {
   cacao: "1801 — cacao en grano", cafe: "0901 — café", azucar: "1701 — azúcar de caña",
   banano: "0803 — bananos", aguacate: "0804.40 — aguacates", tabaco: "2401 — tabaco en rama",
   ron: "2208.40 — ron", camaron: "0306 — crustáceos", arroz: "1006 — arroz",
+  flores: "0603 — flores cortadas", uva: "0806 — uvas", mango: "0804.50 — mangos",
+  pina: "0804.30 — piñas", oro: "7108 — oro", ajonjoli: "1207.40 — sésamo",
 };
 
 /* ---------------- lógica pura ---------------- */
@@ -406,6 +467,31 @@ function norm(s) {
     .replace(/[óòö]/g, "o").replace(/[úùü]/g, "u").replace(/ñ/g, "n");
 }
 function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+// Los anuncios llegan en inglés tanto como en español. El texto se guarda
+// como lo pegaste; esta tabla sólo se usa para emparejar contra el
+// directorio, los precios y las partidas arancelarias.
+const SINONIMOS = {
+  "dominican republic": "republica dominicana", "dominicana": "republica dominicana",
+  "costa rican": "costa rica", "brazil": "brasil", "spain": "espana",
+  "germany": "alemania", "united states": "estados unidos", "usa": "estados unidos",
+  "netherlands": "paises bajos", "united kingdom": "reino unido",
+  "cocoa": "cacao", "cacao beans": "cacao", "coffee": "cafe", "sugar": "azucar",
+  "banana": "banano", "bananas": "banano", "avocado": "aguacate", "avocados": "aguacate",
+  "tobacco": "tabaco", "rice": "arroz", "corn": "maiz", "maize": "maiz",
+  "soybean": "soya", "soybeans": "soya", "copper": "cobre", "shrimp": "camaron",
+  "gold": "oro", "flowers": "flores", "grapes": "uva", "pineapple": "pina",
+  "sesame": "ajonjoli", "fruit": "fruta",
+};
+
+function clave(texto) {
+  let s = norm(texto);
+  for (const ingles in SINONIMOS) {
+    s = s.replace(new RegExp("\\b" + ingles + "\\b", "g"), SINONIMOS[ingles]);
+  }
+  return s;
+}
+
 function usd(n) { return "USD " + Math.round(n).toLocaleString("es-DO"); }
 
 function toneladas(d) {
@@ -417,13 +503,13 @@ function valorCarga(d) {
   if (num(d.precio) && num(d.cantidad)) return { valor: num(d.cantidad) * num(d.precio), estimado: false };
   const t = toneladas(d);
   if (t === null) return { valor: null, estimado: false };
-  const p = norm(d.producto);
+  const p = clave(d.producto);
   for (const clave in PRECIOS_REF) if (p.includes(clave)) return { valor: t * PRECIOS_REF[clave], estimado: true };
   return { valor: null, estimado: false };
 }
 
 function capacidadPais(d) {
-  const pais = norm(d.paisOrigen), prod = norm(d.producto);
+  const pais = clave(d.paisOrigen), prod = clave(d.producto);
   for (const [p, k, t] of CAPACIDAD) if (pais.includes(p) && prod.includes(k)) return t;
   return null;
 }
@@ -506,12 +592,12 @@ function exigencias(d) {
 function fuentesDe(d) {
   const out = [], vistos = new Set();
   const add = function (f) { if (f && !vistos.has(f[0])) { vistos.add(f[0]); out.push(f); } };
-  const pais = norm(d.paisOrigen), prod = norm(d.producto);
+  const pais = clave(d.paisOrigen), prod = clave(d.producto);
+  const destino = clave(d.paisDestino);
   for (const [p, k, lista] of GREMIOS) if (pais.includes(p) && prod.includes(k)) lista.forEach(add);
-  for (const clave in AGENCIAS) if (pais.includes(clave)) add(AGENCIAS[clave]);
-  for (const clave in VERIFICACION) if (pais.includes(clave)) VERIFICACION[clave].forEach(add);
-  const destino = norm(d.paisDestino);
-  for (const clave in AGENCIAS) if (destino && destino.includes(clave)) add(AGENCIAS[clave]);
+  for (const c in AGENCIAS) if (pais.includes(c)) add(AGENCIAS[c]);
+  for (const c in VERIFICACION) if (pais.includes(c)) VERIFICACION[c].forEach(add);
+  for (const c in AGENCIAS) if (destino && destino.includes(c)) add(AGENCIAS[c]);
   GLOBALES.forEach(add);
   return out;
 }
@@ -527,13 +613,139 @@ function consultasDe(d) {
     prod + " exporter " + pais + " site:linkedin.com/in",
     '"' + prod + '" ' + pais + ' "gerente de exportaciones" OR "export manager"',
   ];
-  for (const clave in AGENCIAS) if (norm(pais).includes(clave)) q.push(prod + " exportadores site:" + AGENCIAS[clave][1]);
+  const paisClave = clave(pais);
+  for (const c in AGENCIAS) if (paisClave.includes(c)) q.push(prod + " exportadores site:" + AGENCIAS[c][1]);
   if ((d.requisitos || []).length) q.push(prod + " " + pais + " " + d.requisitos.slice(0, 2).join(" "));
   return q.map(function (s) { return s.replace(/\s+/g, " ").trim(); });
 }
 
+/* ---------------- lector de anuncios ----------------
+   Estos posts casi siempre vienen con la misma estructura de etiquetas,
+   en inglés o en español. Leerlas evita teclear el anuncio entero, que
+   es donde se pierde la mitad de las ganas de trabajarlo. */
+
+const ETIQUETAS = [
+  ["producto", ["producto", "product", "commodity", "mercancia", "mercancía", "goods"]],
+  ["cantidad", ["cantidad", "quantity", "volumen", "volume", "qty"]],
+  ["paisOrigen", ["proveedor", "supplier", "origen", "origin", "pais de origen", "país de origen", "source", "seller"]],
+  ["paisDestino", ["comprador", "buyer", "destino", "destination", "pais destino", "país destino", "delivery"]],
+  ["ciudad", ["ciudad", "city", "puerto", "port"]],
+  ["requisitos", ["requisitos", "requirements", "specs", "especificaciones", "documentacion", "documentación"]],
+  ["incoterm", ["incoterm", "incoterms", "terminos de entrega", "términos de entrega"]],
+  ["pago", ["pago", "payment", "terminos de pago", "términos de pago", "payment terms"]],
+  ["fee", ["comision", "comisión", "commission", "fee", "finder", "finders fee", "finder's fee"]],
+  ["fechaLimite", ["fecha limite", "fecha límite", "deadline", "plazo", "cierre"]],
+  ["_purpose", ["proposito", "propósito", "purpose", "uso", "objetivo"]],
+];
+
+const UNIDADES_TEXTO = [
+  [/\b(toneladas?|tonnes?|tons?|metric tons?|mt|tm)\b/i, "t"],
+  [/\b(kilos?|kilogramos?|kg)\b/i, "kg"],
+  [/\b(libras?|lbs?|pounds?)\b/i, "lb"],
+  [/\b(quintales?|qq)\b/i, "qq"],
+  [/\b(contenedores?|containers?|fcl)\b/i, "contenedores"],
+];
+
+function limpiarLinea(linea) {
+  // Fuera emojis, viñetas y adornos del principio de la línea.
+  return linea
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{20E3}]/gu, " ")
+    .replace(/^[\s*\-–—•·>»#]+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function numeroDe(texto) {
+  // "5,000" y "5.000" son ambos cinco mil; "5.5" es cinco y medio.
+  const m = (texto || "").match(/[\d][\d.,]*/);
+  if (!m) return null;
+  let s = m[0].replace(/[.,](?=\d{3}\b)/g, "");
+  s = s.replace(",", ".");
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function parsearAnuncio(texto) {
+  const salida = { requisitos: [] };
+  const ciudades = [];
+  let ultimoLado = null;   // hacia qué lado apunta la próxima "City:"
+
+  limpiarLinea(texto);
+  const lineas = (texto || "").split(/\n+/).map(limpiarLinea).filter(Boolean);
+
+  for (const linea of lineas) {
+    const corte = linea.match(/^([^:]{2,40}):\s*(.+)$/);
+    if (corte) {
+      const rotulo = norm(corte[1]).replace(/[^a-z\s']/g, "").trim();
+      const valor = corte[2].trim();
+      const par = ETIQUETAS.find(function (e) {
+        return e[1].some(function (alias) { return rotulo === alias || rotulo.endsWith(" " + alias) || rotulo.startsWith(alias + " "); });
+      });
+      if (par) {
+        const campo = par[0];
+        if (campo === "ciudad") { ciudades.push({ lado: ultimoLado, valor: valor }); continue; }
+        if (campo === "_purpose") continue;
+        if (campo === "paisOrigen") ultimoLado = "origen";
+        if (campo === "paisDestino") ultimoLado = "destino";
+        if (campo === "requisitos") {
+          salida.requisitos = valor.split(/[,;]|\sy\s|\sand\s/).map(function (s) {
+            return s.replace(/\.$/, "").trim();
+          }).filter(function (s) { return s.length > 2; });
+          continue;
+        }
+        if (campo === "cantidad") {
+          const n = numeroDe(valor);
+          if (n !== null) salida.cantidad = n;
+          for (const [re, u] of UNIDADES_TEXTO) if (re.test(valor)) { salida.unidad = u; break; }
+          continue;
+        }
+        if (campo === "fee") { const n = numeroDe(valor); if (n !== null) salida.fee = n; continue; }
+        if (!salida[campo]) salida[campo] = valor;
+        continue;
+      }
+    }
+
+    // Sin etiqueta: la línea del gancho suele traer la comisión.
+    if (!salida.fee) {
+      const m = linea.match(/(?:earn|gana[rs]?|pago|paga|comisi[oó]n|fee)[^\d$]{0,24}(?:us\$|usd|\$)?\s*([\d][\d.,]*)/i)
+        || linea.match(/(?:us\$|usd|\$)\s*([\d][\d.,]*)/i);
+      if (m) { const n = numeroDe(m[1]); if (n !== null && n >= 100) salida.fee = n; }
+    }
+    if (!salida.cantidad) {
+      const m = linea.match(/([\d][\d.,]*)\s*(toneladas?|tonnes?|tons?|metric tons?|mt|kg|contenedores?|containers?)/i);
+      if (m) {
+        const n = numeroDe(m[1]);
+        if (n !== null) {
+          salida.cantidad = n;
+          for (const [re, u] of UNIDADES_TEXTO) if (re.test(m[2])) { salida.unidad = u; break; }
+        }
+      }
+    }
+  }
+
+  // Repartir las ciudades: la que sigue al proveedor es origen, la que
+  // sigue al comprador es destino. Si vinieron sueltas, en orden.
+  const origen = ciudades.filter(function (c) { return c.lado === "origen"; });
+  const destino = ciudades.filter(function (c) { return c.lado === "destino"; });
+  const sueltas = ciudades.filter(function (c) { return !c.lado; });
+  if (origen.length) salida.ciudadOrigen = origen[0].valor;
+  if (destino.length) salida.ciudadDestino = destino[0].valor;
+  if (!salida.ciudadOrigen && sueltas.length) salida.ciudadOrigen = sueltas.shift().valor;
+  if (!salida.ciudadDestino && sueltas.length) salida.ciudadDestino = sueltas.shift().valor;
+
+  if (!salida.unidad && salida.cantidad) salida.unidad = "t";
+  return salida;
+}
+
+function contarLeidos(campos) {
+  return Object.keys(campos).filter(function (k) {
+    const v = campos[k];
+    return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== "" && v !== null;
+  }).length;
+}
+
 function partidaHS(producto) {
-  const p = norm(producto);
+  const p = clave(producto);
   for (const clave in PARTIDAS_HS) if (p.includes(clave)) return PARTIDAS_HS[clave];
   return null;
 }
@@ -840,6 +1052,13 @@ Best regards,
 `;
 }
 
+function expediente(d, perfil) {
+  const cabeza = "# Expediente — " + d.id + "\n\nGenerado el " + new Date().toISOString().slice(0, 10) +
+    " con la Mesa de Intermediación.\n";
+  return [cabeza].concat(DOCUMENTOS.map(function (doc) { return doc[3](d, perfil); }))
+    .join("\n\n---\n\n");
+}
+
 const DOCUMENTOS = [
   ["ficha", "Ficha de la oportunidad", "Resumen de una página para mandar a un proveedor.", function (d, p) { return docFicha(d); }],
   ["ncnd", "Acuerdo NCND", "No elusión, no divulgación y comisión. Fírmalo antes de dar nombres.", docNCND],
@@ -855,7 +1074,7 @@ const DOCUMENTOS = [
 
 const CLAVE_LOCAL = "mesa-intermediacion-v1";
 let estado = { perfil: {}, deals: [], actualizado: "" };
-let ui = { sel: null, tab: "riesgo", modal: null, sucio: false, soloLocal: false, docAbierto: null };
+let ui = { sel: null, tab: "riesgo", modal: null, sucio: false, soloLocal: false, docAbierto: null, borrador: null };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
 
@@ -1105,6 +1324,7 @@ function panelRiesgo(d) {
       '<ol class="pasos">' + exigencias(d).map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ol>") +
     tarjeta("la oportunidad", ficha,
       '<span class="crece"></span><button class="btn chico" data-accion="editar">Editar</button>') +
+    (d.anuncio ? tarjeta("anuncio original", '<pre class="crudo">' + esc(d.anuncio) + "</pre>") : "") +
     "</div>";
 }
 
@@ -1140,7 +1360,13 @@ function panelDocs(d) {
       (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
   }).join("");
   const perfilIncompleto = !((estado.perfil || {}).nombre || "").trim();
-  return '<div class="panel">' +
+  const todo = tarjeta("expediente completo",
+    '<p style="color:var(--tinta-suave);font-size:13.5px">Los cinco documentos en un solo archivo, para archivar el deal o mandárselo a tu abogado.</p>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+    '<button class="btn" data-accion="copiar-expediente">Copiar todo</button>' +
+    (bajar ? '<button class="btn" data-accion="bajar-expediente">Descargar .md</button>' : "") +
+    "</div>");
+  return '<div class="panel">' + todo +
     (perfilIncompleto ? tarjeta("antes de usar el acuerdo",
       '<p>El NCND sale con tus datos en blanco. Cargalos una vez en <strong>Mis datos</strong> y quedan puestos en todos los acuerdos.</p>' +
       '<div><button class="btn" data-accion="perfil">Cargar mis datos</button></div>') : "") +
@@ -1235,12 +1461,17 @@ function vistaModal() {
   }
 
   const editando = ui.modal === "editar";
-  const d = editando ? dealActual() : { unidad: "t", etapa: "captada", requisitos: [] };
+  const d = editando ? dealActual() : (ui.borrador || { unidad: "t", etapa: "captada", requisitos: [] });
   if (!d) return "";
+  const pegar = editando ? "" :
+    '<div class="pegar"><label class="campo"><span class="etiqueta">pegá el anuncio y lo leo por vos</span>' +
+    '<textarea name="anuncio" rows="4" placeholder="EARN $55,000 IF YOU CAN CONNECT US TO…&#10;Product: Premium cocoa beans&#10;Quantity: 5,000 tonnes">' +
+    esc(d.anuncio || "") + "</textarea></label>" +
+    '<div><button class="btn" type="button" data-accion="leer-anuncio">Leer anuncio</button></div></div>';
   return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
     "<header><h2>" + (editando ? "Editar oportunidad" : "Nueva oportunidad") + "</h2>" +
     '<span class="crece"></span><button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
-    '<form data-accion="guardar-deal"><div class="rejilla">' +
+    '<form data-accion="guardar-deal">' + pegar + '<div class="rejilla">' +
     campo("producto", "producto", d.producto, "text", true, "required placeholder=\"cacao en grano\"") +
     campo("cantidad", "cantidad", d.cantidad, "number", false, 'step="any" min="0"') +
     '<label class="campo"><span class="etiqueta">unidad</span><select name="unidad">' +
@@ -1282,10 +1513,30 @@ document.addEventListener("click", function (evento) {
   if (verbo === "velo" && evento.target !== a.el) return; // clic dentro del modal
 
   switch (verbo) {
-    case "nuevo": ui.modal = "nuevo"; render(); break;
+    case "nuevo": ui.modal = "nuevo"; ui.borrador = null; render(); break;
     case "editar": ui.modal = "editar"; render(); break;
     case "perfil": ui.modal = "perfil"; render(); break;
-    case "cerrar": case "velo": ui.modal = null; render(); break;
+    case "cerrar": case "velo": ui.modal = null; ui.borrador = null; render(); break;
+    case "leer-anuncio": {
+      const form = a.el.closest("form");
+      const actuales = Object.fromEntries(new FormData(form).entries());
+      const leido = parsearAnuncio(actuales.anuncio || "");
+      const cuantos = contarLeidos(leido);
+      if (!cuantos) { brindis("No pude sacar campos de ese texto. Cargalos a mano."); break; }
+      const base = Object.assign({}, actuales);
+      base.requisitos = (actuales.requisitos || "").split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+      for (const campo in leido) {
+        const valor = leido[campo];
+        const tiene = Array.isArray(valor) ? valor.length > 0 : valor !== "" && valor !== undefined && valor !== null;
+        if (tiene) base[campo] = valor;
+      }
+      ui.borrador = base;
+      render();
+      brindis(cuantos + (cuantos === 1 ? " campo leído" : " campos leídos") + ". Revisá antes de crear.");
+      break;
+    }
+    case "copiar-expediente": copiar(expediente(dealActual(), estado.perfil)); break;
+    case "bajar-expediente": descargar("expediente-" + dealActual().id + ".md", expediente(dealActual(), estado.perfil)); break;
     case "guardar": guardar(); break;
     case "volver": ui.sel = null; render(); break;
     case "sel": ui.sel = arg; ui.tab = "riesgo"; ui.docAbierto = null; render(); break;
@@ -1343,6 +1594,7 @@ document.addEventListener("submit", function (evento) {
       ui.tab = "riesgo";
     }
     ui.modal = null;
+    ui.borrador = null;
     tocar(); render();
     return;
   }
