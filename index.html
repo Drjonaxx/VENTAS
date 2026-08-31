@@ -368,7 +368,7 @@ const SENALES_ADELANTO = ["pago por adelantado", "cuota de registro", "registrat
 
 // Exportación anual aproximada, en toneladas. Órdenes de magnitud.
 const CAPACIDAD = [
-  ["republica dominicana", "cacao", 70000],
+  ["republica dominicana", "cacao", 80000],
   ["republica dominicana", "tabaco", 30000],
   ["republica dominicana", "aguacate", 60000],
   ["ecuador", "cacao", 400000],
@@ -395,6 +395,8 @@ const AGENCIAS = {
   chile: ["ProChile", "prochile.gob.cl", "Directorio de exportadores chilenos."],
   brasil: ["ApexBrasil", "apexbrasil.com.br", "Agencia brasileña de promoción de exportaciones."],
   espana: ["ICEX", "icex.es", "Directorio de exportadores españoles."],
+  "puerto rico": ["MIDA — Cámara de Mercadeo, Industria y Distribución de Alimentos", "midapr.com",
+    "El gremio de toda la industria alimentaria de Puerto Rico: ahí están los distribuidores. Organiza el Food Show anual en San Juan, que es la feria del sector en la isla."],
 };
 
 const VERIFICACION = {
@@ -414,6 +416,12 @@ const VERIFICACION = {
   brasil: [["Receita Federal — consulta CNPJ", "gov.br/receitafederal", "Existencia, situación y actividad del CNPJ."]],
   argentina: [["ARCA (ex AFIP) — constancia de inscripción", "arca.gob.ar", "Estado y actividad declarada del CUIT."]],
   espana: [["Registro Mercantil Central", "rmc.es", "Constitución, administradores y cuentas depositadas."]],
+  "puerto rico": [
+    ["Departamento de Estado — Registro de Corporaciones", "estado.pr.gov",
+     "Existencia, estatus de good standing y agente residente de cualquier corporación o LLC."],
+    ["Hacienda — Registro de Comerciantes (SURI)", "suri.hacienda.pr.gov",
+     "Que la empresa esté inscrita para hacer negocios en Puerto Rico."],
+  ],
 };
 
 const GREMIOS = [
@@ -472,7 +480,8 @@ const GREMIOS = [
 const GLOBALES = [
   ["ITC Trade Map", "trademap.org", "Quién exporta qué, a dónde y cuánto. Cuenta gratuita. Te dice en un minuto si el volumen del anuncio es realista."],
   ["UN Comtrade", "comtrade.un.org", "Estadísticas oficiales de comercio por partida arancelaria."],
-  ["Registros de bills of lading (ImportGenius, Panjiva)", "servicio de pago", "Embarques reales por empresa: la prueba más dura de que un exportador de verdad embarca ese producto a ese destino."],
+  ["ImportYeti — manifiestos de importación de EE.UU.", "importyeti.com", "Gratis. Quién importó qué a Estados Unidos, cuánto y a quién se lo compró. Puerto Rico es territorio aduanero estadounidense, así que también aparece acá. Convierte el correo frío en correo dirigido."],
+  ["Registros de bills of lading (ImportGenius, Panjiva)", "servicio de pago", "De pago y con más países. La prueba más dura de que un exportador de verdad embarca ese producto a ese destino."],
 ];
 
 const PARTIDAS_HS = {
@@ -1496,6 +1505,7 @@ const NOMBRE_PAIS = {
   ecuador: ["Ecuador", "Ecuador"], chile: ["Chile", "Chile"], argentina: ["Argentina", "Argentina"],
   guatemala: ["Guatemala", "Guatemala"], honduras: ["Honduras", "Honduras"],
   "costa rica": ["Costa Rica", "Costa Rica"],
+  "puerto rico": ["Puerto Rico", "Puerto Rico"],
 };
 
 function paisMostrar(pais, idioma) {

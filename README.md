@@ -84,6 +84,14 @@ de WhatsApp último), qué es un mandato de verdad, cuánto se cobra por tipo de
 mercancía, dos guiones de contacto y un plan de treinta días. Sin un comprador
 real, el resto gira en el aire.
 
+`plan/corredor-sd-sju.html` — **el corredor elegido.** Operando desde Puerto
+Rico: las cuatro ventajas estructurales de esa base (la Jones Act no aplica a la
+carga de origen extranjero que entra directo, territorio aduanero y bancario
+estadounidense, Santo Domingo a media hora de vuelo, y ser bilingüe de verdad),
+los exportadores dominicanos y los distribuidores puertorriqueños con nombre y
+apellido, dónde verificar a cada lado, y las cinco acciones de la primera
+semana. Los datos están fechados y con fuentes.
+
 `plan/anatomia-de-un-trato.html` — **el manual del oficio.** Las nueve etapas de
 una operación con carta de crédito, con las cuatro donde de verdad se mueren los
 tratos; quién es quién y por qué nunca firmás el contrato de compraventa; las

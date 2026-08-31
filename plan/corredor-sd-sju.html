@@ -1,0 +1,274 @@
+<title>Corredor Santo Domingo–San Juan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --papel: #EFF2EB; --superficie: #FBFCF9; --franja: #E4E9DD;
+  --tinta: #1A211B; --tinta-suave: #5B6559; --linea: #D0D7C8; --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F; --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C; --ambar: #8E5D0B; --rojo: #A2321F;
+  --verde-tenue: #DFEDE3; --ambar-tenue: #F5E8CE; --rojo-tenue: #F6DFD9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+    --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+    --acento: #74C293; --acento-tenue: #16261C;
+    --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+    --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+  --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+  --acento: #74C293; --acento-tenue: #16261C;
+  --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+  --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: Faustina, Georgia, serif; margin: 0; text-wrap: balance; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--acento); }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.etiqueta { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-suave); }
+.hoja { max-width: 780px; margin: 0 auto; padding: 0 22px 90px; }
+
+header.tapa { padding: 52px 0 30px; border-bottom: 2px solid var(--tinta); margin-bottom: 34px; }
+header.tapa h1 { font-size: clamp(32px, 5.6vw, 48px); line-height: 1.05; letter-spacing: -.02em; }
+header.tapa .bajada { font-size: 18px; color: var(--tinta-suave); margin-top: 14px; max-width: 62ch; }
+
+section { margin-top: 48px; }
+section > h2 { font-size: 26px; line-height: 1.2; padding-bottom: 9px; border-bottom: 1px solid var(--linea); margin-bottom: 18px; }
+.bloque { display: grid; gap: 13px; }
+h3 { font-size: 19px; margin-top: 24px; margin-bottom: 7px; }
+strong { font-weight: 600; }
+em { font-style: italic; color: var(--tinta-suave); }
+
+.tesis { background: var(--acento-tenue); border-left: 3px solid var(--acento);
+  padding: 20px 22px; margin: 26px 0; font-family: Faustina, Georgia, serif;
+  font-size: 21px; line-height: 1.4; }
+ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+li::marker { color: var(--acento); }
+
+.ventaja { border: 1px solid var(--linea); background: var(--superficie); border-radius: 3px;
+  padding: 17px 19px; margin-top: 14px; }
+.ventaja h3 { margin: 0 0 7px; font-size: 19px; }
+.ventaja .dato { margin-top: 9px; font-size: 14.5px; color: var(--tinta-suave); }
+
+.tabla-envoltura { overflow-x: auto; margin-top: 16px; border: 1px solid var(--linea); border-radius: 3px; }
+table { border-collapse: collapse; width: 100%; background: var(--superficie); font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { background: var(--franja); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  font-family: "IBM Plex Mono", monospace; font-weight: 500; color: var(--tinta-suave); }
+tr:last-child td { border-bottom: none; }
+td.mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.paso { display: grid; grid-template-columns: 40px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--linea); }
+.paso:last-child { border-bottom: none; }
+.paso .n { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--acento); color: var(--superficie); font-family: "IBM Plex Mono", monospace;
+  font-size: 14px; font-weight: 600; }
+.paso h3 { margin: 0 0 5px; font-size: 18px; }
+.paso .como { font-size: 14.5px; color: var(--tinta-suave); margin-top: 6px; }
+
+.nota { background: var(--franja); border-radius: 3px; padding: 16px 18px; margin-top: 18px; font-size: 15px; }
+.alerta { background: var(--ambar-tenue); border-radius: 3px; padding: 16px 18px; margin-top: 18px; font-size: 15px; }
+
+footer.cierre { margin-top: 54px; padding-top: 22px; border-top: 2px solid var(--tinta); color: var(--tinta-suave); font-size: 14px; }
+footer.cierre ol { padding-left: 20px; margin-top: 10px; gap: 5px; }
+</style>
+
+<div class="hoja">
+
+<header class="tapa">
+  <p class="etiqueta">Mesa de Intermediación · Semana 1</p>
+  <h1>Corredor Santo&nbsp;Domingo–San&nbsp;Juan</h1>
+  <p class="bajada">Puerto Rico es mejor base para este negocio de lo que parece, y por razones estructurales. Acá está el corredor, los nombres a los que llamar y lo que hacés esta semana.</p>
+</header>
+
+<section>
+  <h2>Tu posición</h2>
+  <div class="bloque">
+    <p>Puerto Rico casi no exporta productos agrícolas. Visto como origen, es un mal lugar para esto. Pero no vas a operar como origen: vas a operar como <strong>puente</strong>, y ahí tenés cuatro ventajas que casi nadie junta.</p>
+  </div>
+
+  <div class="ventaja">
+    <h3>La Jones Act no aplica a lo que viene de afuera</h3>
+    <p>La ley de cabotaje encarece todo lo que se mueve entre puertos de Estados Unidos, y por eso Puerto Rico paga de más por la carga que llega de Florida. Pero <strong>no aplica a la carga de origen extranjero que llega directo</strong>: un barco de bandera extranjera puede ir de Caucedo a San Juan sin problema, mientras que el mismo barco no puede ir de Houston a San Juan.</p>
+    <p class="dato">Traducción comercial: producto dominicano entrando directo a San Juan compite bien contra el mismo producto ruteado por Miami. Ese diferencial es tu argumento de venta ante un distribuidor puertorriqueño, y es estructural — no depende de que negocies bien.</p>
+  </div>
+
+  <div class="ventaja">
+    <h3>Estás dentro de Estados Unidos, con acceso caribeño</h3>
+    <p>Territorio aduanero estadounidense, dólares, bancos americanos, contratos bajo derecho de Estados Unidos. Un comprador en Chicago le firma mucho más rápido a una LLC de San Juan que a una empresa dominicana que no sabe ubicar en el mapa. <strong>Esa credibilidad es gratis y la tenés por vivir donde vivís.</strong></p>
+    <p class="dato">Y no hay riesgo cambiario ni banca exótica: cobrás en dólares, en un banco estadounidense.</p>
+  </div>
+
+  <div class="ventaja">
+    <h3>Santo Domingo está a media hora de vuelo</h3>
+    <p>Podés salir en la mañana, visitar una fermentadora, y volver a dormir a tu casa. La ventaja injusta que el manual dice que casi nadie usa —<em>poder mirar al exportador a la cara</em>— vos la tenés con el país que lidera el cacao orgánico del mundo.</p>
+    <p class="dato">Hay servicio marítimo directo Santo Domingo–San Juan con salidas varias veces por semana y tránsito de menos de un día. Logísticamente, es casi un mercado doméstico.</p>
+  </div>
+
+  <div class="ventaja">
+    <h3>Sos bilingüe de verdad</h3>
+    <p>Hablás con una cooperativa dominicana en la mañana y con un comprador de Boston en la tarde, sin intérprete y sin acento raro en ninguno de los dos lados. Suena obvio viviendo ahí; en este oficio es la habilidad más escasa que hay.</p>
+  </div>
+
+  <div class="tesis">No sos un intermediario más. Sos el único punto del mapa que es Estados Unidos, habla español nativo, y queda a media hora del mayor exportador de cacao orgánico del planeta.</div>
+</section>
+
+<section>
+  <h2>El corredor</h2>
+  <div class="bloque">
+    <p><strong>Cacao y agro dominicano hacia el mercado estadounidense, entrando por Puerto Rico.</strong></p>
+    <p>Es un solo corredor, no dos: Puerto Rico <em>es</em> mercado estadounidense. Pero tiene dos tipos de cliente, y conviene trabajarlos en orden.</p>
+
+    <h3>Primero: distribuidores en Puerto Rico</h3>
+    <p>Puerto Rico importa más del 85% de los alimentos que consume. Los compradores son distribuidores que están a veinte minutos de tu casa y que podés visitar sin avión. <strong>Las dos partes del trato están a tu alcance físico</strong>, que es la situación más fácil que vas a tener nunca para un primer cierre.</p>
+    <p>Comisiones más chicas, sí. Pero el primer trato no es por el dinero: es por las dos referencias contactables que te dejan de ser un desconocido.</p>
+
+    <h3>Después: fabricantes en Estados Unidos continental</h3>
+    <p>Ahí está el dinero. Chocolateros artesanales y procesadores que compran cacao fino y orgánico, donde la comisión se va al 2–5% porque el producto es diferenciado, no un commodity a granel. Y tenés un argumento real: la República Dominicana <strong>lidera la exportación mundial de cacao orgánico, con alrededor del 60% del volumen global</strong>, sobre una producción de 80.000 a 90.000 toneladas al año de las cuales entre 60% y 65% son certificadas orgánicas.</p>
+    <p>A éstos los encontrás en los registros de importación, no tocando puertas. Partida arancelaria 1801.</p>
+  </div>
+  <div class="nota"><strong>Por qué en ese orden:</strong> los mismos exportadores dominicanos que verifiques para el trato chico de Puerto Rico te sirven para el trato grande del continente. El trabajo de verificación se hace una vez y se cobra dos veces. Eso es lo que significa que un corredor acumule.</div>
+</section>
+
+<section>
+  <h2>Los exportadores a fichar</h2>
+  <p>Nombres reales del cacao dominicano, con lo que pesan. Estos son los primeros de tu libro de proveedores.</p>
+  <div class="tabla-envoltura">
+    <table>
+      <thead><tr><th>Exportador</th><th>Peso</th><th>Por qué te importa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CONACADO</strong></td><td class="mono">~49,8%</td><td>Confederación de cacaocultores. Es la vía para volumen, con certificación orgánica y Fairtrade. Empezá por acá.</td></tr>
+        <tr><td><strong>Rizek Cacao</strong></td><td class="mono">~15,8%</td><td>Familia en el cacao desde 1905: cultivan, procesan y exportan. Estructura empresarial sólida.</td></tr>
+        <tr><td><strong>Roig Agro Cacao</strong></td><td class="mono">~13,2%</td><td>Más de 50 años exportando grano a Estados Unidos y Europa. Ya conoce tu mercado destino.</td></tr>
+        <tr><td><strong>Öko Caribe</strong></td><td class="mono">—</td><td>Nombre reconocido entre compradores de cacao fino y de especialidad.</td></tr>
+        <tr><td><strong>Yacao · Biocafcao · Dominicao</strong></td><td class="mono">—</td><td>Exportadores medianos. Más accesibles para un intermediario nuevo que los tres grandes.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="nota"><strong>Puerta de entrada institucional:</strong> el Departamento de Cacao del Ministerio de Agricultura lleva el registro de fermentadoras y exportadoras, y la Junta Agroempresarial Dominicana agrupa a los agroexportadores formales. Son dos llamadas que te ahorran semanas, y están para atender exactamente esto.</div>
+  <div class="alerta"><strong>Ojo con el orden:</strong> a los tres grandes no les llames de entrada pidiendo precio. Ya tienen compradores. Llegales cuando tengas un comprador identificado, aunque no esté cerrado. A los medianos sí podés llamarlos ahora: necesitan canales.</div>
+</section>
+
+<section>
+  <h2>Los compradores a fichar</h2>
+  <p>El lado puertorriqueño. Todos con oficina en la isla, todos visitables.</p>
+  <div class="tabla-envoltura">
+    <table>
+      <thead><tr><th>Empresa</th><th>Qué es</th></tr></thead>
+      <tbody>
+        <tr><td><strong>José Santiago</strong></td><td>El distribuidor de servicio de alimentos más grande y antiguo de Puerto Rico y el Caribe.</td></tr>
+        <tr><td><strong>Malgor &amp; Co.</strong></td><td>Fundada en 1926. Alimentos y misceláneos, más de 1.500 clientes.</td></tr>
+        <tr><td><strong>Garrido Group</strong></td><td>Importador y distribuidor de abarrotes, con servicios de mercadeo y logística.</td></tr>
+        <tr><td><strong>Quirch Foods</strong></td><td>Uno de los grandes del sureste de Estados Unidos, Latinoamérica y el Caribe.</td></tr>
+        <tr><td><strong>Latino Food Distributors</strong></td><td>Importación y distribución enfocada en el mercado puertorriqueño y caribeño.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>MIDA: el atajo</h3>
+  <p>La Cámara de Mercadeo, Industria y Distribución de Alimentos es el gremio de toda la industria alimentaria de Puerto Rico. Ahí están todos los compradores en un solo lugar, y organiza el <strong>MIDA Conference &amp; Food Show</strong> en el Centro de Convenciones de San Juan, en junio: tres días donde suplidores y compradores van a hacer exactamente lo que vos necesitás.</p>
+  <p style="margin-top:10px">La edición de 2026 ya pasó, así que la próxima cae alrededor de junio de 2027 — confirmá la fecha en su sitio. Tenés diez meses, que es tiempo de sobra para llegar con exportadores verificados y muestras en la mano en vez de con tarjetas de presentación. <strong>Es tu feria del sector y te queda en tu ciudad.</strong> Marcala en el calendario hoy.</p>
+</section>
+
+<section>
+  <h2>Cómo verificás a cada lado</h2>
+  <div class="bloque">
+    <p>Son registros distintos y los dos son públicos. Esto va en la pestaña de Verificación de cada ficha en la Mesa.</p>
+    <h3>Del lado dominicano</h3>
+    <ul>
+      <li><strong>DGII</strong> — consulta de RNC: que exista, a quién pertenece y si está activo. Si no te dan RNC, no sigas.</li>
+      <li><strong>Cámara de Comercio y Producción de Santo Domingo</strong> — Registro Mercantil: constitución, socios, capital.</li>
+      <li><strong>Dirección General de Aduanas</strong> — registro de exportadores y estadísticas de embarque.</li>
+    </ul>
+    <h3>Del lado puertorriqueño</h3>
+    <ul>
+      <li><strong>Departamento de Estado de Puerto Rico</strong> — Registro de Corporaciones: existencia, estatus <em>good standing</em>, agente residente.</li>
+      <li><strong>Departamento de Hacienda</strong> — Registro de Comerciantes: que estén inscritos para hacer negocios.</li>
+      <li>Al ser territorio estadounidense, también aplican los registros de importación de Estados Unidos: <strong>ImportYeti es gratis</strong> y te dice qué compró cada empresa de verdad.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Esta semana</h2>
+
+  <div class="paso"><span class="n">1</span><div>
+    <h3>Abrí la Mesa y cargá tus datos</h3>
+    <p>Nombre, empresa (aunque todavía no exista formalmente), correo y teléfono. Son los que salen en cada acuerdo NCND que generes.</p>
+    <p class="como">Después dale a <strong>Guardar</strong> una vez y confirmá que el aviso pasa a "al día". Eso te dice que está guardando en la nube y no sólo en ese navegador.</p>
+  </div></div>
+
+  <div class="paso"><span class="n">2</span><div>
+    <h3>Fichá los cinco exportadores dominicanos</h3>
+    <p>Los de la tabla de arriba, en la sección Proveedores. Con el nombre alcanza para empezar; el resto lo vas llenando cuando hables con ellos.</p>
+    <p class="como">Producto: <em>cacao en grano</em>. País: <em>República Dominicana</em>. Así el cruce y el directorio funcionan desde el primer día.</p>
+  </div></div>
+
+  <div class="paso"><span class="n">3</span><div>
+    <h3>Fichá los cinco distribuidores puertorriqueños</h3>
+    <p>En la sección Compradores. País: <em>Puerto Rico</em>. Todavía no tienen mandato y está bien: el campo de mandato queda vacío y la app te lo va a recordar.</p>
+    <p class="como">Buscá en LinkedIn quién es el <em>Category Buyer</em> o el gerente de compras de cada uno y metelo en la ficha. Ese nombre vale más que el teléfono general.</p>
+  </div></div>
+
+  <div class="paso"><span class="n">4</span><div>
+    <h3>Hacé tres llamadas, no treinta correos</h3>
+    <p>Al Departamento de Cacao del Ministerio de Agricultura dominicano, a la Junta Agroempresarial Dominicana, y a MIDA acá. Presentate como intermediario en Puerto Rico buscando conectar exportadores dominicanos con distribuidores locales.</p>
+    <p class="como">Preguntá una sola cosa concreta a cada uno: <em>"¿a quién me recomiendan contactar?"</em>. Los gremios existen para esto y contestan. Anotá cada llamada en la bitácora de la ficha.</p>
+  </div></div>
+
+  <div class="paso"><span class="n">5</span><div>
+    <h3>Abrí ImportYeti y buscá la partida 1801</h3>
+    <p>Filtrá importadores de cacao en Estados Unidos y mirá quién compra de República Dominicana. Salen nombres de empresas reales con volúmenes reales.</p>
+    <p class="como">Fichá veinte. Ésa es tu lista para el segundo movimiento, el del continente, y la vas a tener lista antes de necesitarla.</p>
+  </div></div>
+</section>
+
+<section>
+  <h2>La estructura, sin humo</h2>
+  <div class="bloque">
+    <p>Lo mínimo para poder cobrar, en orden de urgencia:</p>
+    <ul>
+      <li><strong>Una LLC en Puerto Rico</strong>, inscrita en el Departamento de Estado, más el Registro de Comerciantes en Hacienda. Es rápido y barato comparado con lo que resuelve: te da con qué facturar y a nombre de qué recibir.</li>
+      <li><strong>EIN del IRS</strong> — se saca en línea y sin costo. Lo vas a necesitar para el banco.</li>
+      <li><strong>Cuenta bancaria a nombre de la empresa</strong>, con capacidad de recibir transferencias internacionales. Tené los datos de wire escritos y a mano.</li>
+      <li><strong>El NCND revisado una vez por un abogado en Puerto Rico</strong>, sobre todo la cláusula de comisión y la de ley aplicable. Después lo reusás siempre.</li>
+    </ul>
+
+    <h3>Sobre la Ley 60</h3>
+    <p>Vas a escuchar mucho del decreto de servicios de exportación y su tasa del 4%. Existe de verdad: aplica a servicios prestados desde Puerto Rico a clientes de fuera de la isla, y tu comisión cobrada a un exportador dominicano o a un comprador del continente podría encajar en esa descripción.</p>
+    <div class="alerta"><strong>Pero no es para el día uno.</strong> El decreto tiene requisitos de empleo — se suele citar un mínimo del orden de cinco empleados según el tipo de negocio —, cuesta $750 de solicitud más entre $5.000 y $15.000 de decreto, y tarda meses. Además, <strong>lo que le facturés a un cliente dentro de Puerto Rico no califica</strong>, y tu primer trato probablemente sea exactamente eso. Es una conversación para tener con un CPA en Puerto Rico cuando ya tengas volumen, no un motivo para demorar el arranque.</div>
+  </div>
+</section>
+
+<footer class="cierre">
+  <p>Datos verificados el 31 de agosto de 2026. Las cifras de mercado son órdenes de magnitud para decidir, no cifras oficiales; confirmá lo que vaya a un contrato. Nada de esto es asesoría legal, contable ni fiscal.</p>
+  <p style="margin-top:12px"><strong>Fuentes:</strong></p>
+  <ol>
+    <li>Jones Act y carga de origen extranjero — <a href="https://www.fedbar.org/blog/faq-making-sense-of-the-jones-act-waiver-for-puerto-rico/" target="_blank" rel="noopener noreferrer">Federal Bar Association</a> · <a href="https://www.gao.gov/products/gao-13-260" target="_blank" rel="noopener noreferrer">GAO</a></li>
+    <li>Dependencia de alimentos importados en Puerto Rico — <a href="https://espaciosabiertos.org/seguridad-alimentaria/" target="_blank" rel="noopener noreferrer">Espacios Abiertos</a> · <a href="https://www.uprm.edu/portada/2020/05/08/seguridadalimentaria/" target="_blank" rel="noopener noreferrer">UPR Mayagüez</a></li>
+    <li>Liderazgo dominicano en cacao orgánico — <a href="https://iica.int/es/press/noticias/el-cacao-un-cultivo-clave-que-mantiene-la-republica-dominicana-como-uno-de-los/" target="_blank" rel="noopener noreferrer">IICA</a> · <a href="https://agricultura.gob.do/noticia/republica-dominicana-exporta-en-cacao-214-millones-de-dolares/" target="_blank" rel="noopener noreferrer">Ministerio de Agricultura RD</a></li>
+    <li>Exportadores de cacao dominicanos — <a href="https://mex.mirex.gob.do/wp-content/uploads/2024/09/RDenMexico-Perfil-Cacao-Dominicano-comprimido.pdf" target="_blank" rel="noopener noreferrer">Embajada de RD en México, perfil del cacao</a> · <a href="https://www.rizekcacao.com/about-us" target="_blank" rel="noopener noreferrer">Rizek Cacao</a></li>
+    <li>Servicio marítimo directo RD–PR — <a href="https://marinexpress.com/en/sobre-nosotros/" target="_blank" rel="noopener noreferrer">Marine Express</a></li>
+    <li>Distribuidores y gremio de alimentos en PR — <a href="https://www.josesantiago.com/en/" target="_blank" rel="noopener noreferrer">José Santiago</a> · <a href="https://malgorpr.com/en/" target="_blank" rel="noopener noreferrer">Malgor &amp; Co.</a> · <a href="https://www.midapr.com/historia.html" target="_blank" rel="noopener noreferrer">MIDA</a> · <a href="https://www.midaconferenceandfoodshow.com/en" target="_blank" rel="noopener noreferrer">MIDA Conference &amp; Food Show</a></li>
+    <li>Ley 60, capítulo de servicios de exportación — <a href="https://www.sabalierlaw.com/es/blog/guia-completa-para-acogerse-a-los-incentivos-fiscales-a-la-exportacion-de-servicios-previstos-en-la-ley-60-de-puerto-rico/" target="_blank" rel="noopener noreferrer">Sabalier Law</a> · <a href="https://www.riefkohllaw.com/espanol-ley-60" target="_blank" rel="noopener noreferrer">Riefkohl Law</a></li>
+  </ol>
+</footer>
+
+</div>
