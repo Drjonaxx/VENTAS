@@ -1,6 +1,6 @@
 # Pendientes
 
-La rutina semanal «Capataz» (tarea programada de Claude) lee este
+La rutina «Capataz» (tarea programada de Claude, lunes y jueves 9:44 am) lee este
 archivo, toma el primer pendiente de **Para Claude** que no esté hecho,
 lo termina con pruebas en la rama `claude/automatizar-tareas-czbut9` y lo
 marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
@@ -13,7 +13,7 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 
 ## Para Jonathan
 
-- [ ] Fusionar `claude/automatizar-tareas-czbut9` a `main`.
+- [x] Fusionar `claude/automatizar-tareas-czbut9` a `main` (17 oct 2026).
 - [ ] Las cinco acciones de la primera semana de
       `plan/corredor-sd-sju.html` (las llamadas y visitas son suyas).
 - [ ] Que un abogado lea el NCND antes de firmar el primero.
