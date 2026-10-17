@@ -1,0 +1,35 @@
+name: Pruebas
+
+# Cada push y cada PR abre la app y los planes en Chromium: sin errores
+# de JavaScript, el lector de anuncios saca los campos de un post real y
+# el filtro de riesgo frena la jerga de fraude.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  navegador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar Playwright
+        working-directory: pruebas
+        run: |
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Abrir la app en Chromium
+        run: node pruebas/navegador.mjs
