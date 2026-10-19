@@ -20,10 +20,11 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 
 ## Para Claude
 
-- [ ] El lector de anuncios con texto corrido (sin etiquetas): sacar
+- [x] El lector de anuncios con texto corrido (sin etiquetas): sacar
       producto, países y Incoterm de frases como "busco 200 toneladas de
       cacao de República Dominicana para Holanda FOB". Con casos en
-      `pruebas/navegador.mjs`.
+      `pruebas/navegador.mjs`. (19 oct 2026: también en inglés y con
+      gentilicios como "café colombiano".)
 - [ ] Seguimiento por anuncio: cuántas respuestas trajo cada post que
       generó la app (campo en el deal y un contador en la vista).
 - [ ] Mantener `ci.yml` en verde.

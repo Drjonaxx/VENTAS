@@ -46,6 +46,11 @@ async function caso(nombre, ruta, revisar) {
   }
 }
 
+// Lo mismo que contarLeidos() de la app, del lado de la prueba.
+function contarLeidosEn(campos) {
+  return Object.values(campos).filter((v) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== "" && v !== null)).length;
+}
+
 function igual(actual, esperado, que) {
   if (actual !== esperado) throw new Error(`${que}: se esperaba ${JSON.stringify(esperado)}, salió ${JSON.stringify(actual)}`);
 }
@@ -75,6 +80,51 @@ await caso("el lector saca los campos del anuncio de cacao", "/index.html", asyn
   igual(d.fee, 25000, "comisión");
   igual(d.incoterm, "FOB", "incoterm");
   igual(d.requisitos.length, 3, "requisitos");
+});
+
+await caso("el lector entiende texto corrido en español", "/index.html", async (p) => {
+  const d = await p.evaluate((t) => parsearAnuncio(t),
+    "busco 200 toneladas de cacao de República Dominicana para Holanda FOB");
+  igual(d.producto, "cacao", "producto");
+  igual(d.cantidad, 200, "cantidad");
+  igual(d.unidad, "t", "unidad");
+  igual(d.paisOrigen, "República Dominicana", "origen");
+  igual(d.paisDestino, "Holanda", "destino");
+  igual(d.incoterm, "FOB", "incoterm");
+});
+
+await caso("el lector entiende texto corrido en inglés", "/index.html", async (p) => {
+  const d = await p.evaluate((t) => parsearAnuncio(t),
+    "Looking for 5,000 MT of sugar from Brazil to China, CIF. Earn $20,000 if you connect me with the mill.");
+  igual(d.producto, "sugar", "producto");
+  igual(d.cantidad, 5000, "cantidad");
+  igual(d.paisOrigen, "Brazil", "origen");
+  igual(d.paisDestino, "China", "destino");
+  igual(d.incoterm, "CIF", "incoterm");
+  igual(d.fee, 20000, "comisión");
+});
+
+await caso("un gentilicio dice de dónde sale la carga", "/index.html", async (p) => {
+  const d = await p.evaluate((t) => parsearAnuncio(t),
+    "Necesito café colombiano, 2 contenedores, con destino a España");
+  igual(d.producto, "café", "producto");
+  igual(d.cantidad, 2, "cantidad");
+  igual(d.unidad, "contenedores", "unidad");
+  igual(d.paisOrigen, "Colombia", "origen");
+  igual(d.paisDestino, "España", "destino");
+});
+
+await caso("las etiquetas mandan sobre el texto corrido", "/index.html", async (p) => {
+  const d = await p.evaluate((t) => parsearAnuncio(t),
+    "Vendo cacao de Ecuador\nProduct: Coffee\nSupplier: Colombia\nBuyer: Spain");
+  igual(d.producto, "Coffee", "producto");
+  igual(d.paisOrigen, "Colombia", "origen");
+  igual(d.paisDestino, "Spain", "destino");
+});
+
+await caso("un texto sin trato no inventa campos", "/index.html", async (p) => {
+  const d = await p.evaluate((t) => parsearAnuncio(t), "Hola, ¿cómo estás? Te escribo mañana.");
+  igual(contarLeidosEn(d), 0, "campos leídos");
 });
 
 await caso("el filtro frena la jerga de fraude", "/index.html", async (p) => {

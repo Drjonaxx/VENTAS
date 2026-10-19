@@ -135,5 +135,7 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 - No mide qué anuncio funcionó: no hay seguimiento de respuestas por post.
 - El directorio cubre América Latina y España. Para África y Asia caen sólo las
   fuentes globales, que igual sirven: Trade Map te dice quién exporta qué.
-- El lector de anuncios acierta con posts que traen etiquetas. Un texto corrido
-  sin estructura saca poco más que la comisión y la cantidad.
+- El lector de anuncios acierta con posts que traen etiquetas. Con texto
+  corrido ("busco 200 toneladas de cacao de República Dominicana para Holanda
+  FOB") saca producto, cantidad, países, Incoterm y comisión, pero no
+  ciudades, requisitos ni términos de pago.

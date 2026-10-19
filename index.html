@@ -508,7 +508,8 @@ const SINONIMOS = {
   "dominican republic": "republica dominicana", "dominicana": "republica dominicana",
   "costa rican": "costa rica", "brazil": "brasil", "spain": "espana",
   "germany": "alemania", "united states": "estados unidos", "usa": "estados unidos",
-  "netherlands": "paises bajos", "united kingdom": "reino unido",
+  "netherlands": "paises bajos", "holland": "paises bajos", "holanda": "paises bajos",
+  "united kingdom": "reino unido",
   "cocoa": "cacao", "cacao beans": "cacao", "coffee": "cafe", "sugar": "azucar",
   "banana": "banano", "bananas": "banano", "avocado": "aguacate", "avocados": "aguacate",
   "tobacco": "tabaco", "rice": "arroz", "corn": "maiz", "maize": "maiz",
@@ -878,6 +879,82 @@ function numeroDe(texto) {
   return isNaN(n) ? null : n;
 }
 
+// Para los anuncios sin etiquetas ("busco 200 toneladas de cacao de República
+// Dominicana para Holanda FOB"). Se busca sobre norm(), que cambia letra por
+// letra, así que el valor que se guarda es el del texto tal como vino.
+const INCOTERMS = /\b(EXW|FCA|FAS|FOB|CFR|CIF|CPT|CIP|DAP|DPU|DDP)\b/i;
+const PRODUCTOS_CORRIDO = ["cacao", "cocoa", "cafe", "coffee", "azucar", "sugar", "banano", "bananas",
+  "banana", "aguacates", "aguacate", "avocados", "avocado", "tabaco", "tobacco", "arroz", "rice", "maiz",
+  "corn", "soya", "soybeans", "cobre", "copper", "camarones", "camaron", "shrimp", "flores", "flowers",
+  "pina", "pineapple", "ajonjoli", "sesame", "uvas", "uva", "grapes", "oro", "gold"];
+const PAISES_CORRIDO = ["republica dominicana", "dominican republic", "puerto rico", "estados unidos",
+  "united states", "eeuu", "paises bajos", "netherlands", "holanda", "holland", "reino unido",
+  "united kingdom", "costa rica", "el salvador", "colombia", "ecuador", "peru", "mexico", "guatemala",
+  "honduras", "nicaragua", "panama", "chile", "argentina", "brasil", "brazil", "uruguay", "paraguay",
+  "bolivia", "venezuela", "cuba", "haiti", "jamaica", "espana", "spain", "alemania", "germany", "francia",
+  "france", "italia", "italy", "belgica", "belgium", "portugal", "suiza", "switzerland", "canada",
+  "china", "japon", "japan", "india", "turquia", "turkey", "emiratos arabes unidos", "dubai"];
+// Un gentilicio también dice de dónde sale la carga: "café colombiano".
+const GENTILICIOS = [["dominican[oa]s?", "República Dominicana"], ["colombian[oa]s?", "Colombia"],
+  ["peruan[oa]s?", "Perú"], ["ecuatorian[oa]s?", "Ecuador"], ["mexican[oa]s?", "México"],
+  ["guatemaltec[oa]s?", "Guatemala"], ["hondureñ[oa]s?|hondurenn?[oa]s?", "Honduras"],
+  ["costarricenses?", "Costa Rica"], ["brasileñ[oa]s?|brasilen[oa]s?", "Brasil"], ["chilen[oa]s?", "Chile"]];
+const ANTES_ORIGEN = /(?:\bde|\bdesde|\bfrom|\borigen|\borigin|\bof)\s+(?:la\s+|el\s+|the\s+)?$/;
+const ANTES_DESTINO = /(?:\bpara|\bhacia|\bto|\bdestino|\bdestination|\ba|\binto)\s+(?:la\s+|el\s+|los\s+|the\s+)?$/;
+
+function buscarPalabra(plano, palabra) {
+  const m = new RegExp("(^|[^a-z])(" + palabra + ")(?=[^a-z]|$)").exec(plano);
+  return m ? { i: m.index + m[1].length, largo: m[2].length } : null;
+}
+
+function leerTextoCorrido(texto, salida) {
+  const plano = norm(texto).padEnd(texto.trim().length);
+  const original = texto.trim();
+  const pedazo = (h) => original.slice(h.i, h.i + h.largo);
+
+  if (!salida.incoterm) {
+    const m = original.match(INCOTERMS);
+    if (m) salida.incoterm = m[1].toUpperCase();
+  }
+
+  if (!salida.producto) {
+    let primero = null;
+    for (const p of PRODUCTOS_CORRIDO) {
+      const h = buscarPalabra(plano, p);
+      if (h && (!primero || h.i < primero.i)) primero = h;
+    }
+    if (primero) salida.producto = pedazo(primero);
+  }
+
+  if (!salida.paisOrigen || !salida.paisDestino) {
+    const hallados = [];
+    for (const p of PAISES_CORRIDO) {
+      const h = buscarPalabra(plano, p.replace(/ /g, "\\s+"));
+      // Un país que es parte de otro ya hallado ("dominicana" en "república dominicana") no cuenta.
+      if (h && !hallados.some((x) => h.i >= x.i && h.i < x.i + x.largo)) hallados.push(h);
+    }
+    hallados.sort((a, b) => a.i - b.i);
+    const sueltos = [];
+    for (const h of hallados) {
+      const antes = plano.slice(Math.max(0, h.i - 24), h.i);
+      if (ANTES_DESTINO.test(antes) && !salida.paisDestino) salida.paisDestino = pedazo(h);
+      else if (ANTES_ORIGEN.test(antes) && !salida.paisOrigen) salida.paisOrigen = pedazo(h);
+      else sueltos.push(h);
+    }
+    if (!salida.paisOrigen) {
+      for (const [patron, pais] of GENTILICIOS) {
+        if (new RegExp("(^|[^a-zñ])(" + patron + ")(?=[^a-zñ]|$)").test(plano)) { salida.paisOrigen = pais; break; }
+      }
+    }
+    for (const h of sueltos) {
+      const valor = pedazo(h);
+      if (valor === salida.paisOrigen || valor === salida.paisDestino) continue;
+      if (!salida.paisOrigen) salida.paisOrigen = valor;
+      else if (!salida.paisDestino) salida.paisDestino = valor;
+    }
+  }
+}
+
 function parsearAnuncio(texto) {
   const salida = { requisitos: [] };
   const ciudades = [];
@@ -945,6 +1022,9 @@ function parsearAnuncio(texto) {
   if (destino.length) salida.ciudadDestino = destino[0].valor;
   if (!salida.ciudadOrigen && sueltas.length) salida.ciudadOrigen = sueltas.shift().valor;
   if (!salida.ciudadDestino && sueltas.length) salida.ciudadDestino = sueltas.shift().valor;
+
+  // Lo que las etiquetas no trajeron se busca en el texto corrido.
+  leerTextoCorrido(texto || "", salida);
 
   if (!salida.unidad && salida.cantidad) salida.unidad = "t";
   return salida;
