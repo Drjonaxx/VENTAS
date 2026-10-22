@@ -262,6 +262,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .consulta a:hover { color: var(--acento); text-decoration: underline; }
 
+.publicacion { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 7px 0; border-bottom: 1px dashed var(--linea); }
+.publicacion:last-child { border-bottom: none; }
+.publicacion .n { font-weight: 600; font-size: 14.5px; }
+.publicacion .contador { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.publicacion .cuenta-resp { min-width: 2ch; text-align: center; font-size: 15px; }
+
 pre.doc {
   margin: 0; padding: 14px; background: var(--papel); border-top: 1px solid var(--linea);
   font-family: "IBM Plex Mono", monospace; font-size: 12px; line-height: 1.6;
@@ -1456,6 +1462,11 @@ function contactoActual() {
   return contactoPorId(ui.selContacto);
 }
 
+/* Quien publica: el deal abierto o la ficha del comprador abierta. */
+function duenioActual() {
+  return ui.seccion === "deals" ? dealActual() : contactoActual();
+}
+
 /* ---------------- guardado ---------------- */
 
 function documentoCompleto() {
@@ -1787,6 +1798,39 @@ const FORMATOS = [
   ["linkedin", "LinkedIn", "Donde están los compradores y los gerentes de exportación. Más largo y sin gritar.", postLinkedIn],
   ["whatsapp", "WhatsApp", "Corto y reenviable. Para grupos de comercio y contactos directos.", mensajeWhatsApp],
 ];
+
+/* ---------------- seguimiento por anuncio ----------------
+   Cada post que publicás queda anotado en el deal (o en la ficha del
+   comprador), y cada persona que te escribe por él suma una respuesta.
+   Con eso ves qué formato y qué idioma traen gente de verdad. */
+
+function publicacionesDe(duenio) {
+  return (duenio && duenio.publicaciones) || [];
+}
+
+function respuestasDe(duenio) {
+  return publicacionesDe(duenio).reduce(function (s, p) { return s + num(p.respuestas); }, 0);
+}
+
+function registrarPublicacion(duenio, formato, idioma, fecha) {
+  duenio.publicaciones = publicacionesDe(duenio);
+  duenio.publicaciones.push({ formato: formato, idioma: idioma === "en" ? "en" : "es", fecha: fecha, respuestas: 0 });
+}
+
+function sumarRespuesta(duenio, i, cuanto) {
+  const p = publicacionesDe(duenio)[i];
+  if (p) p.respuestas = Math.max(0, num(p.respuestas) + cuanto);
+}
+
+function plural(n, uno, varios) {
+  return n + " " + (n === 1 ? uno : varios);
+}
+
+function resumenSeguimiento(duenio) {
+  const pubs = publicacionesDe(duenio).length;
+  if (!pubs) return "";
+  return plural(pubs, "post", "posts") + " · " + plural(respuestasDe(duenio), "respuesta", "respuestas");
+}
 </script>
 
 <script id="vista" data-src>
@@ -1872,6 +1916,7 @@ function vistaListaLibro(lado) {
       '<span class="chip">' + esc(NOMBRE_ESTADO[c.estado] || c.estado) + "</span>" +
       "<span>" + esc([c.ciudad, c.pais].filter(Boolean).join(", ") || "sin ubicación") + "</span></span>" +
       ((c.productos || []).length ? '<span class="meta">' + esc(c.productos.join(" · ")) + "</span>" : "") +
+      (resumenSeguimiento(c) ? '<span class="meta">' + esc(resumenSeguimiento(c)) + "</span>" : "") +
       "</button>";
   }).join("");
   return '<div class="lista">' + filas + "</div>";
@@ -1891,6 +1936,7 @@ function vistaLista() {
       '<span class="chip">' + esc(NOMBRE_ETAPA[d.etapa] || d.etapa) + "</span>" +
       "<span>" + esc((d.paisOrigen || "?") + " → " + (d.paisDestino || "?")) + "</span></span>" +
       (num(d.fee) ? '<span class="meta mono">' + usd(num(d.fee)) + "</span>" : "") +
+      (resumenSeguimiento(d) ? '<span class="meta">' + esc(resumenSeguimiento(d)) + "</span>" : "") +
       "</button>";
   }).join("");
   return '<div class="lista">' + filas + "</div>";
@@ -2219,6 +2265,29 @@ function refrescarPublicar(duenio) {
   }
 }
 
+function tarjetaSeguimiento(duenio) {
+  const pubs = publicacionesDe(duenio);
+  if (!pubs.length) {
+    return tarjeta("seguimiento",
+      "<p>Cuando publiques uno de estos posts, tocá <strong>Lo publiqué</strong>. Después sumá una respuesta por cada persona que te escriba por ese post: así ves qué formato y qué idioma te traen gente de verdad.</p>");
+  }
+  const filas = pubs.map(function (p, i) {
+    const formato = FORMATOS.find(function (f) { return f[0] === p.formato; });
+    const r = num(p.respuestas);
+    return '<div class="publicacion">' +
+      '<span class="n">' + esc(formato ? formato[1].split(" · ")[0] : p.formato) + "</span>" +
+      '<span class="etiqueta">' + (p.idioma === "en" ? "inglés" : "español") + " · " + esc(p.fecha) + "</span>" +
+      '<span class="contador">' +
+      '<button class="btn chico" data-accion="resp-menos:' + i + '" aria-label="Restar una respuesta"' + (r ? "" : " disabled") + ">−</button>" +
+      '<span class="mono cuenta-resp" aria-label="respuestas">' + r + "</span>" +
+      '<button class="btn chico" data-accion="resp-mas:' + i + '" aria-label="Sumar una respuesta">+1</button>' +
+      '<button class="btn fantasma chico" data-accion="quitar-pub:' + i + '">Quitar</button>' +
+      "</span></div>";
+  }).join("");
+  return tarjeta("seguimiento",
+    '<p id="total-seguimiento"><strong>' + esc(resumenSeguimiento(duenio)) + "</strong></p>" + filas);
+}
+
 function panelPublicar(necesidad, origenTexto, duenio) {
   const idioma = ui.idiomaPost || "es";
   const c = comisionSugerida(necesidad, duenio);
@@ -2242,6 +2311,7 @@ function panelPublicar(necesidad, origenTexto, duenio) {
       '<span class="crece"></span>' +
       '<button class="btn chico" data-accion="post:' + clave + '">' + (abierto ? "Ocultar" : "Ver") + "</button>" +
       '<button class="btn chico" data-accion="copiar-post:' + clave + '">Copiar</button>' +
+      '<button class="btn chico" data-accion="publicado:' + clave + '">Lo publiqué</button>' +
       '</header><div class="contenido"><p style="color:var(--tinta-suave);font-size:13.5px">' + esc(f[2]) + "</p></div>" +
       (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
   }).join("");
@@ -2253,6 +2323,7 @@ function panelPublicar(necesidad, origenTexto, duenio) {
       "<strong>Fichá a todos en el libro</strong>, cierre o no cierre este trato. Eso es lo que se acumula.</p>" +
       "<p>Contá con que la mitad de los que respondan sean otros intermediarios sin carga real. Pediles el número fiscal del exportador en el primer mensaje: los filtra solos.</p>") +
     aviso +
+    tarjetaSeguimiento(duenio) +
     tarjeta("formato", selector) +
     cuerpo + "</div>";
 }
@@ -2502,9 +2573,33 @@ document.addEventListener("click", function (evento) {
     case "copiar-post": {
       const formato = FORMATOS.find(function (x) { return x[0] === arg; });
       if (!formato) break;
-      const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+      const duenio = duenioActual();
       const nec = ui.seccion === "deals" ? necesidadDeDeal(duenio) : necesidadDeComprador(duenio);
       copiar(formato[3](nec, ui.idiomaPost || "es", duenio));
+      break;
+    }
+    case "publicado": {
+      const duenio = duenioActual();
+      if (!duenio || !FORMATOS.some(function (x) { return x[0] === arg; })) break;
+      registrarPublicacion(duenio, arg, ui.idiomaPost || "es", new Date().toISOString().slice(0, 10));
+      tocar(); render();
+      brindis("Anotado. Sumá una respuesta por cada persona que te escriba por este post.");
+      break;
+    }
+    case "resp-mas": case "resp-menos": {
+      const duenio = duenioActual();
+      if (!duenio) break;
+      sumarRespuesta(duenio, Number(arg), verbo === "resp-mas" ? 1 : -1);
+      tocar(); render();
+      break;
+    }
+    case "quitar-pub": {
+      const duenio = duenioActual();
+      const i = Number(arg);
+      if (duenio && publicacionesDe(duenio)[i] && confirm("¿Quitar esta publicación y sus respuestas del seguimiento?")) {
+        duenio.publicaciones.splice(i, 1);
+        tocar(); render();
+      }
       break;
     }
     case "copiar-texto": copiar(a.el.getAttribute("data-texto")); break;
@@ -2633,7 +2728,7 @@ document.addEventListener("change", function (evento) {
 document.addEventListener("input", function (evento) {
   const a = accionDe(evento.target);
   if (!a || a.valor !== "fee-anuncio") return;
-  const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+  const duenio = duenioActual();
   if (!duenio) return;
   duenio.feeAnuncio = evento.target.value;
   tocar();

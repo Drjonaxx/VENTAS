@@ -25,6 +25,8 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       cacao de República Dominicana para Holanda FOB". Con casos en
       `pruebas/navegador.mjs`. (19 oct 2026: también en inglés y con
       gentilicios como "café colombiano".)
-- [ ] Seguimiento por anuncio: cuántas respuestas trajo cada post que
-      generó la app (campo en el deal y un contador en la vista).
+- [x] Seguimiento por anuncio: cuántas respuestas trajo cada post que
+      generó la app (campo en el deal y un contador en la vista). (22 oct
+      2026: «Lo publiqué» en cada formato, +1 por respuesta y el total en
+      la lista; también en la ficha de un comprador.)
 - [ ] Mantener `ci.yml` en verde.

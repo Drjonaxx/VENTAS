@@ -146,6 +146,31 @@ await caso("un trato sano sale en verde", "/index.html", async (p) => {
   igual(r.nivel, "verde", `nivel (banderas: ${r.banderas.map((b) => b.texto).join(" / ")})`);
 });
 
+await caso("el seguimiento cuenta las respuestas de cada post", "/index.html", async (p) => {
+  await p.evaluate(() => {
+    estado.deals = [{ id: "cacao-1", producto: "cacao", cantidad: 100, unidad: "t", paisOrigen: "República Dominicana", etapa: "captada", notas: [] }];
+    ui.sel = "cacao-1";
+    ui.tab = "publicar";
+    render();
+  });
+  await p.click('[data-accion="publicado:instagram"]');
+  await p.click('[data-accion="idioma:en"]');
+  await p.click('[data-accion="publicado:linkedin"]');
+  await p.click('[data-accion="resp-mas:0"]');
+  await p.click('[data-accion="resp-mas:0"]');
+  await p.click('[data-accion="resp-mas:1"]');
+  await p.click('[data-accion="resp-menos:1"]');
+  igual(await p.textContent("#total-seguimiento"), "2 posts · 2 respuestas", "total");
+  igual(await p.locator(".publicacion .cuenta-resp").allTextContents().then((t) => t.join(",")), "2,0", "por post");
+  if (!(await p.locator('[data-accion="resp-menos:1"]').isDisabled())) throw new Error("se puede restar por debajo de cero");
+  const pubs = await p.evaluate(() => estado.deals[0].publicaciones.map((x) => x.formato + "/" + x.idioma));
+  igual(pubs.join(","), "instagram/es,linkedin/en", "lo que quedó en el deal");
+  igual(await p.textContent('.fila[data-accion="sel:cacao-1"] .meta:last-child'), "2 posts · 2 respuestas", "contador en la lista");
+  p.once("dialog", (d) => d.accept());
+  await p.click('[data-accion="quitar-pub:0"]');
+  igual(await p.textContent("#total-seguimiento"), "1 post · 0 respuestas", "total al quitar uno");
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");

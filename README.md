@@ -132,7 +132,8 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 - La verificación es un checklist manual: la app te dice dónde mirar y lleva la
   cuenta de lo que comprobaste, pero no consulta ningún registro por vos.
 - No publica sola: genera el texto, vos lo pegás en la red que sea.
-- No mide qué anuncio funcionó: no hay seguimiento de respuestas por post.
+- El seguimiento de respuestas por post es a mano: tocás **Lo publiqué** al
+  publicar y **+1** por cada persona que te escribe. La app no lee tus redes.
 - El directorio cubre América Latina y España. Para África y Asia caen sólo las
   fuentes globales, que igual sirven: Trade Map te dice quién exporta qué.
 - El lector de anuncios acierta con posts que traen etiquetas. Con texto
