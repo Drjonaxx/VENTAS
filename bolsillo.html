@@ -511,6 +511,11 @@ function vistaMensaje() {
     : (correo ? '<a class="btn correo" href="' + esc(correo) + '" data-accion="abrio">Abrir el correo</a>'
               : '<span class="btn correo" aria-disabled="true">Falta el correo</span>');
 
+  const tel = (c.telefono || "").replace(/[^\d+]/g, "");
+  const llamar = tel
+    ? '<a class="btn" href="tel:' + esc(tel) + '">Llamar</a>'
+    : "";
+
   return '<header class="cabeza">' +
     '<button class="volver" data-accion="volver">‹ Lista</button>' +
     '<div class="crece" style="text-align:right"><h1 style="font-size:17px">' + esc(c.nombre || "Sin nombre") + "</h1>" +
@@ -531,8 +536,9 @@ function vistaMensaje() {
     '<button class="btn" data-accion="restaurar">Volver al mensaje original</button>' +
     "</div></div>" +
     '<div class="barra">' +
-    '<button class="btn" data-accion="copiar">Copiar</button>' + accion +
-    '<button class="btn ancho" data-accion="ya">Ya lo mandé · recordar en 7 días</button>' +
+    (llamar || '<button class="btn" data-accion="copiar">Copiar</button>') + accion +
+    (llamar ? '<button class="btn ancho" data-accion="copiar">Copiar el mensaje</button>' : "") +
+    '<button class="btn ancho" data-accion="ya">Ya lo escribí · recordar en 7 días</button>' +
     "</div>";
 }
 

@@ -254,6 +254,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dato { display: grid; gap: 2px; align-content: start; }
 .dato .v { font-size: 14.5px; }
 .dato .v.falta { color: var(--tinta-suave); font-style: italic; }
+.dato .v a { color: var(--acento); }
 
 .bandera { display: grid; grid-template-columns: auto 1fr; gap: 11px; align-items: start; padding: 11px 0; border-bottom: 1px dashed var(--linea); }
 .bandera:last-child { border-bottom: none; }
@@ -2523,12 +2524,21 @@ function panelFichaContacto(c) {
   };
   const volumen = num(c.volumen) ? num(c.volumen).toLocaleString("es-DO") + " " + (c.unidad || "t") : "";
 
+  // Teléfono, correo y sitio como enlaces: en el teléfono, tocar el
+  // número tiene que llamar, no obligarte a copiarlo a mano.
+  const enlazado = function (rot, valor, falta, href) {
+    if (!valor) return '<div class="dato"><span class="etiqueta">' + rot +
+      '</span><span class="v falta">' + esc(falta) + "</span></div>";
+    return '<div class="dato"><span class="etiqueta">' + rot + "</span>" +
+      '<span class="v"><a href="' + esc(href) + '">' + esc(valor) + "</a></span></div>";
+  };
+  const sitio = (c.web || "").trim();
   const contacto = '<div class="datos">' +
     dato("persona", c.persona, "sin nombre") +
     dato("cargo", c.cargo, "sin cargo") +
-    dato("correo", c.email, "sin correo") +
-    dato("teléfono", c.telefono, "sin teléfono") +
-    dato("sitio web", c.web, "sin sitio") +
+    enlazado("correo", c.email, "sin correo", "mailto:" + (c.email || "").trim()) +
+    enlazado("teléfono", c.telefono, "sin teléfono", "tel:" + (c.telefono || "").replace(/[^\d+]/g, "")) +
+    enlazado("sitio web", sitio, "sin sitio", /^https?:/.test(sitio) ? sitio : "https://" + sitio) +
     dato("número fiscal", c.fiscal, "no lo dieron") +
     "</div>";
 
