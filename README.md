@@ -142,6 +142,15 @@ La app se republica a sí misma reconstruyendo el documento desde esos bloques
 más el estado en `#estado`, así que **si agregás un `<script>` nuevo tiene que
 llevar el atributo `data-src`** o se pierde en el primer guardado.
 
+## Arranque
+
+`datos/mesa-arranque.json` es el libro de partida del corredor Santo Domingo-San
+Juan: seis exportadores dominicanos de cacao y cinco distribuidores
+puertorriqueños, con los datos de contacto que se pudieron verificar y una nota
+en cada uno sobre cómo encararlo. Se carga desde **Mis datos → Importar
+respaldo**. Ojo: importar reemplaza lo que haya cargado, así que exportá antes
+si ya tenías libro.
+
 ## Pruebas
 
 `pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push

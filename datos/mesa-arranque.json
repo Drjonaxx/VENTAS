@@ -1,0 +1,402 @@
+{
+  "formato": "mesa-intermediacion-1",
+  "exportado": "2026-11-21T02:00:00.000Z",
+  "perfil": {
+    "nombre": "",
+    "empresa": "",
+    "documento": "",
+    "domicilio": "",
+    "email": "gabyjonathan009@gmail.com",
+    "telefono": ""
+  },
+  "deals": [],
+  "contactos": [
+    {
+      "id": "p-conacado-1",
+      "lado": "proveedor",
+      "nombre": "CONACADO",
+      "pais": "República Dominicana",
+      "ciudad": "San Francisco de Macorís",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [
+        "orgánico",
+        "Fairtrade"
+      ],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Confederación Nacional de Cacaocultores: cerca de la mitad de la producción dominicana de cacao orgánico. Es la vía para volumen. No tengo teléfono público confiable: pedilo en la JAD o en el Departamento de Cacao."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "p-rizek-1",
+      "lado": "proveedor",
+      "nombre": "Rizek Cacao",
+      "pais": "República Dominicana",
+      "ciudad": "Santo Domingo",
+      "persona": "",
+      "cargo": "",
+      "email": "info@rizekcacao.com",
+      "telefono": "809-530-9400",
+      "web": "rizekcacao.com",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Familia en el cacao desde 1905: cultivan, procesan y exportan. Cerca del 16% de la producción de orgánico. Segundo teléfono 809-530-0404. En el directorio de la Federation of Cocoa Commerce figura además hjrs@rizekcacao.com. Confirmá antes de llamar."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "p-roig-1",
+      "lado": "proveedor",
+      "nombre": "Roig Agro Cacao",
+      "pais": "República Dominicana",
+      "ciudad": "San Francisco de Macorís",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Más de 50 años exportando grano a Estados Unidos y Europa, así que ya conoce tu mercado destino. Cerca del 13% de la producción de orgánico. Dirección: carretera Macorís-Tenares km 4.5. Sin teléfono verificado todavía."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "p-oko-1",
+      "lado": "proveedor",
+      "nombre": "Öko Caribe",
+      "pais": "República Dominicana",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Nombre reconocido entre compradores de cacao fino y de especialidad. Sin datos de contacto públicos: pedilos en los gremios."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "p-yacao-1",
+      "lado": "proveedor",
+      "nombre": "Yacao",
+      "pais": "República Dominicana",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Exportador mediano. Los medianos son los más accesibles para un intermediario nuevo: necesitan canales, al revés que los tres grandes."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "p-biocafcao-1",
+      "lado": "proveedor",
+      "nombre": "Biocafcao",
+      "pais": "República Dominicana",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "",
+      "fiscal": "",
+      "productos": [
+        "cacao en grano"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Exportador mediano. Mismo razonamiento que Yacao: empezá por acá y no por los grandes."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "c-jose-santiago-1",
+      "lado": "comprador",
+      "nombre": "José Santiago",
+      "pais": "Puerto Rico",
+      "ciudad": "Bayamón",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "787-288-8835",
+      "web": "josesantiago.com",
+      "fiscal": "",
+      "productos": [
+        "alimentos"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [
+        "República Dominicana"
+      ],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "El distribuidor de alimentos más grande y antiguo de Puerto Rico y el Caribe. Fue adquirido por Performance Food Group, empresa pública de Virginia: o sea que son compras corporativas estadounidenses, no un distribuidor familiar. Eso juega a favor de una LLC puertorriqueña. Pedí por el departamento de compras."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "c-malgor-1",
+      "lado": "comprador",
+      "nombre": "Malgor & Co.",
+      "pais": "Puerto Rico",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "malgorpr.com",
+      "fiscal": "",
+      "productos": [
+        "alimentos"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [
+        "República Dominicana"
+      ],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Fundada en 1926. Alimentos y misceláneos, más de 1.500 clientes."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "c-garrido-1",
+      "lado": "comprador",
+      "nombre": "Garrido Group",
+      "pais": "Puerto Rico",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "garridogroup.com",
+      "fiscal": "",
+      "productos": [
+        "alimentos"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [
+        "República Dominicana"
+      ],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Importador y distribuidor de abarrotes, con servicios de mercadeo y logística."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "c-quirch-1",
+      "lado": "comprador",
+      "nombre": "Quirch Foods",
+      "pais": "Puerto Rico",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "quirchfoods.com",
+      "fiscal": "",
+      "productos": [
+        "alimentos"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [
+        "República Dominicana"
+      ],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Uno de los grandes del sureste de Estados Unidos, Latinoamérica y el Caribe."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    },
+    {
+      "id": "c-latino-1",
+      "lado": "comprador",
+      "nombre": "Latino Food Distributors",
+      "pais": "Puerto Rico",
+      "ciudad": "",
+      "persona": "",
+      "cargo": "",
+      "email": "",
+      "telefono": "",
+      "web": "latinofooddistributors.com",
+      "fiscal": "",
+      "productos": [
+        "alimentos"
+      ],
+      "volumen": 0,
+      "unidad": "t",
+      "certificaciones": [],
+      "incoterms": [],
+      "pagos": [],
+      "mercados": [
+        "República Dominicana"
+      ],
+      "mandato": "",
+      "mandatoVence": "",
+      "verif": {},
+      "estado": "nuevo",
+      "notas": [
+        {
+          "fecha": "2026-11-21",
+          "texto": "Importación y distribución enfocada en el mercado puertorriqueño y caribeño."
+        }
+      ],
+      "recontactar": "",
+      "creado": "2026-11-21"
+    }
+  ]
+}

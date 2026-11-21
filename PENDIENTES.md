@@ -14,6 +14,10 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 ## Para Jonathan
 
 - [x] Fusionar `claude/automatizar-tareas-czbut9` a `main` (17 oct 2026).
+- [ ] Pasarle a Claude los cuatro datos del perfil: nombre legal completo,
+      nombre de la empresa (o decidir que todavía no hay), teléfono y si ya
+      tiene RNC/EIN. Sin eso el NCND y la firma de los mensajes salen con
+      corchetes.
 - [ ] Las tres llamadas de la acción 4 (Departamento de Cacao, JAD con la
       extensión 263 que es la de compradores, y MIDA). Las listas para pegar y
       los mensajes ya están hechos.
@@ -41,6 +45,8 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
 - [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
       búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [x] Libro de arranque del corredor con los once contactos y sus notas
+      (21 nov 2026, `datos/mesa-arranque.json`).
 - [x] Mensajes de contacto por WhatsApp y correo desde cada ficha (21 nov
       2026), con el canal sugerido por lado y el recordatorio a los 7 días.
 - [ ] Revisar cada tanto que las cifras de los planes sigan vigentes. La fecha
