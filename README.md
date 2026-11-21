@@ -42,7 +42,13 @@ todo** o **Descargar .md**.
 **5. Lleva la bitácora.** Etapa del embudo, siguiente paso concreto y las notas
 de cada llamada. Esa bitácora es la prueba de que vos originaste el contacto.
 
-**6. Acumula el libro de dos lados.** Compradores y proveedores fichados por
+**6. Aguanta el volumen que el plan pide.** Pegás una lista y salen todas las
+fichas de una (saltando las que ya tenías), buscás entre ellas por nombre, país
+o producto, y cada ficha lleva fecha de *volver a contactar* con aviso cuando se
+vence. Y el libro entero se exporta a un archivo JSON que podés volver a cargar:
+tu activo deja de vivir en un solo lugar.
+
+**7. Acumula el libro de dos lados.** Compradores y proveedores fichados por
 separado, cada uno con su ficha, su capacidad, sus certificaciones y su estado
 de verificación. La app cruza los dos lados sola y te dice quién encaja con
 quién y qué le falta: *"cubre el volumen completo, tiene las certificaciones,
@@ -50,7 +56,7 @@ ya exportó a Canadá"* contra *"sólo cubre 18%, le falta Fairtrade"*. Un deal
 suelto se pierde; el libro queda. Y cuando abrís una oportunidad nueva, los
 proveedores de tu libro que sirven ya aparecen ahí.
 
-**7. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
+**8. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
 necesidad de un comprador salen los tres posts listos — Instagram con el formato
 de placas, LinkedIn en tono profesional y WhatsApp corto y reenviable, en
 español o en inglés. La comisión que se publica no es la tuya: es la tajada que
@@ -126,6 +132,16 @@ Todo vive en `index.html`, separado en bloques con `id`:
 La app se republica a sí misma reconstruyendo el documento desde esos bloques
 más el estado en `#estado`, así que **si agregás un `<script>` nuevo tiene que
 llevar el atributo `data-src`** o se pierde en el primer guardado.
+
+## Pruebas
+
+`pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push
+(`.github/workflows/ci.yml`). Veinte casos: el lector de anuncios, el filtro de
+riesgo, el seguimiento por post, el emparejamiento de productos, el alta en
+lote, la búsqueda, el recontacto, el respaldo, y las tres fallas que ya se
+arreglaron una vez para que no vuelvan.
+
+Correr local: `CHROMIUM_PATH=/ruta/a/chrome node pruebas/navegador.mjs`
 
 ## Qué le falta
 

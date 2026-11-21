@@ -29,4 +29,14 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       generó la app (campo en el deal y un contador en la vista). (22 oct
       2026: «Lo publiqué» en cada formato, +1 por respuesta y el total en
       la lista; también en la ficha de un comprador.)
-- [ ] Mantener `ci.yml` en verde.
+- [x] Mantener `ci.yml` en verde.
+- [x] Auditoría de seguridad y fallas (21 nov 2026): 15 vistas probadas contra
+      inyección de HTML, sin agujeros. Cuatro fallas encontradas y arregladas:
+      el emparejamiento cruzaba camarón con ron y espinaca con piña; en el
+      teléfono el teclado borraba lo que estabas escribiendo; borrar una ficha
+      dejaba acuerdos apuntando al vacío; y publicar bien dejaba el botón
+      trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
+- [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
+      búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [ ] Revisar cada tanto que las cifras de los planes sigan vigentes. La fecha
+      de MIDA ya cambió una vez (de junio a agosto de 2027).

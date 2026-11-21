@@ -171,6 +171,121 @@ await caso("el seguimiento cuenta las respuestas de cada post", "/index.html", a
   igual(await p.textContent("#total-seguimiento"), "1 post · 0 respuestas", "total al quitar uno");
 });
 
+// --- lo que se rompió alguna vez y no puede volver a romperse ---------
+
+await caso("los productos cruzan por palabra, no por subcadena", "/index.html", async (p) => {
+  const r = await p.evaluate(() => ({
+    camaronRon: coincideProducto(["camarón congelado"], ["ron añejo"]),
+    espinacaPina: coincideProducto(["espinaca baby"], ["piña MD2"]),
+    cacaoCacao: coincideProducto(["Premium cocoa beans"], ["cacao en grano"]),
+    cafeCafe: coincideProducto(["coffee"], ["café verde"]),
+  }));
+  if (r.camaronRon) throw new Error("camarón cruza con ron");
+  if (r.espinacaPina) throw new Error("espinaca cruza con piña");
+  if (!r.cacaoCacao || !r.cafeCafe) throw new Error("dejó de cruzar lo que sí es lo mismo");
+});
+
+await caso("cambiar el tamaño no borra lo que estás escribiendo", "/index.html", async (p) => {
+  await p.evaluate(() => {
+    estado.contactos = [{ id: "p-1", lado: "proveedor", nombre: "CONACADO", pais: "RD",
+      productos: ["cacao"], volumen: 100, unidad: "t", certificaciones: [], incoterms: [],
+      pagos: [], mercados: [], verif: {}, estado: "nuevo", notas: [] }];
+    ui.seccion = "proveedor"; ui.selContacto = "p-1"; ui.tabContacto = "bitacora"; render();
+  });
+  await p.click('textarea[name="texto"]');
+  await p.type('textarea[name="texto"]', "piden la LOI");
+  await p.setViewportSize({ width: 1280, height: 600 });   // el teclado del móvil
+  await p.waitForTimeout(200);
+  const r = await p.evaluate(() => ({ foco: document.activeElement.tagName, valor: document.activeElement.value || "" }));
+  igual(r.foco + "|" + r.valor, "TEXTAREA|piden la LOI", "lo escrito sobrevive");
+});
+
+await caso("borrar una ficha suelta los acuerdos que la usaban", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [{ id: "p-9", lado: "proveedor", nombre: "CONACADO", fiscal: "1-01-1",
+      pais: "RD", productos: ["cacao"], volumen: 100, unidad: "t", certificaciones: [],
+      incoterms: [], pagos: [], mercados: [], verif: {}, estado: "activo", notas: [] }];
+    estado.deals = [{ id: "d-1", producto: "cacao", cantidad: 25, unidad: "t", fee: 5000,
+      paisOrigen: "RD", paisDestino: "PR", requisitos: [], etapa: "captada", notas: [],
+      contraparteId: "p-9" }];
+    window.confirm = () => true;
+    ui.seccion = "proveedor"; ui.selContacto = "p-9"; ui.tabContacto = "bitacora"; render();
+    document.querySelector('[data-accion="borrar-contacto"]').click();
+    ui.seccion = "deals"; ui.sel = "d-1"; ui.tab = "docs"; render();
+    return { apunta: estado.deals[0].contraparteId,
+      avisa: document.body.textContent.includes("ya no está en el libro") };
+  });
+  if (r.apunta) throw new Error("el deal sigue apuntando a una ficha borrada");
+  if (!r.avisa) throw new Error("no avisa que la contraparte desapareció");
+});
+
+// --- lo que la app tiene que aguantar para sostener el plan -----------
+
+await caso("se fichan muchos de una pegando la lista", "/index.html", async (p) => {
+  await p.click('[data-accion="seccion:proveedor"]');
+  await p.click('[data-accion="lote:proveedor"]');
+  await p.fill('textarea[name="lote"]', [
+    "CONACADO, República Dominicana, cacao",
+    "Rizek Cacao, República Dominicana, cacao/manteca de cacao",
+    "Roig Agro Cacao, República Dominicana",
+    "Öko Caribe",
+    "CONACADO",
+  ].join("\n"));
+  await p.click('button[type="submit"]');
+  const r = await p.evaluate(() => ({
+    cuantas: estado.contactos.length,
+    pais: estado.contactos[1].pais,
+    productos: estado.contactos[1].productos.length,
+  }));
+  igual(String(r.cuantas), "4", "fichas creadas sin repetir");
+  igual(r.pais + "/" + r.productos, "República Dominicana/2", "país y productos del lote");
+});
+
+await caso("se busca entre muchas fichas sin perder el foco", "/index.html", async (p) => {
+  await p.evaluate(() => {
+    estado.contactos = ["CONACADO", "Rizek Cacao", "Roig Agro Cacao", "Öko Caribe"].map((n, i) => ({
+      id: "p-" + i, lado: "proveedor", nombre: n, pais: "República Dominicana",
+      productos: ["cacao"], volumen: 100, unidad: "t", certificaciones: [], incoterms: [],
+      pagos: [], mercados: [], verif: {}, estado: "nuevo", notas: [],
+    }));
+    ui.seccion = "proveedor"; render();
+  });
+  await p.click('[data-accion="buscar"]');
+  await p.type('[data-accion="buscar"]', "rizek", { delay: 20 });
+  await p.waitForTimeout(150);
+  igual(String(await p.locator("#lista-cuerpo .fila").count()), "1", "filtra");
+  igual(await p.textContent("#cuenta-busqueda"), "1 de 4", "contador");
+  igual(await p.evaluate(() => document.activeElement.getAttribute("data-accion")), "buscar", "el foco se queda");
+});
+
+await caso("avisa a quién toca recontactar", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [{ id: "p-1", lado: "proveedor", nombre: "CONACADO", pais: "RD",
+      productos: ["cacao"], volumen: 100, unidad: "t", certificaciones: [], incoterms: [],
+      pagos: [], mercados: [], verif: {}, estado: "nuevo", notas: [], recontactar: enFecha(-2) }];
+    ui.seccion = "proveedor"; render();
+    return { fila: document.querySelector("#lista-cuerpo .fila").textContent,
+      resumen: document.querySelectorAll(".cifra")[3].textContent };
+  });
+  if (!r.fila.includes("vencido hace 2")) throw new Error("la fila no marca el vencido");
+  if (!r.resumen.includes("1")) throw new Error("el resumen no cuenta los pendientes");
+});
+
+await caso("el respaldo se exporta, se valida y se restaura", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [{ id: "p-1", lado: "proveedor", nombre: "CONACADO", notas: [] }];
+    estado.deals = [{ id: "d-1", producto: "cacao", notas: [] }];
+    const copia = respaldoJSON();
+    estado.contactos = []; estado.deals = [];
+    const basura = aplicarRespaldo("no soy json").ok;
+    const incompleto = aplicarRespaldo('{"a":1}').ok;
+    const bueno = aplicarRespaldo(copia);
+    return { basura, incompleto, ok: bueno.ok, contactos: estado.contactos.length, deals: estado.deals.length };
+  });
+  if (r.basura || r.incompleto) throw new Error("acepta un archivo que no es un respaldo");
+  if (!r.ok || r.contactos !== 1 || r.deals !== 1) throw new Error("no restaura el libro");
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");

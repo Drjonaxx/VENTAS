@@ -161,9 +161,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rail { border-right: 1px solid var(--linea); display: flex; flex-direction: column; min-width: 0; }
 @media (max-width: 900px) { .rail { border-right: none; border-bottom: 1px solid var(--linea); } }
 
-.resumen { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--linea); }
-.cifra { padding: 12px 14px; border-right: 1px solid var(--linea); }
+.resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); border-bottom: 1px solid var(--linea); }
+.cifra { padding: 11px 12px; border-right: 1px solid var(--linea); }
 .cifra:last-child { border-right: none; }
+.cifra .etiqueta { font-size: 9.5px; letter-spacing: .07em; display: block; line-height: 1.35; }
 .cifra .valor { font-family: "IBM Plex Mono", monospace; font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; display: block; }
 
 .lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
@@ -186,6 +187,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .chip.verde { background: var(--verde-tenue); border-color: transparent; color: var(--verde); }
 .chip.amarillo { background: var(--ambar-tenue); border-color: transparent; color: var(--ambar); }
 .chip.rojo { background: var(--rojo-tenue); border-color: transparent; color: var(--rojo); }
+.chip.hoy { background: var(--acento); border-color: transparent; color: var(--superficie); }
+
+.atajos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+
+.buscador { display: flex; gap: 9px; align-items: center; padding: 9px 14px;
+  border-bottom: 1px solid var(--linea); background: var(--superficie); }
+.buscador input {
+  flex: 1; border: 1px solid var(--linea-fuerte); background: var(--papel);
+  border-radius: var(--r); padding: 6px 10px; font-size: 13.5px; min-width: 0;
+}
+.buscador input::-webkit-search-cancel-button { cursor: pointer; }
 
 .vacio { padding: 34px 22px; color: var(--tinta-suave); display: grid; gap: 12px; justify-items: start; }
 
@@ -711,6 +723,89 @@ function puntosVerificacion(contacto) {
   return CHECKS_VERIFICACION.reduce(function (s, c) { return s + (v[c[0]] ? c[2] : 0); }, 0);
 }
 
+/* ---------------- recontactar ----------------
+   El plan manda hacer seguimiento a los siete días. Sin una fecha
+   guardada, a los veinte contactos ya no te acordás de a quién le toca. */
+
+function diasPara(fecha) {
+  if (!fecha) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const destino = new Date(fecha + "T00:00:00");
+  if (isNaN(destino)) return null;
+  return Math.round((destino - hoy) / 86400000);
+}
+
+function avisoRecontacto(obj) {
+  const dias = diasPara((obj || {}).recontactar);
+  if (dias === null) return null;
+  if (dias < 0) return { texto: "vencido hace " + Math.abs(dias) + (Math.abs(dias) === 1 ? " día" : " días"), nivel: "rojo" };
+  if (dias === 0) return { texto: "contactar hoy", nivel: "hoy" };
+  if (dias <= 3) return { texto: "en " + dias + (dias === 1 ? " día" : " días"), nivel: "amarillo" };
+  return { texto: "en " + dias + " días", nivel: "" };
+}
+
+function pendientesDe(lista) {
+  return (lista || []).filter(function (x) {
+    const d = diasPara(x.recontactar);
+    return d !== null && d <= 0;
+  }).length;
+}
+
+function enFecha(dias) {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+/* ---------------- búsqueda ----------------
+   Con cuarenta fichas la lista deja de servir si no se puede filtrar. */
+
+function coincideBusqueda(texto) {
+  const q = norm(ui.busqueda || "");
+  if (!q) return true;
+  return norm(texto).includes(q);
+}
+
+function filtrarContactos(lado) {
+  return contactosDe(lado).filter(function (c) {
+    return coincideBusqueda([c.nombre, c.pais, c.ciudad, c.persona, c.cargo, c.email,
+      (c.productos || []).join(" "), (c.certificaciones || []).join(" "),
+      (c.mercados || []).join(" "), NOMBRE_ESTADO[c.estado] || ""].join(" "));
+  });
+}
+
+function filtrarDeals() {
+  return (estado.deals || []).filter(function (d) {
+    return coincideBusqueda([d.producto, d.paisOrigen, d.ciudadOrigen, d.paisDestino,
+      d.ciudadDestino, d.comprador, d.fuente, d.incoterm,
+      (d.requisitos || []).join(" "), NOMBRE_ETAPA[d.etapa] || ""].join(" "));
+  });
+}
+
+/* ---------------- alta en lote ----------------
+   "Fichá veinte importadores" a mano son veinte modales. Pegás la lista
+   y salen todas, saltando las que ya tenías. */
+
+function parsearLote(texto, lado) {
+  const vistos = new Set(contactosDe(lado).map(function (c) { return norm(c.nombre); }));
+  const nuevos = [], repetidos = [];
+  (texto || "").split(/\r?\n/).forEach(function (linea) {
+    const partes = linea.split(/\t|[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!partes.length) return;
+    const nombre = partes[0];
+    if (norm(nombre).length < 2) return;
+    if (vistos.has(norm(nombre))) { repetidos.push(nombre); return; }
+    vistos.add(norm(nombre));
+    nuevos.push({
+      nombre: nombre,
+      pais: partes[1] || "",
+      productos: partes[2] ? lista(partes[2].replace(/\//g, ",")) : [],
+    });
+  });
+  return { nuevos: nuevos, repetidos: repetidos };
+}
+
 function contactosDe(lado) {
   return (estado.contactos || []).filter(function (c) { return c.lado === lado; });
 }
@@ -736,8 +831,16 @@ const RELLENO_PRODUCTO = ["premium", "beans", "bean", "grano", "granos", "seco",
   "del", "los", "las", "the", "and", "for"];
 
 function nucleoProducto(texto) {
-  const s = clave(texto);
-  for (const palabra of VOCABULARIO_PRODUCTO) if (s.includes(palabra)) return palabra;
+  // Por palabra entera, no por subcadena: "camarón" contiene "ron" y
+  // "espinaca" contiene "piña", y por ahí cruzaban productos distintos.
+  const palabras = clave(texto).split(/[^a-z0-9]+/).filter(Boolean);
+  for (const termino of VOCABULARIO_PRODUCTO) {
+    for (const palabra of palabras) {
+      if (palabra === termino || palabra === termino + "s" || palabra === termino + "es") {
+        return termino;
+      }
+    }
+  }
   return null;
 }
 
@@ -1083,6 +1186,8 @@ function docFicha(d) {
 
 function bloqueContraparte(d) {
   const c = d.contraparteId ? contactoPorId(d.contraparteId) : null;
+  // Si la ficha ya no existe, se llena a mano: mejor en blanco a la vista
+  // que con datos de alguien que borraste.
   if (!c) {
     return "- Nombre / Razón social: __________\n" +
       "- Documento fiscal: __________\n" +
@@ -1391,7 +1496,7 @@ let ui = {
   selContacto: null, tabContacto: "ficha",
   modal: null, modalLado: null, borrador: null,
   sucio: false, soloLocal: false, docAbierto: null,
-  postAbierto: null, idiomaPost: "es",
+  postAbierto: null, idiomaPost: "es", busqueda: "",
 };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
@@ -1497,7 +1602,10 @@ async function guardar() {
   if (boton) { boton.disabled = true; boton.textContent = "Guardando…"; }
   try {
     await publicar.publish(documentoCompleto());
-    // La vista se recarga sola a la versión nueva.
+    // La vista se recarga sola a la versión nueva. Si por lo que sea no
+    // lo hace, que al menos no quede diciendo "Guardando…" para siempre.
+    ui.sucio = false;
+    render();
   } catch (error) {
     const codigo = (error && error.code) || "upstream_error";
     if (codigo === "conflict") return;           // ya viene la recarga con la versión ganadora
@@ -1513,6 +1621,33 @@ async function guardar() {
     }
     render();
   }
+}
+
+/* ---------------- respaldo ----------------
+   El libro es el activo del negocio. Un archivo propio, fuera de acá,
+   es lo que lo vuelve tuyo de verdad. */
+
+function respaldoJSON() {
+  return JSON.stringify({
+    formato: "mesa-intermediacion-1",
+    exportado: new Date().toISOString(),
+    perfil: estado.perfil || {},
+    deals: estado.deals || [],
+    contactos: estado.contactos || [],
+  }, null, 2);
+}
+
+function aplicarRespaldo(crudo) {
+  let datos;
+  try { datos = JSON.parse(crudo); }
+  catch (e) { return { ok: false, porque: "Ese archivo no es un respaldo válido." }; }
+  if (!datos || typeof datos !== "object" || !Array.isArray(datos.deals) || !Array.isArray(datos.contactos)) {
+    return { ok: false, porque: "Ese archivo no tiene la forma de un respaldo de la Mesa." };
+  }
+  estado.perfil = datos.perfil && typeof datos.perfil === "object" ? datos.perfil : {};
+  estado.deals = datos.deals;
+  estado.contactos = datos.contactos;
+  return { ok: true, deals: datos.deals.length, contactos: datos.contactos.length };
 }
 
 let temporizadorBrindis = null;
@@ -1846,7 +1981,8 @@ function vistaBarra() {
       : '<span class="etiqueta" id="estado-guardado">al día</span>';
   const alta = ui.seccion === "deals"
     ? '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>'
-    : '<button class="btn primario" data-accion="nuevo-contacto:' + ui.seccion + '">Fichar ' +
+    : '<button class="btn" data-accion="lote:' + ui.seccion + '">Pegar lista</button>' +
+      '<button class="btn primario" data-accion="nuevo-contacto:' + ui.seccion + '">Fichar ' +
       (ui.seccion === "comprador" ? "comprador" : "proveedor") + "</button>";
   return '<header class="barra">' +
     "<h1>Mesa de Intermediación</h1>" +
@@ -1879,7 +2015,19 @@ function vistaResumen() {
     cifra("activos", vivos.length) +
     cifra("comisión en juego", potencial ? usd(potencial).replace("USD ", "$") : "—") +
     cifra("en rojo", rojos) +
+    cifra("por contactar", pendientesDe(vivos)) +
     "</div>";
+}
+
+function cajaBusqueda(cuantos, total) {
+  return '<div class="buscador">' +
+    '<input type="search" data-accion="buscar" value="' + esc(ui.busqueda || "") +
+    '" placeholder="Buscar por nombre, país, producto…" aria-label="Buscar">' +
+    '<span class="etiqueta" id="cuenta-busqueda">' + textoCuenta(cuantos, total) + "</span></div>";
+}
+
+function textoCuenta(cuantos, total) {
+  return (ui.busqueda || "").trim() ? cuantos + " de " + total : String(total);
 }
 
 function vistaResumenLibro(lado) {
@@ -1894,6 +2042,7 @@ function vistaResumenLibro(lado) {
     cifra("verificados", verificados) +
     cifra(lado === "comprador" ? "con mandato" : "activos",
       lado === "comprador" ? conMandato : gente.filter(function (c) { return c.estado === "activo"; }).length) +
+    cifra("por contactar", pendientesDe(gente)) +
     "</div>";
 }
 
@@ -1904,9 +2053,17 @@ function vistaListaLibro(lado) {
       ? "Acá van los compradores. Es el lado que de verdad vale: un comprador con mandato firmado es lo escaso del negocio, los proveedores se consiguen en una tarde."
       : "Acá van los exportadores que vayas fichando. Cada uno que verifiques queda para siempre, y se cruza solo contra los compradores que cargues.";
     return '<div class="vacio"><p>' + texto + "</p>" +
-      '<button class="btn primario" data-accion="nuevo-contacto:' + lado + '">Fichar el primero</button></div>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn primario" data-accion="nuevo-contacto:' + lado + '">Fichar el primero</button>' +
+      '<button class="btn" data-accion="lote:' + lado + '">Pegar una lista</button></div></div>';
   }
-  const filas = gente.map(function (c) {
+  const visibles = filtrarContactos(lado);
+  return cajaBusqueda(visibles.length, gente.length) +
+    '<div class="lista" id="lista-cuerpo">' + cuerpoListaLibro(visibles) + "</div>";
+}
+
+function cuerpoListaLibro(visibles) {
+  const filas = (visibles || []).map(function (c) {
     const v = puntosVerificacion(c);
     const nivel = v >= 55 ? "verde" : v >= 25 ? "amarillo" : "rojo";
     const sel = c.id === ui.selContacto ? ' aria-current="true"' : "";
@@ -1914,12 +2071,16 @@ function vistaListaLibro(lado) {
       '<span class="titulo">' + esc(c.nombre || "Sin nombre") + "</span>" +
       '<span class="meta"><span class="chip ' + nivel + '">' + v + "% verificado</span>" +
       '<span class="chip">' + esc(NOMBRE_ESTADO[c.estado] || c.estado) + "</span>" +
+      (function () {
+        const a = avisoRecontacto(c);
+        return a ? '<span class="chip ' + a.nivel + '">' + esc(a.texto) + "</span>" : "";
+      })() +
       "<span>" + esc([c.ciudad, c.pais].filter(Boolean).join(", ") || "sin ubicación") + "</span></span>" +
       ((c.productos || []).length ? '<span class="meta">' + esc(c.productos.join(" · ")) + "</span>" : "") +
       (resumenSeguimiento(c) ? '<span class="meta">' + esc(resumenSeguimiento(c)) + "</span>" : "") +
       "</button>";
   }).join("");
-  return '<div class="lista">' + filas + "</div>";
+  return filas || '<div class="vacio"><p>Ninguna ficha coincide con esa búsqueda.</p></div>';
 }
 
 function vistaLista() {
@@ -1927,19 +2088,29 @@ function vistaLista() {
     return '<div class="vacio"><p>Todavía no hay nada acá. Cuando veas un anuncio de finder’s fee, cargalo y la mesa te dice si vale la pena antes de que le metas horas.</p>' +
       '<button class="btn primario" data-accion="nuevo">Cargar la primera</button></div>';
   }
-  const filas = estado.deals.map(function (d) {
+  const visibles = filtrarDeals();
+  return cajaBusqueda(visibles.length, estado.deals.length) +
+    '<div class="lista" id="lista-cuerpo">' + cuerpoListaDeals(visibles) + "</div>";
+}
+
+function cuerpoListaDeals(visibles) {
+  const filas = (visibles || []).map(function (d) {
     const ev = evaluar(d);
     const sel = d.id === ui.sel ? ' aria-current="true"' : "";
     return '<button class="fila" data-accion="sel:' + esc(d.id) + '"' + sel + ">" +
       '<span class="titulo">' + esc(d.producto || "Sin producto") + "</span>" +
       '<span class="meta"><span class="chip ' + ev.nivel + '">' + ev.score + "/100</span>" +
       '<span class="chip">' + esc(NOMBRE_ETAPA[d.etapa] || d.etapa) + "</span>" +
+      (function () {
+        const a = avisoRecontacto(d);
+        return a ? '<span class="chip ' + a.nivel + '">' + esc(a.texto) + "</span>" : "";
+      })() +
       "<span>" + esc((d.paisOrigen || "?") + " → " + (d.paisDestino || "?")) + "</span></span>" +
       (num(d.fee) ? '<span class="meta mono">' + usd(num(d.fee)) + "</span>" : "") +
       (resumenSeguimiento(d) ? '<span class="meta">' + esc(resumenSeguimiento(d)) + "</span>" : "") +
       "</button>";
   }).join("");
-  return '<div class="lista">' + filas + "</div>";
+  return filas || '<div class="vacio"><p>Ninguna oportunidad coincide con esa búsqueda.</p></div>';
 }
 
 function vistaVacioHoja() {
@@ -2062,6 +2233,9 @@ function panelDocs(d) {
   const conQuien = tarjeta("con quién firmás",
     '<label class="campo"><span class="etiqueta">contraparte del acuerdo</span>' +
     '<select data-accion="contraparte">' + opciones + "</select></label>" +
+    (d.contraparteId && !contactoPorId(d.contraparteId)
+      ? '<p style="color:var(--rojo)">La ficha que tenías elegida ya no está en el libro, así que el acuerdo saldría con esos datos en blanco. Elegí otra o llenalos a mano.</p>'
+      : "") +
     '<p style="color:var(--tinta-suave);font-size:13.5px">Si elegís una ficha del libro, el acuerdo sale con su razón social, número fiscal y representante ya puestos.' +
     ((estado.contactos || []).length ? "" : " Todavía no tenés a nadie fichado.") + "</p>");
   const todo = tarjeta("expediente completo",
@@ -2092,6 +2266,14 @@ function panelBitacora(d) {
       '<label class="campo"><span class="etiqueta">etapa</span><select data-accion="etapa">' + opciones + "</select></label>" +
       '<label class="check"><input type="checkbox" data-accion="firmado"' + (d.acuerdoFirmado ? " checked" : "") +
       "> Acuerdo NCND firmado por ambas partes</label>" +
+      '<label class="campo"><span class="etiqueta">volver a contactar el</span>' +
+      '<input type="date" data-accion="recontactar" value="' + esc(d.recontactar || "") + '"></label>' +
+      '<div class="atajos">' +
+      '<button class="btn chico" data-accion="recontactar-en:3">en 3 días</button>' +
+      '<button class="btn chico" data-accion="recontactar-en:7">en 7 días</button>' +
+      '<button class="btn chico" data-accion="recontactar-en:14">en 14 días</button>' +
+      (d.recontactar ? '<button class="btn fantasma chico" data-accion="recontactar-en:">quitar</button>' : "") +
+      "</div>" +
       '<div><button class="btn fantasma chico" data-accion="borrar">Borrar esta oportunidad</button></div>') +
     tarjeta("anotar",
       '<form data-accion="nota"><label class="campo"><span class="etiqueta">qué pasó</span>' +
@@ -2230,6 +2412,14 @@ function panelBitacoraContacto(c) {
   return '<div class="panel">' +
     tarjeta("estado",
       '<label class="campo"><span class="etiqueta">en qué va</span><select data-accion="estado-contacto">' + opciones + "</select></label>" +
+      '<label class="campo"><span class="etiqueta">volver a contactar el</span>' +
+      '<input type="date" data-accion="recontactar" value="' + esc(c.recontactar || "") + '"></label>' +
+      '<div class="atajos">' +
+      '<button class="btn chico" data-accion="recontactar-en:3">en 3 días</button>' +
+      '<button class="btn chico" data-accion="recontactar-en:7">en 7 días</button>' +
+      '<button class="btn chico" data-accion="recontactar-en:14">en 14 días</button>' +
+      (c.recontactar ? '<button class="btn fantasma chico" data-accion="recontactar-en:">quitar</button>' : "") +
+      "</div>" +
       '<div><button class="btn fantasma chico" data-accion="borrar-contacto">Borrar del libro</button></div>') +
     tarjeta("anotar",
       '<form data-accion="nota-contacto"><label class="campo"><span class="etiqueta">qué pasó</span>' +
@@ -2408,7 +2598,16 @@ function vistaModal() {
       campo("teléfono", "telefono", p.telefono) +
       campo("correo", "email", p.email) +
       campo("domicilio", "domicilio", p.domicilio, "text", true) +
-      "</div><footer>" +
+      "</div>" +
+      '<div style="border-top:1px solid var(--linea);padding-top:14px;display:grid;gap:9px">' +
+      '<span class="etiqueta">respaldo</span>' +
+      '<p style="color:var(--tinta-suave);font-size:13.5px">Tu libro en un archivo, fuera de acá. Guardalo donde guardes lo que te importa.</p>' +
+      '<div class="atajos">' +
+      '<button class="btn chico" type="button" data-accion="exportar">Exportar respaldo</button>' +
+      '<button class="btn chico" type="button" data-accion="importar">Importar respaldo</button>' +
+      '<input type="file" id="archivo-respaldo" accept="application/json,.json" style="display:none">' +
+      "</div></div>" +
+      "<footer>" +
       '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
       '<button class="btn primario" type="submit">Guardar datos</button></footer></form></div></div>';
   }
@@ -2458,6 +2657,21 @@ function vistaModal() {
       '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
       '<button class="btn primario" type="submit">' + (editandoC ? "Guardar cambios" : "Fichar") + "</button>" +
       "</footer></form></div></div>";
+  }
+
+  if (ui.modal === "lote") {
+    const lado = ui.modalLado;
+    return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
+      "<header><h2>Pegar una lista de " + (lado === "comprador" ? "compradores" : "proveedores") + "</h2>" +
+      '<span class="crece"></span><button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
+      '<form data-accion="guardar-lote">' +
+      '<p style="color:var(--tinta-suave);font-size:13.5px">Una por línea. Si sabés el país y el producto, separalos con coma: ' +
+      "<strong>Nombre, País, producto/producto</strong>. Con el nombre solo alcanza. " +
+      "Las que ya estén fichadas se saltan.</p>" +
+      '<label class="campo"><textarea name="lote" rows="9" required placeholder="CONACADO, República Dominicana, cacao&#10;Rizek Cacao, República Dominicana, cacao/manteca de cacao&#10;Öko Caribe, República Dominicana&#10;Yacao"></textarea></label>' +
+      "<footer>" +
+      '<button class="btn fantasma" type="button" data-accion="cerrar">Cancelar</button>' +
+      '<button class="btn primario" type="submit">Fichar todas</button></footer></form></div></div>';
   }
 
   const editando = ui.modal === "editar";
@@ -2514,8 +2728,24 @@ document.addEventListener("click", function (evento) {
 
   switch (verbo) {
     case "nuevo": ui.modal = "nuevo"; ui.borrador = null; render(); break;
-    case "seccion": ui.seccion = arg; render(); break;
-    case "ir": ui.seccion = arg; ui.selContacto = null; render(); break;
+    case "seccion": ui.seccion = arg; ui.busqueda = ""; render(); break;
+    case "ir": ui.seccion = arg; ui.selContacto = null; ui.busqueda = ""; render(); break;
+    case "lote": ui.modal = "lote"; ui.modalLado = arg; render(); break;
+    case "recontactar-en": {
+      const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+      if (duenio) { duenio.recontactar = arg ? enFecha(parseInt(arg, 10)) : ""; tocar(); render(); }
+      break;
+    }
+    case "exportar": {
+      const nombre = "mesa-respaldo-" + new Date().toISOString().slice(0, 10) + ".json";
+      descargar(nombre, respaldoJSON());
+      break;
+    }
+    case "importar": {
+      const campo = document.getElementById("archivo-respaldo");
+      if (campo) campo.click();
+      break;
+    }
     case "ver-contacto": ui.seccion = contactoPorId(arg).lado; ui.selContacto = arg; ui.tabContacto = "ficha"; render(); break;
     case "sel-contacto": {
       const c = contactoPorId(arg);
@@ -2535,6 +2765,11 @@ document.addEventListener("click", function (evento) {
       const c = contactoActual();
       if (c && confirm("¿Borrar la ficha de “" + (c.nombre || c.id) + "”?")) {
         estado.contactos = estado.contactos.filter(function (x) { return x.id !== c.id; });
+        // Un deal que la tenía como contraparte sacaría el NCND en blanco
+        // sin avisar. Se suelta la referencia al borrar.
+        estado.deals.forEach(function (d) {
+          if (d.contraparteId === c.id) d.contraparteId = "";
+        });
         ui.selContacto = null;
         tocar(); render();
       }
@@ -2680,6 +2915,29 @@ document.addEventListener("submit", function (evento) {
     return;
   }
 
+  if (a.valor === "guardar-lote") {
+    const lado = ui.modalLado;
+    const leido = parsearLote(datos.lote, lado);
+    if (!leido.nuevos.length) {
+      brindis(leido.repetidos.length
+        ? "Todas esas ya estaban en el libro."
+        : "No pude sacar ningún nombre de ese texto.");
+      return;
+    }
+    leido.nuevos.forEach(function (x) {
+      const id = nuevoIdContacto(x.nombre, lado);
+      estado.contactos.push(Object.assign(contactoNuevo(lado), {
+        id: id, lado: lado, nombre: x.nombre, pais: x.pais, productos: x.productos,
+        creado: new Date().toISOString().slice(0, 10),
+      }));
+    });
+    ui.modal = null; ui.seccion = lado; ui.busqueda = "";
+    tocar(); render();
+    brindis(leido.nuevos.length + (leido.nuevos.length === 1 ? " ficha creada" : " fichas creadas") +
+      (leido.repetidos.length ? " · " + leido.repetidos.length + " ya estaban" : ""));
+    return;
+  }
+
   if (a.valor === "nota-contacto") {
     const c = contactoActual();
     if (c && (datos.texto || "").trim()) {
@@ -2710,6 +2968,11 @@ document.addEventListener("change", function (evento) {
     if (c) { c.verif = c.verif || {}; c.verif[arg] = evento.target.checked; tocar(); render(); }
     return;
   }
+  if (verbo === "recontactar") {
+    const duenio = ui.seccion === "deals" ? dealActual() : contactoActual();
+    if (duenio) { duenio.recontactar = evento.target.value; tocar(); render(); }
+    return;
+  }
   if (verbo === "estado-contacto") {
     const c = contactoActual();
     if (c) { c.estado = evento.target.value; tocar(); render(); }
@@ -2720,6 +2983,7 @@ document.addEventListener("change", function (evento) {
   if (!d) return;
   if (a.valor === "contraparte") { d.contraparteId = evento.target.value; tocar(); render(); }
   if (a.valor === "etapa") { d.etapa = evento.target.value; tocar(); render(); }
+  if (a.valor === "recontactar") { d.recontactar = evento.target.value; tocar(); render(); }
   if (a.valor === "firmado") { d.acuerdoFirmado = evento.target.checked; tocar(); render(); }
 });
 
@@ -2727,7 +2991,24 @@ document.addEventListener("change", function (evento) {
 // siguiente llega a su destino.
 document.addEventListener("input", function (evento) {
   const a = accionDe(evento.target);
-  if (!a || a.valor !== "fee-anuncio") return;
+  if (!a) return;
+
+  // Sólo se cambia el cuerpo de la lista: redibujar entero te sacaría
+  // del campo de búsqueda en la primera letra.
+  if (a.valor === "buscar") {
+    ui.busqueda = evento.target.value;
+    const cuerpo = document.getElementById("lista-cuerpo");
+    if (!cuerpo) return;
+    const enDeals = ui.seccion === "deals";
+    const visibles = enDeals ? filtrarDeals() : filtrarContactos(ui.seccion);
+    const total = enDeals ? estado.deals.length : contactosDe(ui.seccion).length;
+    cuerpo.innerHTML = enDeals ? cuerpoListaDeals(visibles) : cuerpoListaLibro(visibles);
+    const cuenta = document.getElementById("cuenta-busqueda");
+    if (cuenta) cuenta.textContent = textoCuenta(visibles.length, total);
+    return;
+  }
+
+  if (a.valor !== "fee-anuncio") return;
   const duenio = duenioActual();
   if (!duenio) return;
   duenio.feeAnuncio = evento.target.value;
@@ -2735,11 +3016,42 @@ document.addEventListener("input", function (evento) {
   refrescarPublicar(duenio);
 });
 
+// El archivo de respaldo: se lee, se valida y recién ahí se reemplaza.
+document.addEventListener("change", function (evento) {
+  if (evento.target.id !== "archivo-respaldo") return;
+  const archivo = evento.target.files && evento.target.files[0];
+  if (!archivo) return;
+  const lector = new FileReader();
+  lector.onload = function () {
+    const r = aplicarRespaldo(String(lector.result));
+    if (!r.ok) { brindis(r.porque); return; }
+    if (!confirm("Esto reemplaza todo lo que tenés cargado por el respaldo (" +
+      r.deals + " oportunidades, " + r.contactos + " fichas). ¿Seguís?")) return;
+    ui.sel = null; ui.selContacto = null; ui.modal = null; ui.busqueda = "";
+    tocar(); render();
+    brindis("Respaldo cargado: " + r.deals + " oportunidades y " + r.contactos + " fichas.");
+  };
+  lector.onerror = function () { brindis("No se pudo leer el archivo."); };
+  lector.readAsText(archivo);
+});
+
 document.addEventListener("keydown", function (evento) {
   if (evento.key === "Escape" && ui.modal) { ui.modal = null; render(); }
 });
 
-window.addEventListener("resize", function () { render(); });
+// Redibujar en cada resize borraba lo que estabas escribiendo: en el
+// teléfono, abrir el teclado dispara resize. Sólo se redibuja cuando de
+// verdad se cruza el corte entre móvil y escritorio, y nunca con un
+// campo enfocado.
+let eraMovil = window.matchMedia("(max-width: 900px)").matches;
+window.addEventListener("resize", function () {
+  const ahora = window.matchMedia("(max-width: 900px)").matches;
+  if (ahora === eraMovil) return;
+  eraMovil = ahora;
+  const foco = document.activeElement;
+  if (foco && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName)) return;
+  render();
+});
 
 /* ---------------- arranque ---------------- */
 
