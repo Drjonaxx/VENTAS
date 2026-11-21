@@ -7,6 +7,10 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 
 ## Corre solo
 
+- **Boletín del Corredor** (tarea programada, lunes a viernes 6:41 am de Puerto
+  Rico): busca novedades de precio del cacao, de las empresas del libro,
+  oportunidades publicadas y cambios de reglas; si hay algo, lo agrega a
+  `boletin.html` y avisa al teléfono. Si no hay nada, no escribe ni molesta.
 - **Pruebas** (`.github/workflows/ci.yml`, cada push): la app y los planes
   abren en Chromium sin errores, el lector de anuncios y el filtro de
   riesgo dan lo que tienen que dar.
@@ -45,6 +49,9 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
 - [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
       búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [x] Presentar a las dos partes con candado de NCND, lector de personas y
+      origen de cada contacto (21 nov 2026).
+- [x] Boletín diario con filtro, como tarea programada (21 nov 2026).
 - [x] Mesa de Bolsillo (21 nov 2026, `bolsillo.html`): la pantalla de
       teléfono para disparar mensajes, con el día ordenado por lo vencido.
 - [x] Libro de arranque del corredor con los once contactos y sus notas

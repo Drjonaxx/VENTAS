@@ -1,0 +1,176 @@
+<title>Boletín del Corredor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style id="css">
+:root {
+  --papel: #EFF2EB; --superficie: #FBFCF9; --franja: #E4E9DD;
+  --tinta: #1A211B; --tinta-suave: #5B6559; --linea: #D0D7C8; --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F; --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C; --ambar: #8E5D0B; --rojo: #A2321F;
+  --verde-tenue: #DFEDE3; --ambar-tenue: #F5E8CE; --rojo-tenue: #F6DFD9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+    --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+    --acento: #74C293; --acento-tenue: #16261C;
+    --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+    --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+  --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+  --acento: #74C293; --acento-tenue: #16261C;
+  --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+  --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; line-height: 1.58; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: Faustina, Georgia, serif; margin: 0; font-weight: 600; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--acento); }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.etiqueta { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px;
+  font-weight: 500; letter-spacing: .13em; text-transform: uppercase; color: var(--tinta-suave); }
+
+.hoja { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+header.tapa { padding: 40px 0 22px; border-bottom: 2px solid var(--tinta); margin-bottom: 26px; }
+header.tapa h1 { font-size: clamp(28px, 5vw, 38px); line-height: 1.08; }
+header.tapa .sub { color: var(--tinta-suave); margin-top: 9px; font-size: 15px; }
+
+.entrada { border-bottom: 1px solid var(--linea); padding: 24px 0; }
+.entrada:last-child { border-bottom: none; }
+.entrada > .fecha { font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-suave); }
+.entrada > h2 { font-size: 21px; margin: 7px 0 2px; line-height: 1.25; }
+
+.item { background: var(--superficie); border: 1px solid var(--linea); border-radius: 4px;
+  padding: 14px 16px; margin-top: 12px; display: grid; gap: 7px; }
+.item .area { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 999px; justify-self: start; }
+.area.precio { background: var(--ambar-tenue); color: var(--ambar); }
+.area.empresas { background: var(--acento-tenue); color: var(--acento); }
+.area.oportunidades { background: var(--verde-tenue); color: var(--verde); }
+.area.reglas { background: var(--franja); color: var(--tinta-suave); }
+.item .porque { color: var(--tinta-suave); font-size: 14.5px; }
+.item .porque b { color: var(--tinta); font-weight: 600; }
+.item .fuente { font-size: 12.5px; }
+
+.quieto { background: var(--franja); border-radius: 4px; padding: 14px 16px;
+  margin-top: 12px; color: var(--tinta-suave); font-size: 14.5px; }
+.vacio { padding: 40px 0; color: var(--tinta-suave); }
+details > summary { cursor: pointer; padding: 10px 0; font-family: "IBM Plex Mono", monospace;
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-suave); }
+footer.pie { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--linea);
+  color: var(--tinta-suave); font-size: 13.5px; }
+</style>
+
+<div id="raiz"></div>
+
+<script type="application/json" id="entradas">
+[]
+</script>
+
+<script id="vista" data-src>
+"use strict";
+
+/* ============================================================
+   Boletín del Corredor — lo escribe la rutina diaria.
+   Para agregar una entrada: leé el JSON de #entradas, poné la
+   nueva PRIMERA en el arreglo, conservá todas las anteriores, y
+   republicá. No hay que tocar nada más de esta página.
+
+   Forma de una entrada:
+   { "fecha": "2026-11-21",
+     "titular": "una línea con lo más importante del día",
+     "items": [ { "area": "precio|empresas|oportunidades|reglas",
+                  "que": "qué pasó",
+                  "porque": "por qué te importa a vos",
+                  "fuente": "https://..." } ] }
+   Un día sin novedad: items vacío y titular explicando que no hubo.
+   ============================================================ */
+
+const ROTULO_AREA = {
+  precio: "precio y mercado",
+  empresas: "tu libro",
+  oportunidades: "oportunidades",
+  reglas: "reglas y logística",
+};
+
+function esc(s) {
+  return (s === null || s === undefined ? "" : String(s))
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function leer() {
+  try {
+    const d = JSON.parse(document.getElementById("entradas").textContent || "[]");
+    return Array.isArray(d) ? d : [];
+  } catch (e) { return []; }
+}
+
+function fechaLarga(iso) {
+  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+    "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const d = new Date(iso + "T12:00:00");
+  if (isNaN(d)) return iso;
+  return d.getDate() + " de " + meses[d.getMonth()] + " de " + d.getFullYear();
+}
+
+function vistaItem(it) {
+  const area = ROTULO_AREA[it.area] ? it.area : "reglas";
+  const fuente = (it.fuente || "").trim();
+  return '<div class="item">' +
+    '<span class="area ' + area + '">' + esc(ROTULO_AREA[area]) + "</span>" +
+    "<p>" + esc(it.que || "") + "</p>" +
+    (it.porque ? '<p class="porque"><b>Para vos:</b> ' + esc(it.porque) + "</p>" : "") +
+    (/^https?:\/\//i.test(fuente)
+      ? '<p class="fuente"><a href="' + esc(fuente) + '" target="_blank" rel="noopener noreferrer">' +
+        esc(fuente.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + "</a></p>"
+      : (fuente ? '<p class="fuente">' + esc(fuente) + "</p>" : "")) +
+    "</div>";
+}
+
+function vistaEntrada(e) {
+  const items = (e.items || []).map(vistaItem).join("") ||
+    '<div class="quieto">Día tranquilo: nada que mueva tus conversaciones.</div>';
+  return '<article class="entrada"><span class="fecha">' + esc(fechaLarga(e.fecha || "")) + "</span>" +
+    "<h2>" + esc(e.titular || "Sin novedades") + "</h2>" + items + "</article>";
+}
+
+function render() {
+  const entradas = leer();
+  const tapa = '<header class="tapa"><p class="etiqueta">JRN Sourcing · corredor Santo Domingo–San Juan</p>' +
+    "<h1>Boletín del Corredor</h1>" +
+    '<p class="sub">Cacao y agro dominicano hacia el mercado estadounidense. ' +
+    "Lo que movió el precio, lo que pasó en las empresas de tu libro, qué se publicó y qué cambió en las reglas.</p></header>";
+
+  if (!entradas.length) {
+    document.getElementById("raiz").innerHTML = '<div class="hoja">' + tapa +
+      '<p class="vacio">Todavía no hay entradas. La primera llega con la rutina de mañana temprano.</p></div>';
+    return;
+  }
+
+  const hoy = vistaEntrada(entradas[0]);
+  const antes = entradas.slice(1);
+  const archivo = antes.length
+    ? "<details><summary>Ver las " + antes.length + " entradas anteriores</summary>" +
+      antes.map(vistaEntrada).join("") + "</details>"
+    : "";
+
+  document.getElementById("raiz").innerHTML = '<div class="hoja">' + tapa + hoy + archivo +
+    '<footer class="pie">Lo escribe una rutina que corre de lunes a viernes temprano y sólo ' +
+    "agrega entrada cuando hay algo. Las fuentes son enlaces: si algo va a un contrato, confirmalo ahí.</footer></div>";
+}
+
+render();
+</script>

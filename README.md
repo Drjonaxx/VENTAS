@@ -154,13 +154,20 @@ La app se republica a sí misma reconstruyendo el documento desde esos bloques
 más el estado en `#estado`, así que **si agregás un `<script>` nuevo tiene que
 llevar el atributo `data-src`** o se pierde en el primer guardado.
 
-## Dos pantallas
+## Tres pantallas
 
 `index.html` es la Mesa: el escritorio donde filtrás, verificás, cruzás y
 generás los papeles. `bolsillo.html` es la versión de teléfono, para una sola
 cosa: abrirla, ver a quién toca escribirle hoy y mandarle el mensaje con el
 pulgar. Comparten el formato de respaldo, así que el mismo archivo JSON pasa de
 una a la otra.
+
+`boletin.html` es la tercera: lo que una tarea programada escribe cada mañana
+sobre el precio del cacao, las empresas del libro, oportunidades publicadas y
+cambios en las reglas. La página no sale a buscar nada —una página publicada no
+puede— sino que acumula lo que la tarea le agrega. Para agregar una entrada se
+lee el JSON de `#entradas`, se pone la nueva primera, se conservan todas las
+anteriores y se republica.
 
 ## Arranque
 
