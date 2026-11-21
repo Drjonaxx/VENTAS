@@ -64,7 +64,18 @@ formal para correo, y uno por cada lado del libro. La app marca cuál conviene �
 WhatsApp con exportadores y cooperativas, correo con un departamento de compras
 — y al mandarlo deja la nota y te recuerda el seguimiento a los siete días.
 
-**9. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
+**9. Presenta a las dos partes.** Desde cualquier cruce, un botón arma el
+correo de presentación: quién es cada uno, qué verificaste del proveedor, y el
+pedido de quedarte en copia. Con un candado: no deja registrar la presentación
+hasta que las dos partes tengan el NCND firmado, porque presentar antes de eso
+es la forma número uno de quedarse afuera del trato. Al mandarlo queda anotado
+en la bitácora de los dos, con fecha.
+
+**10. Lee personas, no sólo anuncios.** Pegás una firma de correo, una tarjeta
+o un perfil de LinkedIn y sale la ficha con nombre, empresa, cargo, teléfono y
+correo separados.
+
+**11. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
 necesidad de un comprador salen los tres posts listos — Instagram con el formato
 de placas, LinkedIn en tono profesional y WhatsApp corto y reenviable, en
 español o en inglés. La comisión que se publica no es la tuya: es la tajada que
@@ -134,6 +145,7 @@ Todo vive en `index.html`, separado en bloques con `id`:
 | `docs`   | Las plantillas: NCND, checklist y mensajes.                      |
 | `anuncios` | Los generadores de posts y la escala de comisión sugerida.     |
 | `mensajes` | Los mensajes de contacto por WhatsApp y correo, y qué canal conviene. |
+| `red`    | Presentaciones con su candado, lector de personas y origen de cada contacto. |
 | `ui`     | Estado, guardado y utilidades.                                   |
 | `vista`  | Render de las pantallas.                                         |
 | `eventos`| Modales y manejo de eventos.                                     |
@@ -162,7 +174,7 @@ si ya tenías libro.
 ## Pruebas
 
 `pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push
-(`.github/workflows/ci.yml`). Veintidós casos: el lector de anuncios, el filtro de
+(`.github/workflows/ci.yml`). Veinticuatro casos: el lector de anuncios, el filtro de
 riesgo, el seguimiento por post, el emparejamiento de productos, el alta en
 lote, la búsqueda, el recontacto, el respaldo, y las tres fallas que ya se
 arreglaron una vez para que no vuelvan.

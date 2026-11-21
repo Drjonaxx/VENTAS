@@ -192,6 +192,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .atajos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
 
 .canales { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.puerta { border-radius: 3px; padding: 13px 15px; display: grid; gap: 8px; }
+.puerta.cerrada { background: var(--rojo-tenue); }
+.puerta.abierta { background: var(--verde-tenue); }
+.puerta b { font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: .1em; text-transform: uppercase; }
+.puerta.cerrada b { color: var(--rojo); }
+.puerta.abierta b { color: var(--verde); }
 .btn.enviar {
   background: var(--acento); border-color: var(--acento); color: var(--superficie);
   text-decoration: none; padding: 9px 16px; font-size: 14px;
@@ -1521,7 +1529,7 @@ let ui = {
   selContacto: null, tabContacto: "ficha",
   modal: null, modalLado: null, borrador: null,
   sucio: false, soloLocal: false, docAbierto: null,
-  postAbierto: null, idiomaPost: "es", busqueda: "", canal: null,
+  postAbierto: null, idiomaPost: "es", busqueda: "", canal: null, presentarA: null,
 };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
@@ -2176,6 +2184,199 @@ function porqueEseCanal(c) {
 }
 </script>
 
+<script id="red" data-src>
+"use strict";
+
+/* ---------------- presentar ----------------
+   El cruce encuentra quién encaja con quién. Esto hace lo único que de
+   verdad te pagan: ponerlos en contacto. Y lo hace con el candado que
+   el oficio exige, porque presentar sin NCND firmado es exactamente
+   como te sacan del trato. */
+
+function presentaciones() {
+  if (!Array.isArray(estado.presentaciones)) estado.presentaciones = [];
+  return estado.presentaciones;
+}
+
+function yaPresentados(compradorId, proveedorId) {
+  return presentaciones().find(function (x) {
+    return x.compradorId === compradorId && x.proveedorId === proveedorId;
+  }) || null;
+}
+
+function presentacionesDe(id) {
+  return presentaciones().filter(function (x) {
+    return x.compradorId === id || x.proveedorId === id;
+  });
+}
+
+/* El candado: las dos partes tienen que haber firmado. */
+function puertaPresentacion(comprador, proveedor) {
+  const faltan = [];
+  if (!comprador || !proveedor) return { listo: false, faltan: ["faltan las dos partes"] };
+  if (!comprador.ncndFirmado) faltan.push("el NCND con " + (comprador.nombre || "el comprador"));
+  if (!proveedor.ncndFirmado) faltan.push("el NCND con " + (proveedor.nombre || "el proveedor"));
+  return { listo: !faltan.length, faltan: faltan };
+}
+
+function describir(c) {
+  const partes = [];
+  const lugar = [c.ciudad, c.pais].filter(Boolean).join(", ");
+  if (lugar) partes.push("en " + lugar);
+  if ((c.productos || []).length) partes.push((c.productos || []).join(" y "));
+  if (num(c.volumen)) partes.push(num(c.volumen).toLocaleString("es-DO") + " " + (c.unidad || "t"));
+  if ((c.certificaciones || []).length) partes.push("con " + c.certificaciones.join(", "));
+  return partes.join(", ");
+}
+
+function verificadoTexto(c) {
+  const v = c.verif || {};
+  const hechos = CHECKS_VERIFICACION.filter(function (x) { return v[x[0]]; });
+  if (!hechos.length) return "";
+  const nombres = { fiscal: "registro fiscal", mercantil: "registro mercantil",
+    exportador: "registro de exportador", embarques: "historial de embarques",
+    referencias: "referencias comerciales" };
+  return hechos.map(function (x) { return nombres[x[0]]; }).join(", ");
+}
+
+function docPresentacion(comprador, proveedor) {
+  const p = estado.perfil || {};
+  const firma = [p.nombre, [p.empresa, p.telefono].filter(Boolean).join(" · ")]
+    .filter(Boolean).join("\n");
+  const producto = (comprador.productos || [])[0] || (proveedor.productos || [])[0] || "el producto";
+  const verif = verificadoTexto(proveedor);
+
+  return [
+    "Asunto: Presentación: " + (comprador.nombre || "Comprador") + " · " +
+      (proveedor.nombre || "Proveedor") + " — " + producto,
+    "",
+    (comprador.persona || comprador.nombre || "Estimados") + ", " +
+      (proveedor.persona || proveedor.nombre || "estimados") + ": los pongo en contacto.",
+    "",
+    (proveedor.nombre || "El exportador") + " es exportador " + describir(proveedor) + "." +
+      (verif ? " Lo verifiqué personalmente: " + verif + "." : ""),
+    "",
+    (function () {
+      // Del comprador sólo el lugar: lo que busca va en la frase siguiente,
+      // o el párrafo queda diciendo dos veces el mismo producto.
+      const lugar = [comprador.ciudad, comprador.pais].filter(Boolean).join(", ");
+      const busca = [
+        num(comprador.volumen) ? num(comprador.volumen).toLocaleString("es-DO") + " " + (comprador.unidad || "t") + " de " : "",
+        producto,
+        (comprador.certificaciones || []).length ? " con " + comprador.certificaciones.join(", ") : "",
+      ].join("");
+      return (comprador.nombre || "El comprador") + (lugar ? " está en " + lugar + " y" : "") +
+        " busca " + busca + ".";
+    })(),
+    "",
+    "Les dejo el hilo para que sigan desde acá directamente. Quedo en copia para lo " +
+      "que necesiten de mi lado: especificaciones, muestras, coordinación de la " +
+      "documentación o del embarque.",
+    "",
+    "Como les adelanté a cada uno por separado, esta presentación se hace bajo el " +
+      "acuerdo de no elusión y comisión que ya tenemos firmado.",
+    "",
+    "Quedo atento,",
+    firma,
+    "",
+    "---",
+    "",
+    "NOTAS PARA VOS, NO LAS MANDES:",
+    "",
+    "· Mandalo en UN SOLO correo con los dos en el campo Para, y vos en Para o en CC.",
+    "  Nunca en copia oculta: si no te ven, te olvidan.",
+    "· No salgas del hilo aunque te digan que ya siguen ellos. Cada respuesta que",
+    "  queda con tu nombre arriba es tu prueba de que vos originaste el contacto.",
+    "· Anotá en la bitácora de los dos qué pasó después. Esa bitácora y el NCND son",
+    "  lo único que tenés si después hay pleito.",
+  ].join("\n");
+}
+
+/* ---------------- lector de personas ----------------
+   La misma idea que el lector de anuncios, aplicada a gente: pegás una
+   firma de correo, una tarjeta o un perfil y sale la ficha. */
+
+const CARGOS = /(gerente|director|jefe|encargad|coordinador|supervisor|presidente|vicepresident|socio|due[ñn]|propietari|manager|officer|ceo|coo|cfo|head of|chief|owner|partner|buyer|sourcing|procurement|ventas|compras|comercial|export|import|sales)/i;
+const EMPRESAS = /(\bs\.?\s?a\.?\s?s?\b|\bs\.?\s?r\.?\s?l\b|\bc\.?\s?x\.?\s?a\b|\binc\b|\bllc\b|\bltd\b|\bcorp\b|\bco\b|\bgroup\b|\bgrupo\b|\bcompany\b|\bfoods\b|\btrading\b|\bexport|\bimport|\bcacao\b|\bcompa[ñn][ií]a\b|&)/i;
+
+function parsearPersona(texto) {
+  const salida = {};
+  let resto = (texto || "").replace(/\r/g, "");
+
+  const correo = resto.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+  if (correo) { salida.email = correo[0]; resto = resto.replace(correo[0], " "); }
+
+  const tel = resto.match(/(\+?\(?\d[\d\s().\-]{6,}\d)/);
+  if (tel) {
+    const digitos = tel[1].replace(/\D/g, "");
+    if (digitos.length >= 7 && digitos.length <= 15) {
+      salida.telefono = tel[1].trim();
+      resto = resto.replace(tel[1], " ");
+    }
+  }
+
+  const web = resto.match(/\b(?:https?:\/\/)?(?:www\.)?([a-z0-9][a-z0-9-]*\.(?:com|net|org|do|pr|us|co|io|cr|mx|ec|pe|cl|es|ch|nl|de)(?:\.[a-z]{2})?)\b/i);
+  if (web) { salida.web = web[1]; resto = resto.replace(web[0], " "); }
+
+  const lineas = resto.split(/\n|\||·|;|\s[—–]\s|\s-\s/).map(function (l) {
+    return l.replace(/^[\s*\-–—•>,:]+|[\s*\-–—•>,:]+$/g, "").trim();
+  }).filter(function (l) { return l.length > 1 && l.length < 90 && /[a-záéíóúñ]/i.test(l); });
+
+  const cargoEn = lineas.findIndex(function (l) { return CARGOS.test(l); });
+  if (cargoEn >= 0) salida.cargo = lineas[cargoEn];
+
+  const empresaEn = lineas.findIndex(function (l, i) { return i !== cargoEn && EMPRESAS.test(l); });
+  if (empresaEn >= 0) salida.nombre = lineas[empresaEn];
+
+  const personaEn = lineas.findIndex(function (l, i) {
+    return i !== cargoEn && i !== empresaEn && l.split(/\s+/).length <= 5;
+  });
+  if (personaEn >= 0) salida.persona = lineas[personaEn];
+
+  // Sin nombre de empresa, se deduce del dominio del correo.
+  if (!salida.nombre && salida.email) {
+    const dominio = salida.email.split("@")[1].split(".")[0];
+    const genericos = ["gmail", "hotmail", "yahoo", "outlook", "icloud", "live", "aol"];
+    if (genericos.indexOf(dominio.toLowerCase()) < 0) {
+      salida.nombre = dominio.charAt(0).toUpperCase() + dominio.slice(1);
+    }
+  }
+  if (!salida.nombre && salida.persona) { salida.nombre = salida.persona; delete salida.persona; }
+
+  return salida;
+}
+
+function contarLeidosPersona(campos) {
+  return Object.keys(campos).filter(function (k) { return campos[k]; }).length;
+}
+
+/* ---------------- de dónde salió cada contacto ----------------
+   Saber qué canal te está rindiendo es lo que te dice dónde insistir. */
+
+const ORIGENES = [
+  ["", "sin anotar"],
+  ["gremio", "Un gremio o cámara"],
+  ["registro", "Registros de importación"],
+  ["feria", "Una feria"],
+  ["referido", "Me lo presentaron"],
+  ["anuncio", "Respondió un anuncio mío"],
+  ["buscador", "Lo busqué yo"],
+  ["embajada", "Oficina comercial o embajada"],
+];
+const NOMBRE_ORIGEN = Object.fromEntries(ORIGENES);
+
+function porOrigen() {
+  const cuenta = {};
+  (estado.contactos || []).forEach(function (c) {
+    const k = c.origen || "";
+    cuenta[k] = (cuenta[k] || 0) + 1;
+  });
+  return ORIGENES.filter(function (o) { return cuenta[o[0]]; })
+    .map(function (o) { return { clave: o[0], rotulo: o[1], cuantos: cuenta[o[0]] }; })
+    .sort(function (a, b) { return b.cuantos - a.cuantos; });
+}
+</script>
+
 <script id="vista" data-src>
 "use strict";
 
@@ -2551,6 +2752,21 @@ function panelFichaContacto(c) {
     dato(esComprador ? "orígenes que le interesan" : "destinos a los que ya exportó", (c.mercados || []).join(", "), "sin cargar") +
     "</div>";
 
+  const hechas = presentacionesDe(c.id);
+  const red = tarjeta("de dónde salió y a quién lo presentaste",
+    '<label class="campo" style="max-width:280px"><span class="etiqueta">cómo llegaste a este contacto</span>' +
+    '<select data-accion="origen">' + ORIGENES.map(function (o) {
+      return '<option value="' + o[0] + '"' + ((c.origen || "") === o[0] ? " selected" : "") +
+        ">" + o[1] + "</option>";
+    }).join("") + "</select></label>" +
+    (hechas.length
+      ? "<p>" + hechas.map(function (x) {
+          const otro = contactoPorId(x.compradorId === c.id ? x.proveedorId : x.compradorId);
+          return "Presentado a <strong>" + esc(otro ? otro.nombre : "una ficha borrada") +
+            "</strong> el " + esc(x.fecha);
+        }).join("<br>") + "</p>"
+      : "<p style=\"color:var(--tinta-suave)\">Todavía no lo presentaste con nadie.</p>"));
+
   const mandato = esComprador
     ? tarjeta("mandato",
         (c.mandato || "").trim()
@@ -2561,7 +2777,7 @@ function panelFichaContacto(c) {
   return '<div class="panel">' +
     tarjeta("contacto", contacto, '<span class="crece"></span><button class="btn chico" data-accion="editar-contacto">Editar</button>') +
     tarjeta("qué mueve", comercial) +
-    mandato +
+    mandato + red +
     "</div>";
 }
 
@@ -2607,7 +2823,8 @@ function panelCruceContacto(c) {
       '<div class="cab"><span class="n">' + esc(par.contacto.nombre || par.contacto.id) + "</span>" +
       '<span class="chip ' + x.nivel + '">' + x.puntos + "/100</span>" +
       '<span class="crece"></span>' +
-      '<button class="btn fantasma chico" data-accion="sel-contacto:' + esc(par.contacto.id) + '">Ver ficha</button></div>' +
+      '<button class="btn fantasma chico" data-accion="sel-contacto:' + esc(par.contacto.id) + '">Ver ficha</button>' +
+      '<button class="btn chico" data-accion="presentar:' + esc(par.contacto.id) + '">Presentar</button></div>' +
       '<div class="barra-cruce ' + x.nivel + '"><span style="width:' + x.puntos + '%"></span></div>' +
       (x.razones.length ? '<p class="porque">' + esc(x.razones.join(" · ")) + "</p>" : "") +
       (x.huecos.length ? '<p class="hueco">Falta: ' + esc(x.huecos.join(" · ")) + "</p>" : "") +
@@ -2661,6 +2878,59 @@ function panelEscribir(c) {
     tarjeta("cuando lo mandes",
       "<p>Dejalo anotado y la Mesa te recuerda el seguimiento a los siete días, que es lo que el plan pide.</p>" +
       '<div><button class="btn primario" data-accion="ya-escribi:' + canal + '">Ya lo mandé</button></div>') +
+    "</div>";
+}
+
+function panelPresentar(c, otroId) {
+  const otro = contactoPorId(otroId);
+  if (!otro) return '<div class="panel">' + tarjeta("presentar", "<p>Esa ficha ya no está.</p>") + "</div>";
+  const comprador = c.lado === "comprador" ? c : otro;
+  const proveedor = c.lado === "comprador" ? otro : c;
+  const puerta = puertaPresentacion(comprador, proveedor);
+  const hecha = yaPresentados(comprador.id, proveedor.id);
+  const texto = docPresentacion(comprador, proveedor);
+  const correos = [comprador.email, proveedor.email].filter(Boolean);
+  const asunto = texto.split("\n")[0].replace(/^Asunto:\s*/, "");
+  const cuerpo = texto.split("\n").slice(2).join("\n").split("---")[0].trim();
+
+  const firmas = '<div style="display:grid;gap:9px">' +
+    [comprador, proveedor].map(function (x) {
+      return '<label class="check"><input type="checkbox" data-accion="ncnd:' + esc(x.id) + '"' +
+        (x.ncndFirmado ? " checked" : "") + "> Firmó el NCND: <strong>" +
+        esc(x.nombre || x.id) + "</strong></label>";
+    }).join("") + "</div>";
+
+  const estadoPuerta = puerta.listo
+    ? '<div class="puerta abierta"><b>podés presentar</b>' +
+      "<p>Las dos partes firmaron. Mandá el correo con los dos en el campo Para y vos también.</p></div>"
+    : '<div class="puerta cerrada"><b>todavía no</b>' +
+      "<p>Falta " + esc(puerta.faltan.join(" y ")) + ". Presentar sin eso firmado es la forma " +
+      "número uno en que te sacan del trato: una vez que tienen el nombre, no te necesitan. " +
+      "Generá el acuerdo en la pestaña Documentos de una oportunidad y fírmenlo primero.</p></div>";
+
+  const mailto = correos.length
+    ? "mailto:" + correos.join(",") + "?subject=" + encodeURIComponent(asunto) +
+      "&body=" + encodeURIComponent(cuerpo)
+    : "";
+
+  return '<div class="panel">' +
+    tarjeta("presentar a " + esc(comprador.nombre || "el comprador") + " con " +
+      esc(proveedor.nombre || "el proveedor"), estadoPuerta + firmas) +
+    (hecha ? tarjeta("ya los presentaste",
+      "<p>El " + esc(hecha.fecha) + ". Si volvés a mandarlo, que sea en el mismo hilo.</p>") : "") +
+    '<section class="tarjeta"><header><span class="etiqueta">el correo de presentación</span>' +
+    '<span class="crece"></span>' +
+    '<button class="btn chico" data-accion="copiar-presentacion:' + esc(otro.id) + '">Copiar</button>' +
+    (mailto && puerta.listo
+      ? '<a class="btn chico primario" href="' + esc(mailto) + '">Abrir el correo</a>'
+      : '<span class="btn chico" aria-disabled="true" style="opacity:.4">Abrir el correo</span>') +
+    '</header><pre class="doc">' + esc(texto) + "</pre></section>" +
+    tarjeta("cuando lo mandes",
+      "<p>Queda anotado en la bitácora de los dos, con la fecha. Esa bitácora es tu prueba de que " +
+      "vos originaste el contacto.</p>" +
+      '<div><button class="btn primario" data-accion="ya-presente:' + esc(otro.id) + '"' +
+      (puerta.listo ? "" : " disabled") + ">Ya los presenté</button></div>") +
+    '<div><button class="btn fantasma" data-accion="tab-contacto:cruce">← Volver al cruce</button></div>' +
     "</div>";
 }
 
@@ -2787,7 +3057,8 @@ function vistaHojaContacto(clase) {
   const c = contactoActual();
   const abre = '<main class="hoja' + (clase || "") + '">';
   if (!c) return abre + '<div class="vacio"><p>Elegí una ficha de la lista para verla.</p></div></main>';
-  const panel = ui.tabContacto === "escribir" ? panelEscribir(c)
+  const panel = ui.tabContacto === "presentar" ? panelPresentar(c, ui.presentarA)
+    : ui.tabContacto === "escribir" ? panelEscribir(c)
     : ui.tabContacto === "verif" ? panelVerifContacto(c)
     : ui.tabContacto === "cruce" ? panelCruceContacto(c)
     : ui.tabContacto === "publicar" && c.lado === "comprador"
@@ -2886,7 +3157,13 @@ function vistaModal() {
     return '<div class="velo" data-accion="velo"><div class="modal" role="dialog" aria-modal="true">' +
       "<header><h2>" + (editandoC ? "Editar ficha" : "Fichar " + (esComprador ? "comprador" : "proveedor")) + "</h2>" +
       '<span class="crece"></span><button class="btn fantasma chico" data-accion="cerrar">Cerrar</button></header>' +
-      '<form data-accion="guardar-contacto"><div class="rejilla">' +
+      '<form data-accion="guardar-contacto">' +
+      (editandoC ? "" :
+        '<div class="pegar"><label class="campo"><span class="etiqueta">pegá una firma de correo, una tarjeta o un perfil</span>' +
+        '<textarea name="pegado" rows="3" placeholder="María Reyes&#10;Gerente de Exportaciones&#10;CONACADO Agroindustrial, S.A.&#10;m.reyes@conacado.com.do · 809-957-6203">' +
+        esc(c.pegado || "") + "</textarea></label>" +
+        '<div><button class="btn" type="button" data-accion="leer-persona">Leer</button></div></div>') +
+      '<div class="rejilla">' +
       campo("razón social", "nombre", c.nombre, "text", true, "required") +
       campo("país", "pais", c.pais) +
       campo("ciudad", "ciudad", c.ciudad) +
@@ -3019,6 +3296,39 @@ document.addEventListener("click", function (evento) {
       break;
     }
     case "tab-contacto": ui.tabContacto = arg; render(); break;
+    case "presentar": ui.presentarA = arg; ui.tabContacto = "presentar"; render(); break;
+    case "copiar-presentacion": {
+      const c = contactoActual(), otro = contactoPorId(arg);
+      if (!c || !otro) break;
+      const comp = c.lado === "comprador" ? c : otro;
+      const prov = c.lado === "comprador" ? otro : c;
+      copiar(docPresentacion(comp, prov));
+      break;
+    }
+    case "ya-presente": {
+      const c = contactoActual(), otro = contactoPorId(arg);
+      if (!c || !otro) break;
+      const comp = c.lado === "comprador" ? c : otro;
+      const prov = c.lado === "comprador" ? otro : c;
+      if (!puertaPresentacion(comp, prov).listo) {
+        brindis("Falta que firmen el NCND. No presentes sin eso.");
+        break;
+      }
+      if (yaPresentados(comp.id, prov.id)) { brindis("Ya los habías presentado."); break; }
+      const fecha = new Date().toISOString().slice(0, 10);
+      presentaciones().push({ fecha: fecha, compradorId: comp.id, proveedorId: prov.id });
+      [comp, prov].forEach(function (x) {
+        const otroNombre = (x === comp ? prov : comp).nombre || "la otra parte";
+        x.notas = x.notas || [];
+        x.notas.push({ fecha: fecha, texto: "Lo presenté con " + otroNombre + "." });
+        if (!x.estado || x.estado === "nuevo" || x.estado === "contactado") x.estado = "activo";
+        x.recontactar = enFecha(3);
+      });
+      ui.tabContacto = "bitacora";
+      tocar(); render();
+      brindis("Anotado en las dos fichas. Te lo recuerdo en 3 días.");
+      break;
+    }
     case "canal": ui.canal = arg; render(); break;
     case "copiar-mensaje": {
       const c = contactoActual();
@@ -3063,6 +3373,21 @@ document.addEventListener("click", function (evento) {
     case "editar": ui.modal = "editar"; render(); break;
     case "perfil": ui.modal = "perfil"; render(); break;
     case "cerrar": case "velo": ui.modal = null; ui.borrador = null; ui.selContactoEditando = null; render(); break;
+    case "leer-persona": {
+      const form = a.el.closest("form");
+      const actuales = Object.fromEntries(new FormData(form).entries());
+      const leido = parsearPersona(actuales.pegado || "");
+      const cuantos = contarLeidosPersona(leido);
+      if (!cuantos) { brindis("No pude sacar datos de ese texto."); break; }
+      const base = Object.assign({}, actuales, leido);
+      ["productos", "certificaciones", "incoterms", "pagos", "mercados"].forEach(function (k) {
+        base[k] = lista(actuales[k]);
+      });
+      ui.borrador = Object.assign(contactoNuevo(ui.modalLado), base);
+      render();
+      brindis(cuantos + (cuantos === 1 ? " campo leído" : " campos leídos") + ". Revisá antes de fichar.");
+      break;
+    }
     case "leer-anuncio": {
       const form = a.el.closest("form");
       const actuales = Object.fromEntries(new FormData(form).entries());
@@ -3182,6 +3507,7 @@ document.addEventListener("submit", function (evento) {
   if (a.valor === "guardar-contacto") {
     const campos = ["productos", "certificaciones", "incoterms", "pagos", "mercados"];
     const limpio = Object.assign({}, datos);
+    delete limpio.pegado;
     campos.forEach(function (k) { limpio[k] = lista(datos[k]); });
     if (ui.selContactoEditando) {
       Object.assign(contactoActual(), limpio);
@@ -3251,6 +3577,16 @@ document.addEventListener("change", function (evento) {
   if (verbo === "verif") {
     const c = contactoActual();
     if (c) { c.verif = c.verif || {}; c.verif[arg] = evento.target.checked; tocar(); render(); }
+    return;
+  }
+  if (verbo === "ncnd") {
+    const x = contactoPorId(arg);
+    if (x) { x.ncndFirmado = evento.target.checked; tocar(); render(); }
+    return;
+  }
+  if (verbo === "origen") {
+    const c = contactoActual();
+    if (c) { c.origen = evento.target.value; tocar(); render(); }
     return;
   }
   if (verbo === "recontactar") {

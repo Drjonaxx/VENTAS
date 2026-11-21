@@ -378,6 +378,75 @@ await caso("el bolsillo ordena el día y manda lo que editaste", "/bolsillo.html
   if (!(r.llamarAntes || "").startsWith("tel:")) throw new Error("falta el botón de llamar");
 });
 
+await caso("presentar exige las dos firmas y queda anotado", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.perfil = { nombre: "Jonathan Rodríguez Nieves", empresa: "JRN Sourcing" };
+    estado.presentaciones = [];
+    estado.contactos = [
+      { id: "c-1", lado: "comprador", nombre: "Chocolaterie Montréal", persona: "Marc Tremblay",
+        email: "achats@choco.ca", pais: "Canadá", productos: ["cacao en grano"], volumen: 25,
+        unidad: "t", certificaciones: ["orgánico"], incoterms: [], pagos: [],
+        mercados: ["República Dominicana"], verif: {}, estado: "nuevo", notas: [] },
+      { id: "p-1", lado: "proveedor", nombre: "CONACADO", persona: "María Reyes",
+        email: "export@conacado.com.do", pais: "República Dominicana", productos: ["cacao en grano"],
+        volumen: 6000, unidad: "t", certificaciones: ["orgánico", "Fairtrade"], incoterms: [],
+        pagos: [], mercados: ["Canadá"], verif: { fiscal: 1, mercantil: 1 }, estado: "nuevo", notas: [] },
+    ];
+    ui.seccion = "comprador"; ui.selContacto = "c-1"; ui.tabContacto = "cruce"; render();
+    document.querySelector('[data-accion^="presentar:"]').click();
+    const cerrada = document.querySelector(".puerta").className.includes("cerrada");
+    // forzar el botón bloqueado no debe registrar nada
+    const boton = document.querySelector('[data-accion^="ya-presente:"]');
+    const bloqueado = boton.disabled;
+    boton.removeAttribute("disabled");
+    boton.click();
+    const trasForzar = presentaciones().length;
+    // firmar las dos partes
+    document.querySelector('[data-accion="ncnd:c-1"]').click();
+    document.querySelector('[data-accion="ncnd:p-1"]').click();
+    const abierta = document.querySelector(".puerta").className.includes("abierta");
+    const mailto = (document.querySelector("a.btn.chico.primario") || {}).href || "";
+    const texto = document.querySelector("pre.doc").textContent;
+    document.querySelector('[data-accion^="ya-presente:"]').click();
+    return { cerrada, bloqueado, trasForzar, abierta, mailto, texto,
+      cuantas: presentaciones().length,
+      notaC: (contactoPorId("c-1").notas.slice(-1)[0] || {}).texto || "",
+      dias: diasPara(contactoPorId("c-1").recontactar) };
+  });
+  if (!r.cerrada || !r.bloqueado) throw new Error("sin NCND la puerta debería estar cerrada");
+  if (r.trasForzar !== 0) throw new Error("forzando el botón registró una presentación sin firmas");
+  if (!r.abierta) throw new Error("con las dos firmas debería abrirse");
+  if (!r.mailto.startsWith("mailto:achats@choco.ca,export@conacado.com.do")) {
+    throw new Error("el correo no va a los dos a la vez: " + r.mailto.slice(0, 50));
+  }
+  if (!r.texto.includes("registro fiscal, registro mercantil")) {
+    throw new Error("el correo no dice lo que verificaste");
+  }
+  if (r.texto.match(/cacao en grano/g).length > 3) throw new Error("el correo repite el producto");
+  igual(r.cuantas + "/" + r.dias, "1/3", "queda registrada y con recordatorio");
+  if (!r.notaC.includes("CONACADO")) throw new Error("no quedó la nota en la ficha del comprador");
+});
+
+await caso("el lector de personas llena una ficha", "/index.html", async (p) => {
+  await p.click('[data-accion="seccion:proveedor"]');
+  await p.click('[data-accion="nuevo-contacto:proveedor"]');
+  await p.fill('textarea[name="pegado"]',
+    "Luis Ortiz — Export Manager\nRizek Cacao, S.A.S.\nlortiz@rizekcacao.com\n809-530-9400");
+  await p.click('[data-accion="leer-persona"]');
+  const r = await p.evaluate(() => ({
+    nombre: document.querySelector('[name="nombre"]').value,
+    persona: document.querySelector('[name="persona"]').value,
+    cargo: document.querySelector('[name="cargo"]').value,
+    email: document.querySelector('[name="email"]').value,
+    tel: document.querySelector('[name="telefono"]').value,
+  }));
+  igual(r.persona, "Luis Ortiz", "la persona");
+  igual(r.cargo, "Export Manager", "el cargo");
+  igual(r.email, "lortiz@rizekcacao.com", "el correo");
+  igual(r.tel, "809-530-9400", "el teléfono");
+  if (!r.nombre.includes("Rizek")) throw new Error("no sacó la empresa: " + r.nombre);
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");
