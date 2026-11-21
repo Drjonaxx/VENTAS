@@ -338,6 +338,40 @@ await caso("escribirle a una ficha por el canal que conviene", "/index.html", as
   if (!r.nota.includes("correo")) throw new Error("no quedó la nota en la bitácora");
 });
 
+await caso("el bolsillo ordena el día y manda lo que editaste", "/bolsillo.html", async (p) => {
+  const r = await p.evaluate(() => {
+    aplicarRespaldo(JSON.stringify({
+      formato: "mesa-intermediacion-1",
+      perfil: { nombre: "Jonathan Rodríguez Nieves", empresa: "JRN Sourcing", telefono: "939-254-4482" },
+      deals: [],
+      contactos: [
+        { id: "p-1", lado: "proveedor", nombre: "Rizek Cacao", telefono: "809-530-9400",
+          productos: ["cacao en grano"], notas: [], recontactar: enFecha(-2) },
+        { id: "p-2", lado: "proveedor", nombre: "Yacao", productos: ["cacao en grano"], notas: [] },
+        { id: "c-1", lado: "comprador", nombre: "José Santiago", email: "compras@ejemplo.com",
+          productos: ["alimentos"], notas: [], recontactar: enFecha(5) },
+      ],
+    }));
+    render();
+    const orden = grupos().map((g) => g[0]).join(",");
+    ui.abierto = "p-1"; ui.canal = null; ui.borrador = null; render();
+    const antes = document.querySelector(".barra a.btn").getAttribute("href");
+    const caja = document.querySelector("textarea.mensaje");
+    caja.value = caja.value + " PD.";
+    caja.dispatchEvent(new Event("input", { bubbles: true }));
+    const despues = document.querySelector(".barra a.btn").getAttribute("href");
+    return { orden, antes, despues,
+      firma: caja.value.includes("JRN Sourcing"),
+      foco: document.activeElement.tagName };
+  });
+  igual(r.orden.split(",")[0], "Toca hoy", "lo vencido va primero");
+  if (!r.antes.startsWith("https://wa.me/18095309400")) throw new Error("el wa.me salió mal");
+  if (!decodeURIComponent(r.despues).endsWith(" PD.")) {
+    throw new Error("el botón manda el texto original en vez de lo editado");
+  }
+  if (!r.firma) throw new Error("el mensaje no sale firmado con el perfil");
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");

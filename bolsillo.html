@@ -1,0 +1,697 @@
+<title>Mesa de Bolsillo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+
+<style id="css">
+:root {
+  --papel: #EFF2EB; --superficie: #FBFCF9; --franja: #E4E9DD;
+  --tinta: #1A211B; --tinta-suave: #5B6559; --linea: #D0D7C8; --linea-fuerte: #B4BFAA;
+  --acento: #1F5D3F; --acento-tenue: #E1EBE3;
+  --verde: #2C6A4C; --ambar: #8E5D0B; --rojo: #A2321F;
+  --verde-tenue: #DFEDE3; --ambar-tenue: #F5E8CE; --rojo-tenue: #F6DFD9;
+  --wa: #1E7A4C;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+    --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+    --acento: #74C293; --acento-tenue: #16261C;
+    --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+    --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+    --wa: #2E9C63;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #0E1310; --superficie: #161C17; --franja: #1D251F;
+  --tinta: #E2E8DF; --tinta-suave: #94A092; --linea: #29322A; --linea-fuerte: #3B463C;
+  --acento: #74C293; --acento-tenue: #16261C;
+  --verde: #74C293; --ambar: #D9A441; --rojo: #E3826B;
+  --verde-tenue: #152318; --ambar-tenue: #2A2113; --rojo-tenue: #2B1815;
+  --wa: #2E9C63;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+h1, h2 { font-family: Faustina, Georgia, serif; margin: 0; font-weight: 600; }
+p { margin: 0; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.etiqueta {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px;
+  font-weight: 500; letter-spacing: .13em; text-transform: uppercase; color: var(--tinta-suave);
+}
+.mono { font-family: "IBM Plex Mono", monospace; }
+
+/* Todo pensado a ancho de teléfono; en pantalla grande queda centrado. */
+.app { max-width: 520px; margin: 0 auto; min-height: 100vh;
+  display: flex; flex-direction: column; background: var(--papel); }
+
+.cabeza {
+  position: sticky; top: 0; z-index: 10; background: var(--superficie);
+  border-bottom: 1px solid var(--linea); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.cabeza h1 { font-size: 19px; line-height: 1.1; }
+.cabeza .sub { font-size: 12px; color: var(--tinta-suave); margin-top: 2px; }
+.crece { flex: 1; }
+
+.icono {
+  border: 1px solid var(--linea-fuerte); background: var(--superficie); color: var(--tinta);
+  width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+  display: grid; place-items: center; font-size: 19px; flex-shrink: 0;
+}
+.icono:active { background: var(--franja); }
+
+.cuerpo { flex: 1; padding-bottom: 28px; }
+.grupo { padding: 18px 16px 4px; }
+.grupo h2 { font-size: 13px; font-family: "IBM Plex Mono", monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--tinta-suave); font-weight: 500; }
+
+.tarjeta {
+  width: 100%; text-align: left; background: var(--superficie);
+  border: 1px solid var(--linea); border-radius: 12px; margin: 10px 16px;
+  width: calc(100% - 32px); padding: 14px 15px; cursor: pointer;
+  display: grid; gap: 7px;
+}
+.tarjeta:active { background: var(--franja); }
+.tarjeta .n { font-family: Faustina, Georgia, serif; font-size: 19px; font-weight: 600; line-height: 1.2; }
+.tarjeta .d { font-size: 13.5px; color: var(--tinta-suave); }
+.tarjeta .chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.chip {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .07em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--linea-fuerte); color: var(--tinta-suave); white-space: nowrap;
+}
+.chip.rojo { background: var(--rojo-tenue); border-color: transparent; color: var(--rojo); }
+.chip.hoy { background: var(--acento); border-color: transparent; color: var(--superficie); }
+.chip.verde { background: var(--verde-tenue); border-color: transparent; color: var(--verde); }
+.chip.ambar { background: var(--ambar-tenue); border-color: transparent; color: var(--ambar); }
+.chip.apagado { opacity: .55; }
+
+.vacio { padding: 50px 24px; text-align: center; color: var(--tinta-suave); display: grid; gap: 16px; justify-items: center; }
+
+/* pantalla de mensaje */
+.volver { display: flex; align-items: center; gap: 6px; background: none; border: none;
+  color: var(--acento); cursor: pointer; padding: 0; font-size: 15px; font-weight: 500; }
+
+.seccion { padding: 16px; display: grid; gap: 12px; }
+.canales { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.canal {
+  border: 1px solid var(--linea-fuerte); background: var(--superficie); border-radius: 10px;
+  padding: 11px 8px; cursor: pointer; text-align: center; font-size: 14.5px; font-weight: 500;
+}
+.canal[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: var(--superficie); }
+.canal .falta { display: block; font-size: 11px; opacity: .7; margin-top: 2px; }
+
+textarea.mensaje {
+  width: 100%; border: 1px solid var(--linea-fuerte); background: var(--superficie);
+  border-radius: 12px; padding: 13px; font-size: 15px; line-height: 1.55;
+  min-height: 260px; resize: vertical;
+}
+.medidor { display: flex; justify-content: space-between; align-items: center; }
+.medidor .largo { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--tinta-suave); }
+.medidor .largo.pasado { color: var(--ambar); }
+
+.porque { background: var(--acento-tenue); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; }
+
+/* barra de acción fija al pulgar */
+.barra {
+  position: sticky; bottom: 0; background: var(--superficie);
+  border-top: 1px solid var(--linea); padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: auto 1fr; gap: 10px;
+}
+.btn {
+  border: 1px solid var(--linea-fuerte); background: var(--superficie); color: var(--tinta);
+  border-radius: 11px; padding: 13px 16px; cursor: pointer; font-size: 15px; font-weight: 600;
+  text-align: center; text-decoration: none; display: grid; place-items: center;
+}
+.btn:active { background: var(--franja); }
+.btn.enviar { background: var(--wa); border-color: var(--wa); color: #fff; }
+.btn.correo { background: var(--acento); border-color: var(--acento); color: var(--superficie); }
+.btn[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+.btn.ancho { grid-column: 1 / -1; }
+
+.hoja-velo { position: fixed; inset: 0; background: rgba(12,18,13,.55); z-index: 40;
+  display: flex; align-items: flex-end; justify-content: center; }
+.hoja {
+  background: var(--superficie); width: 100%; max-width: 520px;
+  border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  display: grid; gap: 13px; max-height: 88vh; overflow-y: auto;
+}
+.hoja h2 { font-size: 20px; }
+label.campo { display: grid; gap: 5px; }
+label.campo input, label.campo select {
+  border: 1px solid var(--linea-fuerte); background: var(--papel);
+  border-radius: 10px; padding: 11px 12px; width: 100%; font-size: 15px;
+}
+.fila-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+.brindis {
+  position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%);
+  background: var(--tinta); color: var(--papel); padding: 10px 18px;
+  border-radius: 999px; font-size: 14px; z-index: 90; max-width: 90vw; text-align: center;
+}
+</style>
+
+<div id="raiz"></div>
+<script type="application/json" id="estado">{"perfil":{},"deals":[],"contactos":[],"actualizado":""}</script>
+<script id="app" data-src>
+"use strict";
+
+/* ============================================================
+   Mesa de Bolsillo — la versión de teléfono.
+   Una sola cosa bien: abrirla, ver a quién toca escribirle, y
+   mandarle el mensaje con el pulgar. Comparte el formato de
+   respaldo con la Mesa de Intermediación, así que el mismo
+   archivo sirve en las dos.
+   ============================================================ */
+
+const CLAVE_LOCAL = "mesa-bolsillo-v1";
+let estado = { perfil: {}, deals: [], contactos: [], actualizado: "" };
+let ui = { abierto: null, canal: null, borrador: null, hoja: null };
+let publicar = null;
+let bajar = null;
+
+function esc(s) {
+  return (s === null || s === undefined ? "" : String(s))
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+function cargarEstado() {
+  try {
+    estado = Object.assign({ perfil: {}, deals: [], contactos: [], actualizado: "" },
+      JSON.parse(document.getElementById("estado").textContent || "{}"));
+  } catch (e) { /* página nueva */ }
+  try {
+    const local = JSON.parse(localStorage.getItem(CLAVE_LOCAL) || "null");
+    if (local && (local.actualizado || "") > (estado.actualizado || "")) estado = local;
+  } catch (e) { /* sin almacenamiento */ }
+}
+
+function tocar() {
+  estado.actualizado = new Date().toISOString();
+  try { localStorage.setItem(CLAVE_LOCAL, JSON.stringify(estado)); } catch (e) { /* modo privado */ }
+}
+
+function contacto(id) {
+  return (estado.contactos || []).find(function (c) { return c.id === id; }) || null;
+}
+function abierto() { return contacto(ui.abierto); }
+
+/* ---------------- fechas ---------------- */
+
+function diasPara(fecha) {
+  if (!fecha) return null;
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const d = new Date(fecha + "T00:00:00");
+  if (isNaN(d)) return null;
+  return Math.round((d - hoy) / 86400000);
+}
+function enFecha(dias) {
+  const d = new Date(); d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+function aviso(c) {
+  const d = diasPara(c.recontactar);
+  if (d === null) return null;
+  if (d < 0) return { texto: "vencido hace " + Math.abs(d) + (Math.abs(d) === 1 ? " día" : " días"), nivel: "rojo" };
+  if (d === 0) return { texto: "toca hoy", nivel: "hoy" };
+  return { texto: "en " + d + (d === 1 ? " día" : " días"), nivel: "" };
+}
+
+/* ---------------- a quién le toca ----------------
+   El orden de la pantalla es el orden del día: primero lo vencido,
+   después lo que no tocaste nunca, y al final lo agendado. */
+
+function grupos() {
+  const todos = estado.contactos || [];
+  const conFecha = function (c) { return diasPara(c.recontactar); };
+  const toca = todos.filter(function (c) { const d = conFecha(c); return d !== null && d <= 0; })
+    .sort(function (a, b) { return conFecha(a) - conFecha(b); });
+  const nunca = todos.filter(function (c) { return conFecha(c) === null && (!c.estado || c.estado === "nuevo"); });
+  const agendado = todos.filter(function (c) { const d = conFecha(c); return d !== null && d > 0; })
+    .sort(function (a, b) { return conFecha(a) - conFecha(b); });
+  const curso = todos.filter(function (c) { return conFecha(c) === null && c.estado && c.estado !== "nuevo"; });
+  return [
+    ["Toca hoy", toca],
+    ["Sin contactar", nunca],
+    ["Agendados", agendado],
+    ["En curso", curso],
+  ].filter(function (g) { return g[1].length; });
+}
+
+/* ---------------- el mensaje ----------------
+   Los mismos cuatro de la Mesa: dos lados por dos canales. */
+
+function telefonoWhatsApp(tel) {
+  const d = (tel || "").replace(/\D/g, "");
+  if (!d) return "";
+  return d.length === 10 ? "1" + d : d;   // RD y PR son ambos +1
+}
+function enlaceWhatsApp(c, texto) {
+  const n = telefonoWhatsApp(c.telefono);
+  return n ? "https://wa.me/" + n + "?text=" + encodeURIComponent(texto) : "";
+}
+function enlaceCorreo(c, asunto, cuerpo) {
+  const dir = (c.email || "").trim();
+  return dir ? "mailto:" + dir + "?subject=" + encodeURIComponent(asunto) +
+    "&body=" + encodeURIComponent(cuerpo) : "";
+}
+
+function saludo(c) {
+  const quien = (c.persona || "").trim().split(/\s+/)[0];
+  return quien ? "Buenos días " + quien : "Buenos días";
+}
+function yo() {
+  const p = estado.perfil || {};
+  const n = (p.nombre || "").trim(), e = (p.empresa || "").trim();
+  if (n && e) return n + ", de " + e;
+  return n || e || "[cargá tu nombre]";
+}
+function prod(c) { return (c.productos || [])[0] || "[producto]"; }
+function vol(c) {
+  return num(c.volumen) ? num(c.volumen).toLocaleString("es-DO") + " " + (c.unidad || "t") : "";
+}
+
+function mensajeDe(c, canal) {
+  const destino = (c.mercados || [])[0] || (c.lado === "proveedor" ? "Puerto Rico y Estados Unidos" : "República Dominicana");
+  const certs = (c.certificaciones || []).join(", ");
+  const firma = [(estado.perfil || {}).nombre, [(estado.perfil || {}).empresa,
+    (estado.perfil || {}).telefono].filter(Boolean).join(" · ")].filter(Boolean).join("\n");
+
+  if (c.lado === "proveedor" && canal === "whatsapp") {
+    return [
+      saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.", "",
+      "Trabajo con compradores de " + destino + " y estoy buscando proveedor de " + prod(c) +
+        ". Quería saber si les encaja antes de hacerles perder tiempo.", "",
+      "Tres preguntas:",
+      "1. ¿Qué volumen pueden cubrir y en qué plazo?",
+      "2. ¿Precio indicativo FOB y hasta cuándo vale?",
+      "3. ¿Qué certificaciones tienen vigentes?", "",
+      "Mi comisión la asume la parte compradora, así que no afecta su precio de venta.", "",
+      "Gracias.",
+    ].join("\n");
+  }
+  if (c.lado === "proveedor") {
+    return [
+      saludo(c) + ",", "",
+      "Soy " + yo() + ". Trabajo como intermediario comercial desde Puerto Rico, conectando " +
+        "exportadores de la región con compradores en Puerto Rico y Estados Unidos continental.", "",
+      "Estoy buscando proveedor de " + prod(c) + " para " + destino + " y querría saber si pueden participar.", "",
+      "Lo que necesito confirmar para avanzar:", "",
+      "1. Volumen que pueden cubrir, completo o en entregas parciales, y en qué plazo.",
+      "2. Precio indicativo con Incoterm y validez de la oferta.",
+      "3. Certificaciones vigentes y si han exportado antes a ese destino.",
+      "4. Términos de pago que aceptan.", "",
+      "Dos cosas sobre cómo trabajo: mi comisión la asume la parte compradora y no afecta su " +
+        "precio de venta, y antes de presentarlos formalmente firmamos un acuerdo de " +
+        "confidencialidad y no elusión que protege a las dos partes.", "",
+      "Quedo atento,", firma,
+    ].join("\n");
+  }
+  if (canal === "whatsapp") {
+    return [
+      saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.", "",
+      "Represento exportadores verificados de " + prod(c) + " en " + destino +
+        (certs ? ", con " + certs : "") + ".",
+      vol(c) ? "Volumen disponible: " + vol(c) + "." : "", "",
+      "Entrada directa a San Juan, sin pasar por Miami, así que el flete no carga el sobrecosto de cabotaje.", "",
+      "¿Les interesa recibir la ficha técnica y coordinar una muestra?",
+    ].filter(function (l) { return l !== ""; }).join("\n");
+  }
+  return [
+    saludo(c) + ",", "",
+    "Soy " + yo() + ", intermediario comercial radicado en Puerto Rico. Represento exportadores de " +
+      prod(c) + " en " + destino + " y creo que puede encajar con lo que ustedes compran.", "",
+    "Lo concreto:", "",
+    "· Producto: " + prod(c) + (certs ? " (" + certs + ")" : ""),
+    vol(c) ? "· Volumen disponible: " + vol(c) : "· Volumen: a confirmar según su necesidad",
+    "· Origen: " + destino + ", con trazabilidad hasta el productor",
+    "· Entrega: directa a San Juan. Al ser carga de origen extranjero no aplica la Jones Act, " +
+      "así que no carga el sobrecosto de la mercancía ruteada por Florida.",
+    "· Documentación: certificado fitosanitario, certificado de origen y análisis de laboratorio", "",
+    "A los exportadores con los que trabajo los verifico yo antes de presentarlos: registro " +
+      "fiscal, registro mercantil y registro de exportador ante la aduana.", "",
+    "Si la especificación se acerca a lo que compran, les mando la ficha técnica y coordino una " +
+      "muestra. Si no, díganme qué sí necesitan y vuelvo cuando lo tenga.", "",
+    "Quedo atento,", firma,
+  ].join("\n");
+}
+
+function asuntoDe(c) {
+  return c.lado === "proveedor"
+    ? "Consulta de compra: " + prod(c) + " para Puerto Rico"
+    : prod(c) + " de " + ((c.mercados || [])[0] || "origen caribeño") + ", entrega directa a San Juan";
+}
+function canalSugerido(c) { return c.lado === "proveedor" ? "whatsapp" : "correo"; }
+function porqueEseCanal(c) {
+  return c.lado === "proveedor"
+    ? "Con exportadores y cooperativas, WhatsApp es el canal real. El correo se queda sin leer."
+    : "Con un departamento de compras gana el correo: deja rastro y se reenvía internamente.";
+}
+
+/* ---------------- respaldo, el mismo que la Mesa ---------------- */
+
+function respaldoJSON() {
+  return JSON.stringify({
+    formato: "mesa-intermediacion-1",
+    exportado: new Date().toISOString(),
+    perfil: estado.perfil || {}, deals: estado.deals || [], contactos: estado.contactos || [],
+  }, null, 2);
+}
+function aplicarRespaldo(crudo) {
+  let d;
+  try { d = JSON.parse(crudo); } catch (e) { return { ok: false, porque: "Ese archivo no es un respaldo válido." }; }
+  if (!d || typeof d !== "object" || !Array.isArray(d.contactos)) {
+    return { ok: false, porque: "Ese archivo no tiene la forma de un respaldo de la Mesa." };
+  }
+  estado.perfil = d.perfil && typeof d.perfil === "object" ? d.perfil : {};
+  estado.deals = Array.isArray(d.deals) ? d.deals : [];
+  estado.contactos = d.contactos;
+  return { ok: true, contactos: d.contactos.length };
+}
+
+function nuevoId(nombre, lado) {
+  const trozo = (nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "contacto";
+  const base = (lado === "comprador" ? "c-" : "p-") + trozo;
+  const usados = new Set((estado.contactos || []).map(function (c) { return c.id; }));
+  let n = 1;
+  while (usados.has(base + "-" + n)) n++;
+  return base + "-" + n;
+}
+</script>
+<script id="vista" data-src>
+"use strict";
+
+function documentoCompleto() {
+  const css = document.getElementById("css").textContent;
+  const fuentes = Array.prototype.map.call(document.querySelectorAll("script[data-src]"), function (s) {
+    return '<script id="' + s.id + '" data-src>' + s.textContent + "<\/script>";
+  }).join("\n");
+  const json = JSON.stringify(estado).replace(/</g, "\\u003c");
+  return [
+    "<!doctype html>",
+    '<html lang="es"><head><meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+    "<title>Mesa de Bolsillo</title>",
+    '<link rel="preconnect" href="https://fonts.googleapis.com">',
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faustina:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">',
+    '<style id="css">' + css + "</style></head><body>",
+    '<div id="raiz"></div>',
+    '<script type="application/json" id="estado">' + json + "<\/script>",
+    fuentes, "</body></html>",
+  ].join("\n");
+}
+
+function brindis(texto) {
+  let n = document.getElementById("brindis");
+  if (!n) {
+    n = document.createElement("div");
+    n.id = "brindis"; n.className = "brindis"; n.setAttribute("role", "status");
+    document.body.appendChild(n);
+  }
+  n.textContent = texto;
+  clearTimeout(window.__t);
+  window.__t = setTimeout(function () { n.remove(); }, 3000);
+}
+
+async function copiar(texto) {
+  try { await navigator.clipboard.writeText(texto); brindis("Copiado"); }
+  catch (e) {
+    const a = document.createElement("textarea");
+    a.value = texto; a.style.position = "fixed"; a.style.opacity = "0";
+    document.body.appendChild(a); a.select();
+    try { document.execCommand("copy"); brindis("Copiado"); }
+    catch (e2) { brindis("No se pudo copiar"); }
+    a.remove();
+  }
+}
+
+async function guardar() {
+  if (!publicar) { brindis("Guardado en este teléfono"); return; }
+  try { await publicar.publish(documentoCompleto()); }
+  catch (error) {
+    const c = (error && error.code) || "";
+    if (c === "conflict") return;
+    brindis("Guardado en este teléfono, no en la nube");
+  }
+}
+
+/* ---------------- pantallas ---------------- */
+
+function vistaLista() {
+  const gs = grupos();
+  const pend = (estado.contactos || []).filter(function (c) {
+    const d = diasPara(c.recontactar); return d !== null && d <= 0;
+  }).length;
+  const total = (estado.contactos || []).length;
+
+  const cabeza = '<header class="cabeza"><div class="crece"><h1>Mesa de Bolsillo</h1>' +
+    '<p class="sub">' + (total ? (pend ? pend + " por escribir hoy · " + total + " en el libro"
+      : total + " en el libro, nada vencido") : "Todavía sin contactos") + "</p></div>" +
+    '<button class="icono" data-accion="hoja:datos" aria-label="Datos y respaldo">⋯</button>' +
+    '<button class="icono" data-accion="hoja:nuevo" aria-label="Agregar contacto">+</button></header>';
+
+  if (!total) {
+    return cabeza + '<div class="cuerpo"><div class="vacio">' +
+      "<p>Cargá el respaldo que exportaste de la Mesa y acá te aparece a quién le toca escribirle.</p>" +
+      '<button class="btn" data-accion="hoja:datos">Cargar respaldo</button></div></div>';
+  }
+
+  const cuerpo = gs.map(function (g) {
+    return '<div class="grupo"><h2>' + esc(g[0]) + "</h2></div>" +
+      g[1].map(function (c) {
+        const a = aviso(c);
+        const canal = canalSugerido(c);
+        const puede = canal === "whatsapp" ? !!telefonoWhatsApp(c.telefono) : !!(c.email || "").trim();
+        return '<button class="tarjeta" data-accion="abrir:' + esc(c.id) + '">' +
+          '<span class="n">' + esc(c.nombre || "Sin nombre") + "</span>" +
+          '<span class="d">' + esc([c.ciudad, c.pais].filter(Boolean).join(", ") ||
+            (c.lado === "proveedor" ? "Proveedor" : "Comprador")) + "</span>" +
+          '<span class="chips">' +
+          (a ? '<span class="chip ' + a.nivel + '">' + esc(a.texto) + "</span>" : "") +
+          '<span class="chip ' + (puede ? "verde" : "apagado") + '">' +
+            (canal === "whatsapp" ? "WhatsApp" : "Correo") + (puede ? "" : " · falta dato") + "</span>" +
+          "</span></button>";
+      }).join("");
+  }).join("");
+
+  return cabeza + '<div class="cuerpo">' + cuerpo + "</div>";
+}
+
+function vistaMensaje() {
+  const c = abierto();
+  if (!c) return vistaLista();
+  const canal = ui.canal || canalSugerido(c);
+  const texto = ui.borrador !== null && ui.borrador !== undefined ? ui.borrador : mensajeDe(c, canal);
+  const wa = enlaceWhatsApp(c, texto);
+  const correo = enlaceCorreo(c, asuntoDe(c), texto);
+  const puedeWA = !!telefonoWhatsApp(c.telefono);
+  const puedeCorreo = !!(c.email || "").trim();
+
+  const accion = canal === "whatsapp"
+    ? (wa ? '<a class="btn enviar" href="' + esc(wa) + '" target="_blank" rel="noopener noreferrer" data-accion="abrio">Abrir WhatsApp</a>'
+          : '<span class="btn enviar" aria-disabled="true">Falta el teléfono</span>')
+    : (correo ? '<a class="btn correo" href="' + esc(correo) + '" data-accion="abrio">Abrir el correo</a>'
+              : '<span class="btn correo" aria-disabled="true">Falta el correo</span>');
+
+  return '<header class="cabeza">' +
+    '<button class="volver" data-accion="volver">‹ Lista</button>' +
+    '<div class="crece" style="text-align:right"><h1 style="font-size:17px">' + esc(c.nombre || "Sin nombre") + "</h1>" +
+    '<p class="sub">' + (c.lado === "proveedor" ? "Proveedor" : "Comprador") +
+    (c.persona ? " · " + esc(c.persona) : "") + "</p></div></header>" +
+    '<div class="cuerpo"><div class="seccion">' +
+    '<div class="canales">' +
+    '<button class="canal" data-accion="canal:whatsapp" aria-pressed="' + (canal === "whatsapp") + '">WhatsApp' +
+      (puedeWA ? "" : '<span class="falta">sin teléfono</span>') + "</button>" +
+    '<button class="canal" data-accion="canal:correo" aria-pressed="' + (canal === "correo") + '">Correo' +
+      (puedeCorreo ? "" : '<span class="falta">sin correo</span>') + "</button>" +
+    "</div>" +
+    '<p class="porque">' + esc(porqueEseCanal(c)) + "</p>" +
+    '<div class="medidor"><span class="etiqueta">el mensaje · editalo si querés</span>' +
+    '<span class="largo' + (canal === "whatsapp" && texto.length > 700 ? " pasado" : "") + '" id="largo">' +
+      texto.length + "</span></div>" +
+    '<textarea class="mensaje" data-accion="editar">' + esc(texto) + "</textarea>" +
+    '<button class="btn" data-accion="restaurar">Volver al mensaje original</button>' +
+    "</div></div>" +
+    '<div class="barra">' +
+    '<button class="btn" data-accion="copiar">Copiar</button>' + accion +
+    '<button class="btn ancho" data-accion="ya">Ya lo mandé · recordar en 7 días</button>' +
+    "</div>";
+}
+
+function vistaHoja() {
+  if (ui.hoja === "nuevo") {
+    return '<div class="hoja-velo" data-accion="cerrar-hoja"><form class="hoja" data-accion="crear">' +
+      "<h2>Agregar contacto</h2>" +
+      '<label class="campo"><span class="etiqueta">nombre</span><input name="nombre" required autocomplete="off"></label>' +
+      '<label class="campo"><span class="etiqueta">lado</span><select name="lado">' +
+      '<option value="proveedor">Proveedor</option><option value="comprador">Comprador</option></select></label>' +
+      '<label class="campo"><span class="etiqueta">teléfono</span><input name="telefono" type="tel" inputmode="tel" autocomplete="off"></label>' +
+      '<label class="campo"><span class="etiqueta">correo</span><input name="email" type="email" autocomplete="off"></label>' +
+      '<label class="campo"><span class="etiqueta">producto</span><input name="producto" autocomplete="off"></label>' +
+      '<div class="fila-botones"><button class="btn" type="button" data-accion="cerrar-hoja">Cancelar</button>' +
+      '<button class="btn correo" type="submit">Agregar</button></div></form></div>';
+  }
+  const p = estado.perfil || {};
+  return '<div class="hoja-velo" data-accion="cerrar-hoja"><div class="hoja">' +
+    "<h2>Datos y respaldo</h2>" +
+    '<p style="font-size:13.5px;color:var(--tinta-suave)">Firmás como <strong>' +
+      esc(p.nombre || "sin nombre cargado") + (p.empresa ? " · " + esc(p.empresa) : "") +
+      "</strong>. Se edita en la Mesa grande.</p>" +
+    '<button class="btn" data-accion="exportar">Exportar respaldo</button>' +
+    '<button class="btn" data-accion="importar">Importar respaldo</button>' +
+    '<input type="file" id="archivo" accept="application/json,.json" style="display:none">' +
+    '<button class="btn" data-accion="cerrar-hoja">Cerrar</button></div></div>';
+}
+
+function render() {
+  document.getElementById("raiz").innerHTML =
+    '<div class="app">' + (ui.abierto ? vistaMensaje() : vistaLista()) + "</div>" +
+    (ui.hoja ? vistaHoja() : "");
+}
+</script>
+<script id="eventos" data-src>
+"use strict";
+
+function accionDe(nodo) {
+  const el = nodo.closest ? nodo.closest("[data-accion]") : null;
+  return el ? { el: el, valor: el.getAttribute("data-accion") } : null;
+}
+
+document.addEventListener("click", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a) return;
+  const [verbo, arg] = a.valor.split(":");
+
+  if (verbo === "cerrar-hoja" && evento.target !== a.el && a.el.classList.contains("hoja-velo")) return;
+
+  switch (verbo) {
+    case "abrir": ui.abierto = arg; ui.canal = null; ui.borrador = null; render(); break;
+    case "volver": ui.abierto = null; ui.borrador = null; render(); break;
+    case "canal": ui.canal = arg; ui.borrador = null; render(); break;
+    case "restaurar": ui.borrador = null; render(); break;
+    case "copiar": {
+      const c = abierto();
+      if (c) copiar(ui.borrador != null ? ui.borrador : mensajeDe(c, ui.canal || canalSugerido(c)));
+      break;
+    }
+    case "hoja": ui.hoja = arg; render(); break;
+    case "cerrar-hoja": ui.hoja = null; render(); break;
+    case "exportar": {
+      const nombre = "mesa-respaldo-" + new Date().toISOString().slice(0, 10) + ".json";
+      if (bajar) {
+        bajar.save({ filename: nombre, data: respaldoJSON() })
+          .catch(function (e) { if ((e && e.code) !== "declined") copiar(respaldoJSON()); });
+      } else { copiar(respaldoJSON()); }
+      break;
+    }
+    case "importar": {
+      const campo = document.getElementById("archivo");
+      if (campo) campo.click();
+      break;
+    }
+    case "ya": {
+      const c = abierto();
+      if (!c) break;
+      const canal = ui.canal || canalSugerido(c);
+      c.notas = c.notas || [];
+      c.notas.push({ fecha: new Date().toISOString().slice(0, 10),
+        texto: "Le escribí por " + (canal === "correo" ? "correo" : "WhatsApp") + "." });
+      if (!c.estado || c.estado === "nuevo") c.estado = "contactado";
+      c.recontactar = enFecha(7);
+      ui.abierto = null; ui.borrador = null;
+      tocar(); render(); guardar();
+      brindis("Anotado. Te lo recuerdo en 7 días.");
+      break;
+    }
+  }
+});
+
+document.addEventListener("input", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a || a.valor !== "editar") return;
+  // Sin redibujar: redibujar mientras escribís te saca del campo. Pero
+  // hay que mover el enlace a mano o el botón manda el texto original.
+  ui.borrador = evento.target.value;
+  const c = abierto();
+  if (!c) return;
+  const canal = ui.canal || canalSugerido(c);
+
+  const largo = document.getElementById("largo");
+  if (largo) {
+    largo.textContent = ui.borrador.length;
+    largo.className = "largo" + (canal === "whatsapp" && ui.borrador.length > 700 ? " pasado" : "");
+  }
+
+  const boton = document.querySelector(".barra a.btn");
+  if (boton) {
+    const destino = canal === "whatsapp"
+      ? enlaceWhatsApp(c, ui.borrador)
+      : enlaceCorreo(c, asuntoDe(c), ui.borrador);
+    if (destino) boton.setAttribute("href", destino);
+  }
+});
+
+document.addEventListener("submit", function (evento) {
+  const a = accionDe(evento.target);
+  if (!a || a.valor !== "crear") return;
+  evento.preventDefault();
+  const d = Object.fromEntries(new FormData(evento.target).entries());
+  if (!(d.nombre || "").trim()) return;
+  const lado = d.lado === "comprador" ? "comprador" : "proveedor";
+  estado.contactos.push({
+    id: nuevoId(d.nombre, lado), lado: lado, nombre: d.nombre.trim(),
+    pais: "", ciudad: "", persona: "", cargo: "", email: (d.email || "").trim(),
+    telefono: (d.telefono || "").trim(), web: "", fiscal: "",
+    productos: (d.producto || "").trim() ? [d.producto.trim()] : [],
+    volumen: 0, unidad: "t", certificaciones: [], incoterms: [], pagos: [], mercados: [],
+    mandato: "", mandatoVence: "", verif: {}, estado: "nuevo", notas: [],
+    recontactar: "", creado: new Date().toISOString().slice(0, 10),
+  });
+  ui.hoja = null;
+  tocar(); render(); guardar();
+  brindis("Agregado");
+});
+
+document.addEventListener("change", function (evento) {
+  if (evento.target.id !== "archivo") return;
+  const archivo = evento.target.files && evento.target.files[0];
+  if (!archivo) return;
+  const lector = new FileReader();
+  lector.onload = function () {
+    const r = aplicarRespaldo(String(lector.result));
+    if (!r.ok) { brindis(r.porque); return; }
+    if (!confirm("Esto reemplaza lo que tengas cargado por el respaldo (" + r.contactos + " fichas). ¿Seguís?")) return;
+    ui.hoja = null; ui.abierto = null;
+    tocar(); render(); guardar();
+    brindis(r.contactos + " fichas cargadas");
+  };
+  lector.onerror = function () { brindis("No se pudo leer el archivo"); };
+  lector.readAsText(archivo);
+});
+
+cargarEstado();
+render();
+
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("artifact").then(function (c) { publicar = c; });
+  window.claude.use("downloads").then(function (c) { bajar = c; });
+}
+</script>

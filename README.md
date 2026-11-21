@@ -142,6 +142,14 @@ La app se republica a sí misma reconstruyendo el documento desde esos bloques
 más el estado en `#estado`, así que **si agregás un `<script>` nuevo tiene que
 llevar el atributo `data-src`** o se pierde en el primer guardado.
 
+## Dos pantallas
+
+`index.html` es la Mesa: el escritorio donde filtrás, verificás, cruzás y
+generás los papeles. `bolsillo.html` es la versión de teléfono, para una sola
+cosa: abrirla, ver a quién toca escribirle hoy y mandarle el mensaje con el
+pulgar. Comparten el formato de respaldo, así que el mismo archivo JSON pasa de
+una a la otra.
+
 ## Arranque
 
 `datos/mesa-arranque.json` es el libro de partida del corredor Santo Domingo-San
@@ -154,7 +162,7 @@ si ya tenías libro.
 ## Pruebas
 
 `pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push
-(`.github/workflows/ci.yml`). Veintiún casos: el lector de anuncios, el filtro de
+(`.github/workflows/ci.yml`). Veintidós casos: el lector de anuncios, el filtro de
 riesgo, el seguimiento por post, el emparejamiento de productos, el alta en
 lote, la búsqueda, el recontacto, el respaldo, y las tres fallas que ya se
 arreglaron una vez para que no vuelvan.

@@ -45,6 +45,8 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
 - [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
       búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [x] Mesa de Bolsillo (21 nov 2026, `bolsillo.html`): la pantalla de
+      teléfono para disparar mensajes, con el día ordenado por lo vencido.
 - [x] Libro de arranque del corredor con los once contactos y sus notas
       (21 nov 2026, `datos/mesa-arranque.json`).
 - [x] Mensajes de contacto por WhatsApp y correo desde cada ficha (21 nov
