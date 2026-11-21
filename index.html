@@ -1194,6 +1194,25 @@ function docFicha(d) {
   ].filter(function (l) { return l !== ""; }).join("\n");
 }
 
+/* Mientras no haya empresa constituida, el acuerdo se firma como
+   persona física. Dejar "Empresa: ____" en blanco hace ver el documento
+   a medio llenar, que es lo último que querés al mandarlo a firmar. */
+function bloqueIntermediario(perfil) {
+  perfil = perfil || {};
+  const tiene = function (k) { return (perfil[k] || "").toString().trim(); };
+  const lineas = ["- Nombre: " + o(perfil.nombre)];
+  if (tiene("empresa")) lineas.push("- Empresa: " + perfil.empresa);
+  lineas.push("- Documento de identidad o fiscal: " + o(perfil.documento));
+  lineas.push("- Domicilio: " + o(perfil.domicilio));
+  lineas.push("- Correo: " + o(perfil.email));
+  lineas.push("- Teléfono: " + o(perfil.telefono));
+  if (!tiene("empresa")) {
+    lineas.push("");
+    lineas.push("_Actúa por cuenta propia, como persona física._");
+  }
+  return lineas.join("\n");
+}
+
 function bloqueContraparte(d) {
   const c = d.contraparteId ? contactoPorId(d.contraparteId) : null;
   // Si la ficha ya no existe, se llena a mano: mejor en blanco a la vista
@@ -1227,12 +1246,7 @@ function docNCND(d, perfil) {
 
 **EL INTERMEDIARIO**
 
-- Nombre: ${o(perfil.nombre)}
-- Empresa: ${o(perfil.empresa)}
-- Documento / RNC: ${o(perfil.documento)}
-- Domicilio: ${o(perfil.domicilio)}
-- Correo: ${o(perfil.email)}
-- Teléfono: ${o(perfil.telefono)}
+${bloqueIntermediario(perfil)}
 
 **LA PARTE CONTRATANTE**
 
