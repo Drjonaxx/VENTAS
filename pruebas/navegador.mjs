@@ -355,12 +355,14 @@ await caso("el bolsillo ordena el día y manda lo que editaste", "/bolsillo.html
     render();
     const orden = grupos().map((g) => g[0]).join(",");
     ui.abierto = "p-1"; ui.canal = null; ui.borrador = null; render();
-    const antes = document.querySelector(".barra a.btn").getAttribute("href");
+    const antes = document.querySelector("[data-enviar]").getAttribute("href");
+    const llamar0 = (document.querySelector('.barra a[href^="tel:"]') || {}).href;
     const caja = document.querySelector("textarea.mensaje");
     caja.value = caja.value + " PD.";
     caja.dispatchEvent(new Event("input", { bubbles: true }));
-    const despues = document.querySelector(".barra a.btn").getAttribute("href");
+    const despues = document.querySelector("[data-enviar]").getAttribute("href");
     return { orden, antes, despues,
+      llamarAntes: llamar0, llamarDespues: (document.querySelector('.barra a[href^="tel:"]') || {}).href,
       firma: caja.value.includes("JRN Sourcing"),
       foco: document.activeElement.tagName };
   });
@@ -370,6 +372,10 @@ await caso("el bolsillo ordena el día y manda lo que editaste", "/bolsillo.html
     throw new Error("el botón manda el texto original en vez de lo editado");
   }
   if (!r.firma) throw new Error("el mensaje no sale firmado con el perfil");
+  if (r.llamarAntes !== r.llamarDespues) {
+    throw new Error("editar el mensaje le pisó el enlace al botón de llamar");
+  }
+  if (!(r.llamarAntes || "").startsWith("tel:")) throw new Error("falta el botón de llamar");
 });
 
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {

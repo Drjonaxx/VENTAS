@@ -506,9 +506,9 @@ function vistaMensaje() {
   const puedeCorreo = !!(c.email || "").trim();
 
   const accion = canal === "whatsapp"
-    ? (wa ? '<a class="btn enviar" href="' + esc(wa) + '" target="_blank" rel="noopener noreferrer" data-accion="abrio">Abrir WhatsApp</a>'
+    ? (wa ? '<a class="btn enviar" data-enviar href="' + esc(wa) + '" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>'
           : '<span class="btn enviar" aria-disabled="true">Falta el teléfono</span>')
-    : (correo ? '<a class="btn correo" href="' + esc(correo) + '" data-accion="abrio">Abrir el correo</a>'
+    : (correo ? '<a class="btn correo" data-enviar href="' + esc(correo) + '">Abrir el correo</a>'
               : '<span class="btn correo" aria-disabled="true">Falta el correo</span>');
 
   const tel = (c.telefono || "").replace(/[^\d+]/g, "");
@@ -646,7 +646,7 @@ document.addEventListener("input", function (evento) {
     largo.className = "largo" + (canal === "whatsapp" && ui.borrador.length > 700 ? " pasado" : "");
   }
 
-  const boton = document.querySelector(".barra a.btn");
+  const boton = document.querySelector("[data-enviar]");
   if (boton) {
     const destino = canal === "whatsapp"
       ? enlaceWhatsApp(c, ui.borrador)
