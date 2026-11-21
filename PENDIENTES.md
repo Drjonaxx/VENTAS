@@ -14,6 +14,9 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 ## Para Jonathan
 
 - [x] Fusionar `claude/automatizar-tareas-czbut9` a `main` (17 oct 2026).
+- [ ] Las tres llamadas de la acción 4 (Departamento de Cacao, JAD con la
+      extensión 263 que es la de compradores, y MIDA). Las listas para pegar y
+      los mensajes ya están hechos.
 - [ ] Las cinco acciones de la primera semana de
       `plan/corredor-sd-sju.html` (las llamadas y visitas son suyas).
 - [ ] Que un abogado lea el NCND antes de firmar el primero.
@@ -38,5 +41,7 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
 - [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
       búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [x] Mensajes de contacto por WhatsApp y correo desde cada ficha (21 nov
+      2026), con el canal sugerido por lado y el recordatorio a los 7 días.
 - [ ] Revisar cada tanto que las cifras de los planes sigan vigentes. La fecha
       de MIDA ya cambió una vez (de junio a agosto de 2027).

@@ -286,6 +286,58 @@ await caso("el respaldo se exporta, se valida y se restaura", "/index.html", asy
   if (!r.ok || r.contactos !== 1 || r.deals !== 1) throw new Error("no restaura el libro");
 });
 
+await caso("escribirle a una ficha por el canal que conviene", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.perfil = { nombre: "Jonathan Guzmán", empresa: "JG Trade", telefono: "787-555-0101" };
+    estado.contactos = [
+      { id: "p-1", lado: "proveedor", nombre: "CONACADO", persona: "María Reyes",
+        telefono: "809 563 1234", email: "export@conacado.com.do", pais: "República Dominicana",
+        productos: ["cacao en grano"], volumen: 6000, unidad: "t", certificaciones: ["orgánico"],
+        incoterms: [], pagos: [], mercados: ["Puerto Rico"], verif: {}, estado: "nuevo", notas: [] },
+      { id: "c-1", lado: "comprador", nombre: "José Santiago", email: "compras@josesantiago.com",
+        telefono: "", pais: "Puerto Rico", productos: ["cacao en grano"], volumen: 25, unidad: "t",
+        certificaciones: ["orgánico"], incoterms: [], pagos: [], mercados: ["República Dominicana"],
+        verif: {}, estado: "nuevo", notas: [] },
+    ];
+    ui.seccion = "proveedor"; ui.selContacto = "p-1"; ui.tabContacto = "escribir"; ui.canal = null;
+    render();
+    const prov = {
+      canal: canalSugerido(contactoActual()),
+      enlace: document.querySelector("a.btn.enviar").getAttribute("href"),
+      texto: document.querySelector("pre.doc").textContent,
+    };
+    ui.seccion = "comprador"; ui.selContacto = "c-1"; ui.canal = null;
+    render();
+    const comp = {
+      canal: canalSugerido(contactoActual()),
+      enlace: document.querySelector("a.btn.enviar").getAttribute("href"),
+    };
+    // sin teléfono, WhatsApp queda apagado y no se puede pinchar
+    ui.canal = "whatsapp"; render();
+    const apagado = document.querySelector('[aria-disabled="true"]') !== null;
+    // y "ya lo mandé" deja la nota y el recordatorio
+    ui.canal = null; render();
+    document.querySelector('[data-accion^="ya-escribi:"]').click();
+    const c = contactoPorId("c-1");
+    return { prov, comp, apagado, estado: c.estado, dias: diasPara(c.recontactar),
+      nota: (c.notas[0] || {}).texto || "" };
+  });
+  igual(r.prov.canal, "whatsapp", "a un proveedor conviene WhatsApp");
+  igual(r.comp.canal, "correo", "a un comprador conviene el correo");
+  if (!r.prov.enlace.startsWith("https://wa.me/18095631234?text=")) {
+    throw new Error("el número no se normalizó: " + r.prov.enlace.slice(0, 40));
+  }
+  if (!r.comp.enlace.startsWith("mailto:compras@josesantiago.com?subject=")) {
+    throw new Error("el mailto salió mal: " + r.comp.enlace.slice(0, 40));
+  }
+  if (!r.prov.texto.includes("María") || !r.prov.texto.includes("JG Trade")) {
+    throw new Error("el mensaje no usa los campos de la ficha ni los tuyos");
+  }
+  if (!r.apagado) throw new Error("sin teléfono el botón de WhatsApp debería estar apagado");
+  igual(r.estado + "/" + r.dias, "contactado/7", "al mandarlo queda anotado y con recordatorio");
+  if (!r.nota.includes("correo")) throw new Error("no quedó la nota en la bitácora");
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");

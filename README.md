@@ -56,7 +56,15 @@ ya exportó a Canadá"* contra *"sólo cubre 18%, le falta Fairtrade"*. Un deal
 suelto se pierde; el libro queda. Y cuando abrís una oportunidad nueva, los
 proveedores de tu libro que sirven ya aparecen ahí.
 
-**8. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
+**8. Le escribe a cada ficha por el canal que conviene.** La pestaña
+*Escribir* arma el mensaje con los campos de la ficha y los tuyos, y lo abre
+directo: WhatsApp con el número ya normalizado, o el correo con asunto y cuerpo
+puestos. Son cuatro mensajes distintos, no uno traducido: corto para WhatsApp,
+formal para correo, y uno por cada lado del libro. La app marca cuál conviene —
+WhatsApp con exportadores y cooperativas, correo con un departamento de compras
+— y al mandarlo deja la nota y te recuerda el seguimiento a los siete días.
+
+**9. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
 necesidad de un comprador salen los tres posts listos — Instagram con el formato
 de placas, LinkedIn en tono profesional y WhatsApp corto y reenviable, en
 español o en inglés. La comisión que se publica no es la tuya: es la tajada que
@@ -125,6 +133,7 @@ Todo vive en `index.html`, separado en bloques con `id`:
 | `app`    | Banderas rojas, directorio, libro de contactos y motor de cruce. |
 | `docs`   | Las plantillas: NCND, checklist y mensajes.                      |
 | `anuncios` | Los generadores de posts y la escala de comisión sugerida.     |
+| `mensajes` | Los mensajes de contacto por WhatsApp y correo, y qué canal conviene. |
 | `ui`     | Estado, guardado y utilidades.                                   |
 | `vista`  | Render de las pantallas.                                         |
 | `eventos`| Modales y manejo de eventos.                                     |
@@ -136,7 +145,7 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 ## Pruebas
 
 `pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push
-(`.github/workflows/ci.yml`). Veinte casos: el lector de anuncios, el filtro de
+(`.github/workflows/ci.yml`). Veintiún casos: el lector de anuncios, el filtro de
 riesgo, el seguimiento por post, el emparejamiento de productos, el alta en
 lote, la búsqueda, el recontacto, el respaldo, y las tres fallas que ya se
 arreglaron una vez para que no vuelvan.

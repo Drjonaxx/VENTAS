@@ -191,6 +191,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .atajos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
 
+.canales { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.enviar {
+  background: var(--acento); border-color: var(--acento); color: var(--superficie);
+  text-decoration: none; padding: 9px 16px; font-size: 14px;
+}
+.btn.enviar:hover { filter: brightness(1.08); }
+.btn.enviar[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+.largo { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-suave); }
+.largo.pasado { color: var(--ambar); }
+
 .buscador { display: flex; gap: 9px; align-items: center; padding: 9px 14px;
   border-bottom: 1px solid var(--linea); background: var(--superficie); }
 .buscador input {
@@ -1496,7 +1506,7 @@ let ui = {
   selContacto: null, tabContacto: "ficha",
   modal: null, modalLado: null, borrador: null,
   sucio: false, soloLocal: false, docAbierto: null,
-  postAbierto: null, idiomaPost: "es", busqueda: "",
+  postAbierto: null, idiomaPost: "es", busqueda: "", canal: null,
 };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
@@ -1968,6 +1978,189 @@ function resumenSeguimiento(duenio) {
 }
 </script>
 
+<script id="mensajes" data-src>
+"use strict";
+
+/* ---------------- escribirle a una ficha ----------------
+   Los documentos largos sirven para adjuntar. Para abrir la puerta, lo
+   que funciona es un mensaje corto por el canal que esa persona usa:
+   WhatsApp con un exportador dominicano, correo con el departamento de
+   compras de un distribuidor. Esto arma el mensaje con los campos de la
+   ficha y lo abre en la aplicación que corresponda. */
+
+function telefonoWhatsApp(tel) {
+  const digitos = (tel || "").replace(/\D/g, "");
+  if (!digitos) return "";
+  // República Dominicana y Puerto Rico son ambos +1.
+  if (digitos.length === 10) return "1" + digitos;
+  return digitos;
+}
+
+function enlaceWhatsApp(contacto, texto) {
+  const numero = telefonoWhatsApp(contacto.telefono);
+  if (!numero) return "";
+  return "https://wa.me/" + numero + "?text=" + encodeURIComponent(texto);
+}
+
+function enlaceCorreo(contacto, asunto, cuerpo) {
+  const dir = (contacto.email || "").trim();
+  if (!dir) return "";
+  return "mailto:" + dir + "?subject=" + encodeURIComponent(asunto) +
+    "&body=" + encodeURIComponent(cuerpo);
+}
+
+function saludo(contacto) {
+  const quien = (contacto.persona || "").trim().split(/\s+/)[0];
+  return quien ? "Buenos días " + quien : "Buenos días";
+}
+
+function yo() {
+  const p = estado.perfil || {};
+  const nombre = (p.nombre || "").trim();
+  const empresa = (p.empresa || "").trim();
+  if (nombre && empresa) return nombre + ", de " + empresa;
+  return nombre || empresa || "[tu nombre]";
+}
+
+function productoDe(contacto) {
+  return (contacto.productos || [])[0] || "[producto]";
+}
+
+function volumenDe(contacto) {
+  return num(contacto.volumen)
+    ? num(contacto.volumen).toLocaleString("es-DO") + " " + (contacto.unidad || "t")
+    : "";
+}
+
+/* Cuatro mensajes: dos lados por dos canales. El de WhatsApp es corto a
+   propósito — un muro de texto en WhatsApp no se lee. */
+
+function mensajeProveedorCorto(c) {
+  const destino = (c.mercados || [])[0] || "Puerto Rico y Estados Unidos";
+  return [
+    saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
+    "",
+    "Trabajo con compradores de " + destino + " y estoy buscando proveedor de " +
+      productoDe(c) + ". Quería saber si les encaja antes de hacerles perder tiempo.",
+    "",
+    "Tres preguntas:",
+    "1. ¿Qué volumen pueden cubrir y en qué plazo?",
+    "2. ¿Precio indicativo FOB y hasta cuándo vale?",
+    "3. ¿Qué certificaciones tienen vigentes?",
+    "",
+    "Mi comisión la asume la parte compradora, así que no afecta su precio de venta.",
+    "",
+    "Gracias.",
+  ].join("\n");
+}
+
+function mensajeProveedorCorreo(c) {
+  const destino = (c.mercados || [])[0] || "Puerto Rico y Estados Unidos";
+  return [
+    saludo(c) + ",",
+    "",
+    "Soy " + yo() + ". Trabajo como intermediario comercial desde Puerto Rico, " +
+      "conectando exportadores de la región con compradores en Puerto Rico y Estados Unidos continental.",
+    "",
+    "Estoy buscando proveedor de " + productoDe(c) + " para " + destino +
+      " y me gustaría saber si pueden participar.",
+    "",
+    "Lo que necesito confirmar para avanzar:",
+    "",
+    "1. Volumen que pueden cubrir, completo o en entregas parciales, y en qué plazo.",
+    "2. Precio indicativo con Incoterm y validez de la oferta.",
+    "3. Certificaciones vigentes y si han exportado antes a ese destino.",
+    "4. Términos de pago que aceptan.",
+    "",
+    "Dos cosas sobre cómo trabajo, para que no haya sorpresas: mi comisión la asume " +
+      "la parte compradora y no afecta su precio de venta, y antes de presentarlos " +
+      "formalmente firmamos un acuerdo de confidencialidad y no elusión que protege a las dos partes.",
+    "",
+    "Si les interesa, con una respuesta a esos cuatro puntos seguimos.",
+    "",
+    "Quedo atento,",
+    (estado.perfil || {}).nombre || "",
+    [(estado.perfil || {}).empresa, (estado.perfil || {}).telefono].filter(Boolean).join(" · "),
+  ].filter(function (l) { return l !== undefined; }).join("\n");
+}
+
+function mensajeCompradorCorto(c) {
+  const origen = (c.mercados || [])[0] || "República Dominicana";
+  const vol = volumenDe(c);
+  const certs = (c.certificaciones || []).join(", ");
+  return [
+    saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
+    "",
+    "Represento exportadores verificados de " + productoDe(c) + " en " + origen +
+      (certs ? ", con " + certs : "") + ".",
+    vol ? "Volumen disponible: " + vol + "." : "",
+    "",
+    "Entrada directa a San Juan, sin pasar por Miami, así que el flete no carga el " +
+      "sobrecosto de cabotaje.",
+    "",
+    "¿Les interesa recibir la ficha técnica y coordinar una muestra?",
+  ].filter(function (l) { return l !== null; }).join("\n");
+}
+
+function mensajeCompradorCorreo(c) {
+  const origen = (c.mercados || [])[0] || "República Dominicana";
+  const vol = volumenDe(c);
+  const certs = (c.certificaciones || []).join(", ");
+  return [
+    saludo(c) + ",",
+    "",
+    "Soy " + yo() + ", intermediario comercial radicado en Puerto Rico. Les escribo " +
+      "porque represento exportadores de " + productoDe(c) + " en " + origen +
+      " y creo que puede encajar con lo que ustedes compran.",
+    "",
+    "Lo concreto:",
+    "",
+    "· Producto: " + productoDe(c) + (certs ? " (" + certs + ")" : ""),
+    vol ? "· Volumen disponible: " + vol : "· Volumen: a confirmar según su necesidad",
+    "· Origen: " + origen + ", con trazabilidad hasta el productor",
+    "· Entrega: directa a San Juan. Al ser carga de origen extranjero no aplica la " +
+      "Jones Act, así que no carga el sobrecosto que sí tiene la mercancía ruteada por Florida.",
+    "· Documentación: certificado fitosanitario, certificado de origen y análisis de laboratorio",
+    "",
+    "A los exportadores con los que trabajo los verifico yo antes de presentarlos: " +
+      "registro fiscal, registro mercantil y registro de exportador ante la aduana.",
+    "",
+    "Si la especificación se acerca a lo que compran, les mando la ficha técnica y " +
+      "coordino una muestra. Si no, díganme qué sí necesitan y vuelvo cuando lo tenga.",
+    "",
+    "Quedo atento,",
+    (estado.perfil || {}).nombre || "",
+    [(estado.perfil || {}).empresa, (estado.perfil || {}).telefono].filter(Boolean).join(" · "),
+  ].join("\n");
+}
+
+function asuntoDe(c) {
+  return c.lado === "proveedor"
+    ? "Consulta de compra: " + productoDe(c) + " para Puerto Rico"
+    : productoDe(c) + " de " + ((c.mercados || [])[0] || "origen caribeño") +
+      ", entrega directa a San Juan";
+}
+
+function mensajeDe(c, canal) {
+  if (c.lado === "proveedor") {
+    return canal === "correo" ? mensajeProveedorCorreo(c) : mensajeProveedorCorto(c);
+  }
+  return canal === "correo" ? mensajeCompradorCorreo(c) : mensajeCompradorCorto(c);
+}
+
+/* Cuál conviene. No es lo mismo una cooperativa dominicana que el
+   departamento de compras de un distribuidor. */
+function canalSugerido(c) {
+  return c.lado === "proveedor" ? "whatsapp" : "correo";
+}
+
+function porqueEseCanal(c) {
+  return c.lado === "proveedor"
+    ? "Con exportadores y cooperativas de la región, WhatsApp es el canal de trabajo real: el correo se queda sin leer. Mandá el corto y dejá el formal para cuando contesten."
+    : "Con un departamento de compras, el correo gana: les deja rastro, se reenvía internamente y se le puede adjuntar la ficha. WhatsApp sirve después, cuando ya tenés con quién hablar.";
+}
+</script>
+
 <script id="vista" data-src>
 "use strict";
 
@@ -2299,7 +2492,7 @@ function vistaCabezaContacto(c) {
 
 function vistaPestanasContacto() {
   const c = contactoActual();
-  const tabs = [["ficha", "Ficha"], ["verif", "Verificación"], ["cruce", "Cruce"]]
+  const tabs = [["ficha", "Ficha"], ["escribir", "Escribir"], ["verif", "Verificación"], ["cruce", "Cruce"]]
     .concat(c && c.lado === "comprador" ? [["publicar", "Publicar"]] : [])
     .concat([["bitacora", "Bitácora"]]);
   return '<div class="pestanas" role="tablist">' + tabs.map(function (x) {
@@ -2397,6 +2590,54 @@ function panelCruceContacto(c) {
       "</div>";
   }).join("");
   return '<div class="panel">' + tarjeta("quién encaja con " + esc(c.nombre || "este contacto"), filas) + "</div>";
+}
+
+function panelEscribir(c) {
+  const canal = ui.canal || canalSugerido(c);
+  const texto = mensajeDe(c, canal);
+  const asunto = asuntoDe(c);
+  const sugerido = canalSugerido(c);
+  const wa = enlaceWhatsApp(c, texto);
+  const correo = enlaceCorreo(c, asunto, texto);
+  const falta = canal === "whatsapp" ? !wa : !correo;
+
+  const boton = function (clave, rotulo) {
+    return '<button class="btn chico' + (canal === clave ? " primario" : "") +
+      '" data-accion="canal:' + clave + '">' + rotulo +
+      (clave === sugerido ? " ·" : "") + "</button>";
+  };
+
+  const enlace = canal === "whatsapp"
+    ? (wa ? '<a class="btn enviar" href="' + esc(wa) + '" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>'
+          : '<span class="btn enviar" aria-disabled="true">Abrir WhatsApp</span>')
+    : (correo ? '<a class="btn enviar" href="' + esc(correo) + '">Abrir el correo</a>'
+              : '<span class="btn enviar" aria-disabled="true">Abrir el correo</span>');
+
+  const aviso = falta
+    ? '<p style="color:var(--ambar)">Falta ' + (canal === "whatsapp" ? "el teléfono" : "el correo") +
+      ' en la ficha. Cargalo en la pestaña Ficha y el botón se enciende.</p>'
+    : "";
+
+  const limite = canal === "whatsapp"
+    ? '<p class="largo' + (texto.length > 700 ? " pasado" : "") + '">' + texto.length +
+      " caracteres" + (texto.length > 700 ? " — largo para WhatsApp, se lee a medias" : "") + "</p>"
+    : "";
+
+  return '<div class="panel">' +
+    tarjeta("por dónde", '<div class="canales">' + boton("whatsapp", "WhatsApp") + boton("correo", "Correo") + "</div>" +
+      "<p>" + esc(porqueEseCanal(c)) + "</p>" +
+      '<p class="etiqueta">el punto marca el canal que conviene para este lado</p>') +
+    tarjeta("el mensaje",
+      (canal === "correo" ? '<p><strong>Asunto:</strong> ' + esc(asunto) + "</p>" : "") +
+      limite + aviso +
+      '<div class="canales">' + enlace +
+      '<button class="btn" data-accion="copiar-mensaje">Copiar</button></div>') +
+    '<section class="tarjeta"><header><span class="etiqueta">así queda</span></header>' +
+    '<pre class="doc">' + esc(texto) + "</pre></section>" +
+    tarjeta("cuando lo mandes",
+      "<p>Dejalo anotado y la Mesa te recuerda el seguimiento a los siete días, que es lo que el plan pide.</p>" +
+      '<div><button class="btn primario" data-accion="ya-escribi:' + canal + '">Ya lo mandé</button></div>') +
+    "</div>";
 }
 
 function panelBitacoraContacto(c) {
@@ -2522,7 +2763,8 @@ function vistaHojaContacto(clase) {
   const c = contactoActual();
   const abre = '<main class="hoja' + (clase || "") + '">';
   if (!c) return abre + '<div class="vacio"><p>Elegí una ficha de la lista para verla.</p></div></main>';
-  const panel = ui.tabContacto === "verif" ? panelVerifContacto(c)
+  const panel = ui.tabContacto === "escribir" ? panelEscribir(c)
+    : ui.tabContacto === "verif" ? panelVerifContacto(c)
     : ui.tabContacto === "cruce" ? panelCruceContacto(c)
     : ui.tabContacto === "publicar" && c.lado === "comprador"
       ? panelPublicar(necesidadDeComprador(c),
@@ -2746,13 +2988,32 @@ document.addEventListener("click", function (evento) {
       if (campo) campo.click();
       break;
     }
-    case "ver-contacto": ui.seccion = contactoPorId(arg).lado; ui.selContacto = arg; ui.tabContacto = "ficha"; render(); break;
+    case "ver-contacto": ui.seccion = contactoPorId(arg).lado; ui.selContacto = arg; ui.tabContacto = "ficha"; ui.canal = null; render(); break;
     case "sel-contacto": {
       const c = contactoPorId(arg);
-      if (c) { ui.seccion = c.lado; ui.selContacto = arg; ui.tabContacto = "ficha"; render(); }
+      if (c) { ui.seccion = c.lado; ui.selContacto = arg; ui.tabContacto = "ficha"; ui.canal = null; render(); }
       break;
     }
     case "tab-contacto": ui.tabContacto = arg; render(); break;
+    case "canal": ui.canal = arg; render(); break;
+    case "copiar-mensaje": {
+      const c = contactoActual();
+      if (c) copiar(mensajeDe(c, ui.canal || canalSugerido(c)));
+      break;
+    }
+    case "ya-escribi": {
+      const c = contactoActual();
+      if (!c) break;
+      const por = arg === "correo" ? "correo" : "WhatsApp";
+      c.notas = c.notas || [];
+      c.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: "Le escribí por " + por + "." });
+      if (c.estado === "nuevo") c.estado = "contactado";
+      c.recontactar = enFecha(7);
+      ui.tabContacto = "bitacora";
+      tocar(); render();
+      brindis("Anotado. Te lo recuerdo en 7 días.");
+      break;
+    }
     case "nuevo-contacto":
       ui.modal = "contacto"; ui.modalLado = arg; ui.borrador = null;
       ui.selContactoEditando = null; render();
