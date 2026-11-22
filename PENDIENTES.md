@@ -43,7 +43,10 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       generó la app (campo en el deal y un contador en la vista). (22 oct
       2026: «Lo publiqué» en cada formato, +1 por respuesta y el total en
       la lista; también en la ficha de un comprador.)
-- [x] Mantener `ci.yml` en verde.
+- [x] Mantener `ci.yml` en verde. (22 nov 2026: estuvo rojo dos commits sin
+      que se notara. No era el código: `ubuntu-latest` pasó a Ubuntu 26.04 y
+      Playwright 1.56.1 no instala Chromium ahí, así que ninguna prueba llegó
+      a correr. La imagen quedó fijada en `ubuntu-24.04`.)
 - [x] Auditoría de seguridad y fallas (21 nov 2026): 15 vistas probadas contra
       inyección de HTML, sin agujeros. Cuatro fallas encontradas y arregladas:
       el emparejamiento cruzaba camarón con ron y espinaca con piña; en el

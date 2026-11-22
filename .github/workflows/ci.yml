@@ -15,7 +15,12 @@ concurrency:
 
 jobs:
   navegador:
-    runs-on: ubuntu-latest
+    # Fijo, no 'latest'. El 21 de noviembre de 2026 'ubuntu-latest' pasó a
+    # Ubuntu 26.04 y Playwright 1.56.1 dejó de instalar Chromium ahí
+    # ("Playwright does not support chromium on ubuntu26.04-x64"): dos
+    # commits en rojo sin que una sola prueba llegara a correr. Al subir
+    # Playwright se sube también esta imagen, juntas y a propósito.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
