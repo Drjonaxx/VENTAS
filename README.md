@@ -71,11 +71,23 @@ hasta que las dos partes tengan el NCND firmado, porque presentar antes de eso
 es la forma número uno de quedarse afuera del trato. Al mandarlo queda anotado
 en la bitácora de los dos, con fecha.
 
-**10. Lee personas, no sólo anuncios.** Pegás una firma de correo, una tarjeta
+**10. Sigue una secuencia, no un recordatorio suelto.** Día 0, 3, 7, 14 y 30,
+con un mensaje distinto en cada paso: el rebote corto, el que trae un dato
+nuevo, el que pide hablar con otra persona, y el cierre cortés —que es el que
+más respuestas destraba—. Cada vez que mandás uno, avanza sola y agenda el
+siguiente.
+
+**11. Revisa tu correo y te dice quién contestó.** Un botón consulta Gmail con
+las credenciales de quien mira la página, en una sola búsqueda por los dominios
+del libro, y marca las fichas que respondieron. Si Gmail no está conectado, si
+la sesión venció o si falta permiso, cada caso dice qué hacer en vez de un
+"algo salió mal".
+
+**12. Lee personas, no sólo anuncios.** Pegás una firma de correo, una tarjeta
 o un perfil de LinkedIn y sale la ficha con nombre, empresa, cargo, teléfono y
 correo separados.
 
-**11. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
+**13. Escribe los anuncios.** Lo inverso del lector: de un deal o de la
 necesidad de un comprador salen los tres posts listos — Instagram con el formato
 de placas, LinkedIn en tono profesional y WhatsApp corto y reenviable, en
 español o en inglés. La comisión que se publica no es la tuya: es la tajada que
@@ -181,7 +193,7 @@ si ya tenías libro.
 ## Pruebas
 
 `pruebas/navegador.mjs` abre la app y los tres planes en Chromium en cada push
-(`.github/workflows/ci.yml`). Veinticuatro casos: el lector de anuncios, el filtro de
+(`.github/workflows/ci.yml`). Veintiséis casos: el lector de anuncios, el filtro de
 riesgo, el seguimiento por post, el emparejamiento de productos, el alta en
 lote, la búsqueda, el recontacto, el respaldo, y las tres fallas que ya se
 arreglaron una vez para que no vuelvan.

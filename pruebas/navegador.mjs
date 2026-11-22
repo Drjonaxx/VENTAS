@@ -334,8 +334,9 @@ await caso("escribirle a una ficha por el canal que conviene", "/index.html", as
     throw new Error("el mensaje no usa los campos de la ficha ni los tuyos");
   }
   if (!r.apagado) throw new Error("sin teléfono el botón de WhatsApp debería estar apagado");
-  igual(r.estado + "/" + r.dias, "contactado/7", "al mandarlo queda anotado y con recordatorio");
+  igual(r.estado + "/" + r.dias, "contactado/3", "al mandarlo arranca la secuencia: el rebote es a los 3 días");
   if (!r.nota.includes("correo")) throw new Error("no quedó la nota en la bitácora");
+  if (!r.nota.includes("Primer contacto")) throw new Error("la nota no dice en qué paso de la secuencia va");
 });
 
 await caso("el bolsillo ordena el día y manda lo que editaste", "/bolsillo.html", async (p) => {
@@ -445,6 +446,59 @@ await caso("el lector de personas llena una ficha", "/index.html", async (p) => 
   igual(r.email, "lortiz@rizekcacao.com", "el correo");
   igual(r.tel, "809-530-9400", "el teléfono");
   if (!r.nombre.includes("Rizek")) throw new Error("no sacó la empresa: " + r.nombre);
+});
+
+await caso("la secuencia avanza con un mensaje distinto en cada paso", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.perfil = { nombre: "Jonathan Rodríguez Nieves", empresa: "JRN Sourcing" };
+    estado.contactos = [{ id: "p-1", lado: "proveedor", nombre: "Rizek Cacao", persona: "Luis",
+      telefono: "809-530-9400", productos: ["cacao en grano"], certificaciones: ["orgánico"],
+      incoterms: [], pagos: [], mercados: ["Puerto Rico"], verif: {}, estado: "nuevo", notas: [] }];
+    ui.seccion = "proveedor"; ui.selContacto = "p-1"; ui.tabContacto = "escribir";
+    ui.canal = null; ui.paso = null; render();
+    const lineas = [], esperas = [];
+    for (let i = 0; i < 5; i++) {
+      lineas.push(document.querySelector("pre.doc").textContent.split("\n")[0]);
+      document.querySelector('[data-accion^="ya-escribi:"]').click();
+      esperas.push(diasPara(contactoPorId("p-1").recontactar));
+      ui.tabContacto = "escribir"; ui.paso = null; render();
+    }
+    const c = contactoPorId("p-1");
+    return { lineas, esperas, paso: pasoDe(c), recordatorio: c.recontactar, notas: c.notas.length };
+  });
+  if (new Set(r.lineas).size !== 5) throw new Error("algún paso repite el mismo mensaje");
+  igual(JSON.stringify(r.esperas), "[3,4,7,16,null]", "las esperas de la cadencia");
+  igual(String(r.paso) + "/" + r.notas, "4/5", "paso final y una nota por paso");
+  if (r.recordatorio !== "") throw new Error("al terminar la secuencia no debería seguir recordando");
+});
+
+await caso("el repaso del correo empareja y explica cada fallo", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [
+      { id: "p-1", lado: "proveedor", nombre: "Rizek", email: "info@rizekcacao.com", notas: [] },
+      { id: "c-1", lado: "comprador", nombre: "Malgor", email: "malgorco@malgor.com", notas: [] },
+      { id: "p-9", lado: "proveedor", nombre: "Personal", email: "x@gmail.com", notas: [] },
+    ];
+    // forma observada en una llamada real a search_threads
+    const hallazgos = cruzarCorreo({ resultCountEstimate: "2", threads: [
+      { id: "t1", messageCount: 2, viewUrl: "https://mail.google.com/t1", messages: [
+        { id: "m1", sender: "luis@rizekcacao.com", date: "2026-11-20T10:00:00Z",
+          subject: "Re: Consulta", viewUrl: "https://mail.google.com/m1" } ] },
+      { id: "t2", messageCount: 1, messages: [
+        { id: "m2", sender: "otra@desconocida.com", date: "2026-11-19T10:00:00Z" } ] },
+    ] });
+    const codigos = ["server_not_connected", "needs_reauth", "not_in_manifest", "approval_required",
+      "blocked_by_policy", "selection_required", "server_unavailable", "codigo_nuevo"];
+    return { consulta: consultaCorreo(), dominios: dominiosDelLibro(), hallazgos: hallazgos,
+      textos: codigos.map(explicarFalloCorreo), reintenta: reintentable("server_unavailable"),
+      noReintenta: reintentable("needs_reauth") };
+  });
+  igual(r.consulta, "from:(rizekcacao.com OR malgor.com) newer_than:90d", "la consulta a Gmail");
+  if (r.dominios.indexOf("gmail.com") >= 0) throw new Error("no debería buscar en dominios gratuitos");
+  igual(Object.keys(r.hallazgos).join(","), "p-1", "sólo empareja la ficha del dominio que escribió");
+  igual(r.hallazgos["p-1"].de, "luis@rizekcacao.com", "el remitente");
+  if (new Set(r.textos).size !== r.textos.length) throw new Error("dos códigos dan el mismo mensaje");
+  if (!r.reintenta || r.noReintenta) throw new Error("mal clasificado qué se puede reintentar");
 });
 
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {

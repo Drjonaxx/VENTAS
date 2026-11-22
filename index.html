@@ -1529,7 +1529,8 @@ let ui = {
   selContacto: null, tabContacto: "ficha",
   modal: null, modalLado: null, borrador: null,
   sucio: false, soloLocal: false, docAbierto: null,
-  postAbierto: null, idiomaPost: "es", busqueda: "", canal: null, presentarA: null,
+  postAbierto: null, idiomaPost: "es", busqueda: "", canal: null, presentarA: null, paso: null,
+  bandeja: null, revisando: false,
 };
 let publicar = null;   // capacidad artifact
 let bajar = null;      // capacidad downloads
@@ -2045,7 +2046,7 @@ function yo() {
   return nombre || empresa || "[tu nombre]";
 }
 
-function productoDe(contacto) {
+function prod0(contacto) {
   return (contacto.productos || [])[0] || "[producto]";
 }
 
@@ -2064,7 +2065,7 @@ function mensajeProveedorCorto(c) {
     saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
     "",
     "Trabajo con compradores de " + destino + " y estoy buscando proveedor de " +
-      productoDe(c) + ". Quería saber si les encaja antes de hacerles perder tiempo.",
+      prod0(c) + ". Quería saber si les encaja antes de hacerles perder tiempo.",
     "",
     "Tres preguntas:",
     "1. ¿Qué volumen pueden cubrir y en qué plazo?",
@@ -2085,7 +2086,7 @@ function mensajeProveedorCorreo(c) {
     "Soy " + yo() + ". Trabajo como intermediario comercial desde Puerto Rico, " +
       "conectando exportadores de la región con compradores en Puerto Rico y Estados Unidos continental.",
     "",
-    "Estoy buscando proveedor de " + productoDe(c) + " para " + destino +
+    "Estoy buscando proveedor de " + prod0(c) + " para " + destino +
       " y me gustaría saber si pueden participar.",
     "",
     "Lo que necesito confirmar para avanzar:",
@@ -2114,7 +2115,7 @@ function mensajeCompradorCorto(c) {
   return [
     saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
     "",
-    "Represento exportadores verificados de " + productoDe(c) + " en " + origen +
+    "Represento exportadores verificados de " + prod0(c) + " en " + origen +
       (certs ? ", con " + certs : "") + ".",
     vol ? "Volumen disponible: " + vol + "." : "",
     "",
@@ -2133,12 +2134,12 @@ function mensajeCompradorCorreo(c) {
     saludo(c) + ",",
     "",
     "Soy " + yo() + ", intermediario comercial radicado en Puerto Rico. Les escribo " +
-      "porque represento exportadores de " + productoDe(c) + " en " + origen +
+      "porque represento exportadores de " + prod0(c) + " en " + origen +
       " y creo que puede encajar con lo que ustedes compran.",
     "",
     "Lo concreto:",
     "",
-    "· Producto: " + productoDe(c) + (certs ? " (" + certs + ")" : ""),
+    "· Producto: " + prod0(c) + (certs ? " (" + certs + ")" : ""),
     vol ? "· Volumen disponible: " + vol : "· Volumen: a confirmar según su necesidad",
     "· Origen: " + origen + ", con trazabilidad hasta el productor",
     "· Entrega: directa a San Juan. Al ser carga de origen extranjero no aplica la " +
@@ -2157,10 +2158,88 @@ function mensajeCompradorCorreo(c) {
   ].join("\n");
 }
 
+/* ---------------- la secuencia de seguimiento ----------------
+   Un recordatorio a los siete días y después nada es como se pierde
+   la mitad de las respuestas. Lo que funciona es una cadencia con un
+   mensaje distinto en cada paso: el mismo texto repetido molesta, uno
+   que aporta algo nuevo se contesta. */
+
+const SECUENCIA = [
+  { dias: 0, rotulo: "Primer contacto", nota: "El que abre la puerta." },
+  { dias: 3, rotulo: "Rebote, día 3", nota: "Cortísimo. Sube el hilo y da salida fácil." },
+  { dias: 7, rotulo: "Algo nuevo, día 7", nota: "No repite: trae un dato que no tenían." },
+  { dias: 14, rotulo: "Otra puerta, día 14", nota: "Asume que no es la persona correcta y pide a quién sí." },
+  { dias: 30, rotulo: "Cierre, día 30", nota: "Cerrás vos. Es lo que más respuestas destraba." },
+];
+
+function pasoDe(c) {
+  const n = Math.max(0, Math.min(SECUENCIA.length - 1, parseInt((c || {}).paso, 10) || 0));
+  return n;
+}
+function hayPasoSiguiente(c) { return pasoDe(c) < SECUENCIA.length - 1; }
+
+function seguimientoDe(c, paso) {
+  const prod = prod0(c);
+  const esProv = c.lado === "proveedor";
+  const cuando = (c.ultimoContacto || "").trim();
+  const desde = cuando ? " el " + cuando : "";
+
+  if (paso === 1) {
+    return [
+      saludo(c) + ", te escribí" + desde + " por lo de " + prod + ".",
+      "",
+      "¿Te llegó? Si no es el momento decímelo y no insisto más, sin problema.",
+    ].join("\n");
+  }
+  if (paso === 2) {
+    const dato = esProv
+      ? "El comprador con el que trabajo pide " +
+        ((c.certificaciones || []).length ? c.certificaciones.join(" y ") : "trazabilidad y certificación vigente") +
+        ", y entrega directa a San Juan."
+      : "Entrada directa a San Juan desde " + ((c.mercados || [])[0] || "origen caribeño") +
+        ": al ser carga de origen extranjero no aplica la Jones Act, así que el flete no carga " +
+        "el sobrecosto de la mercancía ruteada por Florida.";
+    return [
+      saludo(c) + ". Vuelvo con algo concreto, no para insistir.",
+      "",
+      dato,
+      "",
+      esProv
+        ? "¿Eso les encaja? Con un sí o un no ya sé si seguir."
+        : "¿Vale la pena que les mande la ficha técnica?",
+    ].join("\n");
+  }
+  if (paso === 3) {
+    return [
+      saludo(c) + ". Capaz no sos vos quien ve esto, y te estoy haciendo perder tiempo.",
+      "",
+      esProv
+        ? "¿Quién lleva las exportaciones ahí? Le escribo directo y te saco del medio."
+        : "¿Quién lleva las compras de " + prod + " ahí? Le escribo directo y te saco del medio.",
+      "",
+      "Gracias igual.",
+    ].join("\n");
+  }
+  return [
+    saludo(c) + ". Cierro el tema por ahora, no te escribo más.",
+    "",
+    esProv
+      ? "Si en algún momento les queda volumen libre de " + prod + " y quieren colocarlo en " +
+        "Puerto Rico o Estados Unidos, escribime y lo movemos."
+      : "Si en algún momento necesitan " + prod + " de origen caribeño, escribime y te consigo proveedor verificado.",
+    "",
+    "Quedo por acá. Éxitos.",
+  ].join("\n");
+}
+
+function mensajePaso(c, canal, paso) {
+  return paso === 0 ? mensajeDe(c, canal) : seguimientoDe(c, paso);
+}
+
 function asuntoDe(c) {
   return c.lado === "proveedor"
-    ? "Consulta de compra: " + productoDe(c) + " para Puerto Rico"
-    : productoDe(c) + " de " + ((c.mercados || [])[0] || "origen caribeño") +
+    ? "Consulta de compra: " + prod0(c) + " para Puerto Rico"
+    : prod0(c) + " de " + ((c.mercados || [])[0] || "origen caribeño") +
       ", entrega directa a San Juan";
 }
 
@@ -2290,6 +2369,136 @@ function docPresentacion(comprador, proveedor) {
     "· Anotá en la bitácora de los dos qué pasó después. Esa bitácora y el NCND son",
     "  lo único que tenés si después hay pleito.",
   ].join("\n");
+}
+
+/* ---------------- revisar el correo ----------------
+   La app no puede leer tu correo sola: lo hace el conector de Gmail
+   del que la está mirando, con sus credenciales, y sólo cuando tocás
+   el botón. Una sola consulta para todas las fichas: Gmail acepta OR,
+   así que se arma una query con los dominios del libro y se empareja
+   el remitente contra cada ficha.
+
+   La forma de la respuesta se observó en una llamada real:
+   { resultCountEstimate, threads: [ { id, messageCount, viewUrl,
+     messages: [ { id, sender, date, subject, snippet, viewUrl } ] } ] }
+   El remitente es un correo en texto plano. */
+
+function dominioDe(correo) {
+  const m = (correo || "").trim().toLowerCase().match(/@([^@\s>]+)$/);
+  return m ? m[1] : "";
+}
+
+function dominiosDelLibro() {
+  const vistos = new Set();
+  (estado.contactos || []).forEach(function (c) {
+    const d = dominioDe(c.email);
+    if (!d) return;
+    if (["gmail.com", "hotmail.com", "yahoo.com", "outlook.com", "icloud.com"].indexOf(d) >= 0) return;
+    vistos.add(d);
+  });
+  return Array.from(vistos).slice(0, 25);
+}
+
+function consultaCorreo() {
+  const doms = dominiosDelLibro();
+  if (!doms.length) return "";
+  return "from:(" + doms.join(" OR ") + ") newer_than:90d";
+}
+
+/* Cada código de error tiene un arreglo distinto. Un solo cartel
+   genérico esconde justo la acción que destraba la página. */
+function explicarFalloCorreo(codigo) {
+  switch (codigo) {
+    case "server_not_connected":
+      return "No tenés Gmail conectado en Claude. Se agrega en Configuración → Conectores.";
+    case "needs_reauth":
+      return "La conexión con Gmail venció. Reconectala en Configuración → Conectores.";
+    case "not_in_manifest":
+      return "No le diste permiso a esta página para usar Gmail. Podés permitirlo desde el menú de permisos del artefacto.";
+    case "approval_required":
+      return "Gmail necesita que apruebes esta consulta. Tocá otra vez y aceptá el aviso.";
+    case "blocked_by_policy":
+      return "La política de tu organización bloquea esta consulta a Gmail.";
+    case "selection_required":
+      return "Tenés más de una cuenta de Gmail conectada y falta elegir cuál usar.";
+    case "server_unavailable":
+      return "Gmail no contestó. Probá de nuevo en un momento.";
+    case "not_granted":
+    case "capability_disabled":
+    case "capability_removed":
+      return "Esta vista no puede usar conectores. Abrí la Mesa desde claude.ai.";
+    default:
+      return "No se pudo consultar Gmail.";
+  }
+}
+function reintentable(codigo) {
+  return codigo === "server_unavailable" || codigo === "upstream_error";
+}
+
+/* Empareja cada hilo con la ficha cuyo dominio coincide. */
+function cruzarCorreo(respuesta) {
+  const hilos = (respuesta && respuesta.threads) || [];
+  const porDominio = {};
+  (estado.contactos || []).forEach(function (c) {
+    const d = dominioDe(c.email);
+    if (d) (porDominio[d] = porDominio[d] || []).push(c);
+  });
+
+  const hallazgos = {};
+  hilos.forEach(function (h) {
+    const mensajes = h.messages || [];
+    mensajes.forEach(function (m) {
+      const d = dominioDe(m.sender);
+      const fichas = porDominio[d] || [];
+      fichas.forEach(function (c) {
+        const previo = hallazgos[c.id];
+        const cuando = m.date || h.date || "";
+        if (!previo || String(cuando) > String(previo.cuando)) {
+          hallazgos[c.id] = {
+            cuando: cuando,
+            asunto: m.subject || "",
+            enlace: m.viewUrl || h.viewUrl || "",
+            de: m.sender || "",
+          };
+        }
+      });
+    });
+  });
+  return hallazgos;
+}
+
+async function revisarCorreo() {
+  const consulta = consultaCorreo();
+  if (!consulta) {
+    ui.bandeja = { error: "Ninguna ficha tiene correo cargado todavía." };
+    render();
+    return;
+  }
+  const mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null;
+  if (!mcp) {
+    ui.bandeja = { error: explicarFalloCorreo("capability_disabled") };
+    render();
+    return;
+  }
+
+  ui.revisando = true; ui.bandeja = null; render();
+  try {
+    const r = await mcp.callTool("Gmail", "search_threads", {
+      query: consulta, pageSize: 50, view: "THREAD_VIEW_SUMMARY",
+    });
+    const hallazgos = cruzarCorreo(r && r.payload);
+    ui.bandeja = {
+      hallazgos: hallazgos,
+      cuantos: Object.keys(hallazgos).length,
+      revisadas: dominiosDelLibro().length,
+      cuando: r && r.cache && r.cache.storedAt ? new Date(r.cache.storedAt).toISOString() : null,
+    };
+  } catch (error) {
+    const codigo = (error && error.code) || "upstream_error";
+    ui.bandeja = { error: explicarFalloCorreo(codigo), codigo: codigo, reintentable: reintentable(codigo) };
+  }
+  ui.revisando = false;
+  render();
 }
 
 /* ---------------- lector de personas ----------------
@@ -2428,6 +2637,30 @@ function vistaResumen() {
     "</div>";
 }
 
+function vistaBandeja() {
+  const b = ui.bandeja;
+  const boton = '<button class="btn chico" data-accion="revisar-correo"' +
+    (ui.revisando ? " disabled" : "") + ">" +
+    (ui.revisando ? "Revisando…" : "Revisar el correo") + "</button>";
+
+  if (!b) {
+    return '<div class="buscador" id="bandeja" style="border-bottom:1px solid var(--linea)">' +
+      '<span class="etiqueta crece">¿quién te contestó?</span>' + boton + "</div>";
+  }
+  if (b.error) {
+    return '<div class="aviso" id="bandeja" style="background:var(--rojo-tenue)">' +
+      "<span>" + esc(b.error) + "</span>" +
+      (b.reintentable ? '<button class="btn chico" data-accion="revisar-correo">Probar de nuevo</button>' : "") +
+      '<button class="btn fantasma chico" data-accion="cerrar-bandeja">Cerrar</button></div>';
+  }
+  const resumen = b.cuantos
+    ? "<strong>" + b.cuantos + (b.cuantos === 1 ? " ficha te contestó" : " fichas te contestaron") + "</strong>"
+    : "Nadie del libro te escribió en los últimos 90 días.";
+  return '<div class="aviso" id="bandeja" style="background:var(--acento-tenue)">' +
+    "<span>" + resumen + " · revisé " + b.revisadas + " dominios</span>" +
+    boton + '<button class="btn fantasma chico" data-accion="cerrar-bandeja">Cerrar</button></div>';
+}
+
 function cajaBusqueda(cuantos, total) {
   return '<div class="buscador">' +
     '<input type="search" data-accion="buscar" value="' + esc(ui.busqueda || "") +
@@ -2481,6 +2714,8 @@ function cuerpoListaLibro(visibles) {
       '<span class="meta"><span class="chip ' + nivel + '">' + v + "% verificado</span>" +
       '<span class="chip">' + esc(NOMBRE_ESTADO[c.estado] || c.estado) + "</span>" +
       (function () {
+        const h = ui.bandeja && ui.bandeja.hallazgos && ui.bandeja.hallazgos[c.id];
+        if (h) return '<span class="chip verde">te contestó</span>';
         const a = avisoRecontacto(c);
         return a ? '<span class="chip ' + a.nivel + '">' + esc(a.texto) + "</span>" : "";
       })() +
@@ -2752,6 +2987,17 @@ function panelFichaContacto(c) {
     dato(esComprador ? "orígenes que le interesan" : "destinos a los que ya exportó", (c.mercados || []).join(", "), "sin cargar") +
     "</div>";
 
+  const respuesta = ui.bandeja && ui.bandeja.hallazgos && ui.bandeja.hallazgos[c.id];
+  const correoHallado = respuesta
+    ? tarjeta("te contestaron",
+        "<p>Hay correo de <strong>" + esc(respuesta.de) + "</strong>" +
+        (respuesta.asunto ? ": " + esc(respuesta.asunto) : "") + ".</p>" +
+        (respuesta.enlace
+          ? '<p><a href="' + esc(respuesta.enlace) + '" target="_blank" rel="noopener noreferrer">Abrirlo en Gmail</a></p>'
+          : "") +
+        '<div><button class="btn primario" data-accion="marcar-respondio">Marcar que respondió</button></div>')
+    : "";
+
   const hechas = presentacionesDe(c.id);
   const red = tarjeta("de dónde salió y a quién lo presentaste",
     '<label class="campo" style="max-width:280px"><span class="etiqueta">cómo llegaste a este contacto</span>' +
@@ -2777,7 +3023,7 @@ function panelFichaContacto(c) {
   return '<div class="panel">' +
     tarjeta("contacto", contacto, '<span class="crece"></span><button class="btn chico" data-accion="editar-contacto">Editar</button>') +
     tarjeta("qué mueve", comercial) +
-    mandato + red +
+    correoHallado + mandato + red +
     "</div>";
 }
 
@@ -2835,7 +3081,8 @@ function panelCruceContacto(c) {
 
 function panelEscribir(c) {
   const canal = ui.canal || canalSugerido(c);
-  const texto = mensajeDe(c, canal);
+  const paso = ui.paso !== null && ui.paso !== undefined ? ui.paso : pasoDe(c);
+  const texto = mensajePaso(c, canal, paso);
   const asunto = asuntoDe(c);
   const sugerido = canalSugerido(c);
   const wa = enlaceWhatsApp(c, texto);
@@ -2864,7 +3111,22 @@ function panelEscribir(c) {
       " caracteres" + (texto.length > 700 ? " — largo para WhatsApp, se lee a medias" : "") + "</p>"
     : "";
 
-  return '<div class="panel">' +
+  const pasos = SECUENCIA.map(function (s, i) {
+    const hecho = i < pasoDe(c);
+    return '<button class="btn chico' + (i === paso ? " primario" : "") + '" data-accion="paso:' + i + '">' +
+      (hecho ? "✓ " : "") + esc(s.rotulo) + "</button>";
+  }).join("");
+
+  const dondeVas = tarjeta("en qué paso vas",
+    '<div class="canales">' + pasos + "</div>" +
+    "<p>" + esc(SECUENCIA[paso].nota) + "</p>" +
+    (paso !== pasoDe(c)
+      ? '<p style="color:var(--ambar)">Estás mirando un paso que no es el que te toca. El que sigue es <strong>' +
+        esc(SECUENCIA[pasoDe(c)].rotulo) + "</strong>.</p>"
+      : "") +
+    '<p class="etiqueta">la cadencia completa es día 0, 3, 7, 14 y 30</p>');
+
+  return '<div class="panel">' + dondeVas +
     tarjeta("por dónde", '<div class="canales">' + boton("whatsapp", "WhatsApp") + boton("correo", "Correo") + "</div>" +
       "<p>" + esc(porqueEseCanal(c)) + "</p>" +
       '<p class="etiqueta">el punto marca el canal que conviene para este lado</p>') +
@@ -2876,7 +3138,11 @@ function panelEscribir(c) {
     '<section class="tarjeta"><header><span class="etiqueta">así queda</span></header>' +
     '<pre class="doc">' + esc(texto) + "</pre></section>" +
     tarjeta("cuando lo mandes",
-      "<p>Dejalo anotado y la Mesa te recuerda el seguimiento a los siete días, que es lo que el plan pide.</p>" +
+      (hayPasoSiguiente(c)
+        ? "<p>Lo anoto, avanzo la secuencia y te lo recuerdo en <strong>" +
+          (SECUENCIA[pasoDe(c) + 1].dias - SECUENCIA[pasoDe(c)].dias) + " días</strong>, que es cuando toca <em>" +
+          esc(SECUENCIA[pasoDe(c) + 1].rotulo) + "</em>.</p>"
+        : "<p>Es el último paso de la secuencia. Después de esto no insistas más: si contestan, contestan.</p>") +
       '<div><button class="btn primario" data-accion="ya-escribi:' + canal + '">Ya lo mandé</button></div>') +
     "</div>";
 }
@@ -3101,7 +3367,7 @@ function render() {
   const ocultaHoja = movil && !abierto ? " oculta" : "";
   const rail = enDeals
     ? vistaResumen() + vistaLista()
-    : vistaResumenLibro(ui.seccion) + vistaListaLibro(ui.seccion);
+    : vistaResumenLibro(ui.seccion) + vistaBandeja() + vistaListaLibro(ui.seccion);
   const hoja = enDeals ? vistaHoja(ocultaHoja) : vistaHojaContacto(ocultaHoja);
   document.getElementById("raiz").innerHTML =
     '<div class="marco">' + vistaBarra() + vistaSecciones() + vistaAviso() +
@@ -3292,7 +3558,7 @@ document.addEventListener("click", function (evento) {
     case "ver-contacto": ui.seccion = contactoPorId(arg).lado; ui.selContacto = arg; ui.tabContacto = "ficha"; ui.canal = null; render(); break;
     case "sel-contacto": {
       const c = contactoPorId(arg);
-      if (c) { ui.seccion = c.lado; ui.selContacto = arg; ui.tabContacto = "ficha"; ui.canal = null; render(); }
+      if (c) { ui.seccion = c.lado; ui.selContacto = arg; ui.tabContacto = "ficha"; ui.canal = null; ui.paso = null; render(); }
       break;
     }
     case "tab-contacto": ui.tabContacto = arg; render(); break;
@@ -3332,20 +3598,45 @@ document.addEventListener("click", function (evento) {
     case "canal": ui.canal = arg; render(); break;
     case "copiar-mensaje": {
       const c = contactoActual();
-      if (c) copiar(mensajeDe(c, ui.canal || canalSugerido(c)));
+      if (c) copiar(mensajePaso(c, ui.canal || canalSugerido(c), ui.paso != null ? ui.paso : pasoDe(c)));
       break;
     }
     case "ya-escribi": {
       const c = contactoActual();
       if (!c) break;
       const por = arg === "correo" ? "correo" : "WhatsApp";
+      const hoy = new Date().toISOString().slice(0, 10);
+      const actual = pasoDe(c);
       c.notas = c.notas || [];
-      c.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: "Le escribí por " + por + "." });
+      c.notas.push({ fecha: hoy, texto: SECUENCIA[actual].rotulo + ", por " + por + "." });
       if (c.estado === "nuevo") c.estado = "contactado";
-      c.recontactar = enFecha(7);
+      c.ultimoContacto = hoy;
+      if (hayPasoSiguiente(c)) {
+        c.paso = actual + 1;
+        const espera = SECUENCIA[c.paso].dias - SECUENCIA[actual].dias;
+        c.recontactar = enFecha(espera);
+        brindis("Anotado. " + SECUENCIA[c.paso].rotulo + " en " + espera + " días.");
+      } else {
+        c.recontactar = "";
+        brindis("Secuencia terminada. Ya no te lo recuerdo.");
+      }
+      ui.paso = null;
       ui.tabContacto = "bitacora";
       tocar(); render();
-      brindis("Anotado. Te lo recuerdo en 7 días.");
+      break;
+    }
+    case "paso": ui.paso = parseInt(arg, 10) || 0; render(); break;
+    case "revisar-correo": revisarCorreo(); break;
+    case "cerrar-bandeja": ui.bandeja = null; render(); break;
+    case "marcar-respondio": {
+      const c = contactoActual();
+      if (!c) break;
+      c.estado = "respondio";
+      c.recontactar = "";
+      c.notas = c.notas || [];
+      c.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: "Respondió por correo." });
+      tocar(); render();
+      brindis("Marcada. La saqué de la secuencia: ahora la conversación la llevás vos.");
       break;
     }
     case "nuevo-contacto":

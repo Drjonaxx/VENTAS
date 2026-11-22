@@ -27,6 +27,9 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       los mensajes ya están hechos.
 - [ ] Las cinco acciones de la primera semana de
       `plan/corredor-sd-sju.html` (las llamadas y visitas son suyas).
+- [ ] Permitirle a la Mesa usar Gmail la primera vez que toques «Revisar el
+      correo». Si Claude no tiene Gmail conectado, se agrega en
+      Configuración → Conectores.
 - [ ] Que un abogado lea el NCND antes de firmar el primero.
 
 ## Para Claude
@@ -49,6 +52,8 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       trabado en «Guardando…». Las tres primeras quedaron con prueba en CI.
 - [x] Que la app aguante el volumen del plan (21 nov 2026): alta en lote,
       búsqueda, fecha de recontacto con aviso, y respaldo exportable.
+- [x] Secuencia de seguimiento de día 0, 3, 7, 14 y 30, con mensaje propio
+      por paso, y repaso del correo por el conector de Gmail (22 nov 2026).
 - [x] Presentar a las dos partes con candado de NCND, lector de personas y
       origen de cada contacto (21 nov 2026).
 - [x] Boletín diario con filtro, como tarea programada (21 nov 2026).
