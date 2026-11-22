@@ -63,5 +63,24 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
       (21 nov 2026, `datos/mesa-arranque.json`).
 - [x] Mensajes de contacto por WhatsApp y correo desde cada ficha (21 nov
       2026), con el canal sugerido por lado y el recordatorio a los 7 días.
+- [x] Panel de números (22 nov 2026): embudo de contactos con la caída entre
+      etapas, qué paso de la secuencia destraba las respuestas, qué canal de
+      captación rinde, y el tiempo de primer contacto a respuesta. Las fechas
+      se anotan solas al mandar y al marcar que respondió.
+- [x] Libro de comisiones (22 nov 2026): cada oportunidad lleva estado de
+      cobro, fecha de factura y cuánto entró de verdad; el panel suma en
+      juego, facturado, cobrado y perdido, y avisa de facturas pasadas de 30
+      días.
+- [x] Papelería (22 nov 2026): los cinco documentos y el expediente completo
+      salen como HTML con membrete de JRN Sourcing, listos para imprimir o
+      guardar en PDF desde el navegador.
+- [x] La secuencia de cinco pasos también en el teléfono (22 nov 2026): antes
+      el bolsillo mandaba de nuevo el mensaje de apertura a quien ya lo había
+      recibido, y recordaba a 7 días en vez de seguir los días de la Mesa.
 - [ ] Revisar cada tanto que las cifras de los planes sigan vigentes. La fecha
       de MIDA ya cambió una vez (de junio a agosto de 2027).
+- [ ] Antes de publicar `bolsillo.html` o `index.html` desde el repo: leer el
+      `#estado` de la versión viva y pegarlo en el archivo que se publica. El
+      repo guarda la plantilla vacía, así que publicar tal cual le borraría a
+      Jonathan lo que trabajó desde el teléfono. (El 22 nov 2026 el servidor lo
+      frenó con un conflicto; no siempre va a avisar.)

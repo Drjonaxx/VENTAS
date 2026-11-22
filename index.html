@@ -193,6 +193,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .canales { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.barra-embudo { display: grid; gap: 9px; }
+.cuerpo.solo .panel { margin-inline: auto; }
+.tramo { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; }
+.tramo .riel { background: var(--franja); border-radius: 999px; height: 22px; overflow: hidden; }
+.tramo .lleno { display: block; background: var(--acento); height: 100%;
+  border-radius: 999px; min-width: 3px; }
+.tramo .cifra { padding: 0; border: none; font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 14px; }
+.tramo .caida { color: var(--tinta-suave); font-size: 12px; }
+@media (max-width: 560px) { .tramo { grid-template-columns: 110px 1fr auto; } }
+
+.dinero { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.dinero .caja { border: 1px solid var(--linea); border-radius: 3px; padding: 12px 14px; display: grid; gap: 3px; }
+.dinero .caja .monto { font-family: "IBM Plex Mono", monospace; font-size: 20px;
+  font-variant-numeric: tabular-nums; }
+.dinero .caja.cobrado { background: var(--verde-tenue); border-color: transparent; }
+.dinero .caja.cobrado .monto { color: var(--verde); }
+.dinero .caja.perdido .monto { color: var(--rojo); }
+
 .puerta { border-radius: 3px; padding: 13px 15px; display: grid; gap: 8px; }
 .puerta.cerrada { background: var(--rojo-tenue); }
 .puerta.abierta { background: var(--verde-tenue); }
@@ -1353,6 +1372,205 @@ Cargo: __________   Fecha: __________
 `;
 }
 
+// ---------------------------------------------------------------------
+// Papelería. Un NCND en .txt se lee como un favor entre conocidos; el
+// mismo texto en papel con membrete se lee como una empresa. El archivo
+// sale en HTML porque se abre en cualquier teléfono y se imprime a PDF
+// desde el propio navegador, sin instalar nada.
+// ---------------------------------------------------------------------
+
+function escHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// Negrita e itálica sólo con asteriscos: los guiones bajos son las
+// rayas para firmar y tienen que salir intactos.
+function enLinea(texto) {
+  let h = escHtml(texto);
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  h = h.replace(/_{6,}/g, '<span class="raya"></span>');
+  return h;
+}
+
+function mdAHtml(md) {
+  const lineas = String(md || "").replace(/\r/g, "").split("\n");
+  const salida = [];
+  let lista = null;      // "ul" | "ol" | null
+  let parrafo = [];
+  let item = null;
+
+  const cerrarParrafo = function () {
+    if (!parrafo.length) return;
+    const crudo = parrafo.join("\n");
+    // Las líneas con rayas para firmar llevan su espaciado a mano:
+    // si el navegador lo colapsa, las columnas se desarman.
+    const clase = /_{6,}/.test(crudo) ? ' class="campos"' : "";
+    salida.push("<p" + clase + ">" + enLinea(crudo).replace(/\n/g, clase ? "\n" : "<br>") + "</p>");
+    parrafo = [];
+  };
+  const cerrarItem = function () {
+    if (item === null) return;
+    salida.push("<li>" + enLinea(item) + "</li>");
+    item = null;
+  };
+  const cerrarLista = function () {
+    cerrarItem();
+    if (lista) { salida.push("</" + lista + ">"); lista = null; }
+  };
+  const abrirLista = function (tipo) {
+    if (lista === tipo) return;
+    cerrarLista();
+    lista = tipo;
+    salida.push("<" + tipo + ">");
+  };
+
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    const limpia = linea.trim();
+
+    if (!limpia) { cerrarParrafo(); cerrarLista(); continue; }
+
+    if (/^(-{3,}|_{3,}\s*$|\*{3,})$/.test(limpia) && !/_{6,}/.test(limpia)) {
+      cerrarParrafo(); cerrarLista(); salida.push("<hr>"); continue;
+    }
+
+    const enc = limpia.match(/^(#{1,4})\s+(.*)$/);
+    if (enc) {
+      cerrarParrafo(); cerrarLista();
+      const n = enc[1].length;
+      salida.push("<h" + n + ">" + enLinea(enc[2]) + "</h" + n + ">");
+      continue;
+    }
+
+    const vinieta = limpia.match(/^[-*+]\s+(.*)$/);
+    if (vinieta) {
+      cerrarParrafo();
+      abrirLista("ul");
+      cerrarItem();
+      item = vinieta[1].replace(/^\[ \]\s*/, "☐ ").replace(/^\[[xX]\]\s*/, "☑ ");
+      continue;
+    }
+
+    const numerada = limpia.match(/^\d+[.)]\s+(.*)$/);
+    if (numerada) {
+      cerrarParrafo();
+      abrirLista("ol");
+      cerrarItem();
+      item = numerada[1];
+      continue;
+    }
+
+    // Línea sangrada que sigue a una viñeta: es parte del mismo punto.
+    if (item !== null && /^\s{2,}/.test(linea)) { item += " " + limpia; continue; }
+
+    if (lista) cerrarLista();
+    parrafo.push(limpia);
+  }
+  cerrarParrafo(); cerrarLista();
+  return salida.join("\n");
+}
+
+function inicialesDe(texto) {
+  const partes = String(texto || "").trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return "·";
+  // "JRN Sourcing" se sella JRN, no JS: si una palabra ya es una sigla,
+  // ésa es la marca.
+  const sigla = partes.filter(function (x) {
+    return /^[A-ZÁÉÍÓÚÑ]{2,4}$/.test(x);
+  })[0];
+  if (sigla) return sigla;
+  return partes.slice(0, 3).map(function (x) { return x[0].toUpperCase(); }).join("");
+}
+
+const CSS_PAPEL = `
+  @page { size: letter; margin: 20mm 18mm 18mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f2ee; color: #16130f;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 11.5pt; line-height: 1.55; }
+  .hoja { max-width: 190mm; margin: 24px auto; background: #fff; padding: 22mm 20mm;
+    box-shadow: 0 1px 3px rgba(0,0,0,.14); }
+  .membrete { display: flex; align-items: center; gap: 14px;
+    border-bottom: 1.5px solid #16130f; padding-bottom: 10px; margin-bottom: 22px; }
+  .sello { width: 42px; height: 42px; flex: 0 0 42px; border: 1.5px solid #16130f;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700;
+    font-size: 15px; letter-spacing: .5px; }
+  .membrete .quien { flex: 1 1 auto; }
+  .membrete .empresa { font-family: ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700; font-size: 14pt; letter-spacing: .2px; }
+  .membrete .contacto { font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 8.5pt; color: #5c5349; margin-top: 2px; }
+  .membrete .fecha { font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 8.5pt; color: #5c5349; text-align: right; white-space: nowrap; }
+  h1 { font-size: 15pt; margin: 0 0 4px; letter-spacing: .2px; }
+  h2 { font-size: 11.5pt; margin: 20px 0 6px; letter-spacing: .3px;
+    text-transform: uppercase; font-family: ui-sans-serif, system-ui, sans-serif; }
+  h3 { font-size: 11pt; margin: 14px 0 4px; }
+  p { margin: 0 0 9px; text-align: justify; }
+  p.campos { white-space: pre-wrap; text-align: left; break-inside: avoid;
+    margin: 14px 0 4px; }
+  ul, ol { margin: 0 0 10px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  hr { border: none; border-top: 1px solid #c9c2b6; margin: 20px 0; }
+  strong { font-weight: 700; }
+  .raya { display: inline-block; width: 52mm; border-bottom: 1px solid #16130f;
+    vertical-align: baseline; }
+  .pie { margin-top: 26px; border-top: 1px solid #c9c2b6; padding-top: 7px;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 8pt; color: #7a7064; }
+  .barra { position: sticky; top: 0; background: #16130f; color: #f4f2ee;
+    padding: 10px 16px; display: flex; gap: 10px; align-items: center;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
+  .barra button { font: inherit; font-weight: 600; background: #f4f2ee; color: #16130f;
+    border: none; padding: 7px 14px; border-radius: 3px; cursor: pointer; }
+  .corte { break-before: page; }
+  @media print {
+    body { background: #fff; }
+    .hoja { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+    .barra { display: none; }
+  }
+`;
+
+function hojaImprimible(titulo, md, perfil) {
+  const pf = perfil || {};
+  const empresa = (pf.empresa || "").trim() || (pf.nombre || "").trim() || "Intermediación comercial";
+  const contacto = [pf.nombre, pf.telefono, pf.email].filter(function (x) {
+    return (x || "").toString().trim();
+  }).join("  ·  ");
+  const hoy = new Date().toLocaleDateString("es-DO", { day: "2-digit", month: "long", year: "numeric" });
+  const cuerpos = (Array.isArray(md) ? md : [md]).map(function (x, i) {
+    return '<div class="' + (i ? "corte" : "") + '">' + mdAHtml(x) + "</div>";
+  }).join("\n");
+
+  return "<!doctype html>\n" +
+    '<html lang="es"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    "<title>" + escHtml(titulo) + " — " + escHtml(empresa) + "</title>" +
+    "<style>" + CSS_PAPEL + "</style></head><body>" +
+    '<div class="barra"><span>Imprimí o guardá como PDF: queda con membrete.</span>' +
+    '<button onclick="window.print()">Imprimir / PDF</button></div>' +
+    '<div class="hoja">' +
+    '<header class="membrete"><div class="sello">' + escHtml(inicialesDe(empresa)) + "</div>" +
+    '<div class="quien"><div class="empresa">' + escHtml(empresa) + "</div>" +
+    (contacto ? '<div class="contacto">' + escHtml(contacto) + "</div>" : "") +
+    '</div><div class="fecha">' + escHtml(hoy) + "</div></header>" +
+    cuerpos +
+    '<div class="pie">' + escHtml(empresa) +
+    " · Documento generado el " + escHtml(hoy) +
+    " · Confidencial: para uso exclusivo de las partes mencionadas.</div>" +
+    "</div></body></html>";
+}
+
+function nombreArchivo(titulo, d) {
+  const base = String(titulo || "documento").toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return base + "-" + ((d && d.id) || "doc") + ".html";
+}
+
 function docChecklist(d) {
   const extra = (d.requisitos || []).length
     ? "\n## Requisitos específicos de este comprador\n\n" + d.requisitos.map(function (r) { return "- [ ] " + r; }).join("\n") + "\n"
@@ -2371,6 +2589,159 @@ function docPresentacion(comprador, proveedor) {
   ].join("\n");
 }
 
+/* ---------------- el embudo ----------------
+   El manual dice que de cuarenta correos salen tres a cinco
+   conversaciones. Sin medirlo no sabés si estás en el rango o si tu
+   mensaje no sirve, y son dos problemas con arreglos opuestos. */
+
+// Qué cuenta como "respondió". Una sola lista: si acá y en el embudo
+// dijeran cosas distintas, el panel se contradiría solo.
+const RESPONDIO = ["respondio", "verificado", "activo"];
+
+const ETAPAS_EMBUDO = [
+  ["fichados", "Fichados", function () { return true; }],
+  ["contactados", "Contactados", function (c) {
+    return !!(c.ultimoContacto || (c.estado && c.estado !== "nuevo")); }],
+  ["respondieron", "Respondieron", function (c) {
+    return RESPONDIO.indexOf(c.estado) >= 0 || !!c.respondioEl; }],
+  ["activos", "Activos", function (c) { return c.estado === "activo"; }],
+];
+
+function embudoContactos(lado) {
+  const gente = lado ? contactosDe(lado) : (estado.contactos || []);
+  const vivos = gente.filter(function (c) { return c.estado !== "descartado"; });
+  let previo = 0;
+  return ETAPAS_EMBUDO.map(function (e, i) {
+    const cuantos = vivos.filter(e[2]).length;
+    const fila = {
+      clave: e[0], rotulo: e[1], cuantos: cuantos,
+      porcentaje: vivos.length ? Math.round((cuantos / vivos.length) * 100) : 0,
+      conversion: i === 0 || !previo ? null : Math.round((cuantos / previo) * 100),
+    };
+    previo = cuantos;
+    return fila;
+  });
+}
+
+/* Qué paso de la secuencia destrabó la respuesta. Si la mayoría
+   contesta en el tercero, empezá por ese y ahorrate dos semanas. */
+function respuestaPorPaso() {
+  const cuenta = SECUENCIA.map(function (s, i) {
+    return { paso: i, rotulo: s.rotulo, mandados: 0, respuestas: 0 };
+  });
+  (estado.contactos || []).forEach(function (c) {
+    const llegoA = pasoDe(c);
+    for (let i = 0; i <= llegoA; i++) if (c.ultimoContacto || c.paso) cuenta[i].mandados++;
+    const en = c.pasoAlResponder;
+    if (en !== undefined && en !== null && cuenta[en]) cuenta[en].respuestas++;
+  });
+  return cuenta.map(function (x) {
+    x.tasa = x.mandados ? Math.round((x.respuestas / x.mandados) * 100) : null;
+    return x;
+  });
+}
+
+/* Qué canal te está rindiendo: no es lo mismo veinte fichas de un
+   gremio que contestan, que cuarenta de un buscador que no. */
+function rendimientoPorOrigen() {
+  const mapa = {};
+  (estado.contactos || []).forEach(function (c) {
+    const k = c.origen || "";
+    const m = mapa[k] || (mapa[k] = { clave: k, rotulo: NOMBRE_ORIGEN[k] || k || "sin anotar",
+      fichados: 0, contactados: 0, respondieron: 0 });
+    m.fichados++;
+    if (c.ultimoContacto || (c.estado && c.estado !== "nuevo")) m.contactados++;
+    if (RESPONDIO.indexOf(c.estado) >= 0 || c.respondioEl) m.respondieron++;
+  });
+  return Object.keys(mapa).map(function (k) {
+    const m = mapa[k];
+    m.tasa = m.contactados ? Math.round((m.respondieron / m.contactados) * 100) : null;
+    return m;
+  }).filter(function (m) {
+    // Un canal del que todavía no contactaste a nadie no rinde ni mal
+    // ni bien: no dice nada y ocupa una fila.
+    return m.contactados > 0;
+  }).sort(function (a, b) { return b.fichados - a.fichados; });
+}
+
+// Las métricas no sirven si nadie anota la fecha. Se anota sola,
+// en el momento en que pasa, y una sola vez: la primera respuesta
+// es la que mide el embudo.
+function anotarPrimerContacto(c, hoy) {
+  if (!c.primerContacto) c.primerContacto = hoy || new Date().toISOString().slice(0, 10);
+}
+
+function anotarRespuesta(c, hoy) {
+  if (c.respondioEl) return false;
+  c.respondioEl = hoy || new Date().toISOString().slice(0, 10);
+  c.pasoAlResponder = pasoDe(c);
+  return true;
+}
+
+function diasEntre(a, b) {
+  if (!a || !b) return null;
+  const x = new Date(a + "T00:00:00"), y = new Date(b + "T00:00:00");
+  if (isNaN(x) || isNaN(y)) return null;
+  return Math.round((y - x) / 86400000);
+}
+
+function tiempoHastaRespuesta() {
+  const dias = (estado.contactos || []).map(function (c) {
+    return diasEntre(c.primerContacto || c.creado, c.respondioEl);
+  }).filter(function (d) { return d !== null && d >= 0; });
+  if (!dias.length) return null;
+  dias.sort(function (a, b) { return a - b; });
+  const medio = Math.floor(dias.length / 2);
+  // Con un número par de respuestas la mediana es el promedio de las dos
+  // del medio; tomar sólo la de arriba exagera la demora.
+  const mediana = dias.length % 2 ? dias[medio] : Math.round((dias[medio - 1] + dias[medio]) / 2);
+  return { cuantos: dias.length, mediana: mediana,
+    minimo: dias[0], maximo: dias[dias.length - 1] };
+}
+
+/* ---------------- el libro de comisiones ----------------
+   Una correduría sin registro de cobros es un pasatiempo. Esto separa
+   lo que podría pasar de lo que facturaste y de lo que entró. */
+
+const COBROS = [
+  ["", "Sin facturar"],
+  ["facturada", "Facturada"],
+  ["cobrada", "Cobrada"],
+  ["perdida", "Perdida"],
+];
+const NOMBRE_COBRO = Object.fromEntries(COBROS);
+
+function dineroDelLibro() {
+  const deals = estado.deals || [];
+  const suma = function (filtro, campo) {
+    return deals.filter(filtro).reduce(function (s, d) {
+      return s + num(campo === "cobrado" ? (d.montoCobrado || d.fee) : d.fee);
+    }, 0);
+  };
+  const vivo = function (d) {
+    return ["cerrada", "descartada"].indexOf(d.etapa) < 0 && (d.cobro || "") !== "perdida";
+  };
+  const facturadas = deals.filter(function (d) { return d.cobro === "facturada"; });
+  const vencidas = facturadas.filter(function (d) {
+    const dd = diasPara(d.fechaFactura ? enFechaDesde(d.fechaFactura, 30) : "");
+    return dd !== null && dd < 0;
+  });
+  return {
+    enJuego: suma(vivo),
+    facturado: suma(function (d) { return d.cobro === "facturada"; }),
+    cobrado: suma(function (d) { return d.cobro === "cobrada"; }, "cobrado"),
+    perdido: suma(function (d) { return d.cobro === "perdida"; }),
+    vencidas: vencidas,
+  };
+}
+
+function enFechaDesde(iso, dias) {
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return "";
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
 /* ---------------- revisar el correo ----------------
    La app no puede leer tu correo sola: lo hace el conector de Gmail
    del que la está mirando, con sus credenciales, y sólo cuando tocás
@@ -2597,7 +2968,9 @@ function vistaBarra() {
     : ui.sucio
       ? '<span class="etiqueta" id="estado-guardado" style="color:var(--ambar)">cambios sin guardar</span>'
       : '<span class="etiqueta" id="estado-guardado">al día</span>';
-  const alta = ui.seccion === "deals"
+  const alta = ui.seccion === "panel"
+    ? ""
+    : ui.seccion === "deals"
     ? '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>'
     : '<button class="btn" data-accion="lote:' + ui.seccion + '">Pegar lista</button>' +
       '<button class="btn primario" data-accion="nuevo-contacto:' + ui.seccion + '">Fichar ' +
@@ -2616,6 +2989,7 @@ function vistaSecciones() {
       rotulo + '<span class="cuenta">' + cuenta + "</span></button>";
   };
   return '<nav class="secciones">' +
+    item("panel", "Panel", "") +
     item("deals", "Oportunidades", estado.deals.length) +
     item("comprador", "Compradores", contactosDe("comprador").length) +
     item("proveedor", "Proveedores", contactosDe("proveedor").length) +
@@ -2634,6 +3008,85 @@ function vistaResumen() {
     cifra("comisión en juego", potencial ? usd(potencial).replace("USD ", "$") : "—") +
     cifra("en rojo", rojos) +
     cifra("por contactar", pendientesDe(vivos)) +
+    "</div>";
+}
+
+function vistaPanel() {
+  const emb = embudoContactos(null);
+  const tope = emb[0].cuantos || 1;
+  const tramos = emb.map(function (f) {
+    return '<div class="tramo"><span class="etiqueta">' + esc(f.rotulo) + "</span>" +
+      '<span class="riel"><span class="lleno" style="width:' +
+      Math.max(2, Math.round((f.cuantos / tope) * 100)) + '%"></span></span>' +
+      '<span class="cifra">' + f.cuantos +
+      (f.conversion !== null ? ' <span class="caida">· ' + f.conversion + "%</span>" : "") +
+      "</span></div>";
+  }).join("");
+
+  const tiempos = tiempoHastaRespuesta();
+  const lectura = (function () {
+    const contactados = emb[1].cuantos, respondieron = emb[2].cuantos;
+    if (!contactados) return "Todavía no contactaste a nadie. El embudo arranca cuando mandás el primer mensaje.";
+    const tasa = Math.round((respondieron / contactados) * 100);
+    if (contactados < 10) return "Con " + contactados + " contactados todavía no hay muestra para sacar conclusiones. " +
+      "El manual habla de rondas de cuarenta.";
+    if (tasa < 5) return "Estás por debajo del rango esperado (de cuarenta correos salen tres a cinco conversaciones, " +
+      "o sea 8% a 12%). Antes de cambiar de producto, revisá dos cosas: si el mensaje pedía en vez de ofrecer, " +
+      "y si le escribiste a fabricantes o a traders.";
+    if (tasa > 20) return "Tasa alta. Lo que estás haciendo funciona: subí el volumen de contactos antes de tocar nada.";
+    return "Estás dentro del rango esperado del oficio. Lo que mueve la aguja ahora es volumen, no afinar el mensaje.";
+  })();
+
+  const pasos = respuestaPorPaso().filter(function (x) { return x.mandados; });
+  const porPaso = pasos.length
+    ? '<div class="barra-embudo">' + pasos.map(function (x) {
+        return '<div class="tramo"><span class="etiqueta">' + esc(x.rotulo) + "</span>" +
+          '<span class="riel"><span class="lleno" style="width:' + (x.tasa || 0) + '%"></span></span>' +
+          '<span class="cifra">' + x.respuestas + "/" + x.mandados +
+          (x.tasa !== null ? ' <span class="caida">· ' + x.tasa + "%</span>" : "") + "</span></div>";
+      }).join("") + "</div>" +
+      "<p>Si la mayoría te contesta en un paso tardío, empezá por ese mensaje y ahorrate dos semanas por contacto.</p>"
+    : "<p>Todavía no mandaste ningún mensaje de la secuencia.</p>";
+
+  const origenes = rendimientoPorOrigen();
+  const porOrigenHtml = origenes.length
+    ? '<div class="barra-embudo">' + origenes.map(function (o) {
+        return '<div class="tramo"><span class="etiqueta">' + esc(o.rotulo) + "</span>" +
+          '<span class="riel"><span class="lleno" style="width:' + (o.tasa || 0) + '%"></span></span>' +
+          '<span class="cifra">' + o.respondieron + "/" + o.contactados +
+          (o.tasa !== null ? ' <span class="caida">· ' + o.tasa + "%</span>" : "") + "</span></div>";
+      }).join("") + "</div>" +
+      "<p>Dónde insistir: el canal que más responde, no el que más fichas te dio.</p>"
+    : "<p>Anotá en cada ficha de dónde salió y acá vas a ver qué canal rinde.</p>";
+
+  const d = dineroDelLibro();
+  const caja = function (clase, rot, monto, nota) {
+    return '<div class="caja ' + clase + '"><span class="etiqueta">' + rot + "</span>" +
+      '<span class="monto">' + (monto ? usd(monto).replace("USD ", "$") : "—") + "</span>" +
+      (nota ? '<span class="caida">' + esc(nota) + "</span>" : "") + "</div>";
+  };
+  const vencidas = d.vencidas.length
+    ? '<p style="color:var(--rojo)"><strong>' + d.vencidas.length +
+      (d.vencidas.length === 1 ? " factura lleva" : " facturas llevan") + " más de 30 días sin cobrar:</strong> " +
+      esc(d.vencidas.map(function (x) { return x.producto || x.id; }).join(", ")) + ".</p>"
+    : "";
+
+  return '<div class="panel">' +
+    tarjeta("embudo de contactos", '<div class="barra-embudo">' + tramos + "</div>" +
+      "<p>" + esc(lectura) + "</p>" +
+      (tiempos ? '<p class="etiqueta">de primer contacto a respuesta: mediana de ' + tiempos.mediana +
+        " días, entre " + tiempos.minimo + " y " + tiempos.maximo + ", sobre " + tiempos.cuantos + " respuestas</p>" : "")) +
+    tarjeta("qué paso destraba la respuesta", porPaso) +
+    tarjeta("qué canal rinde", porOrigenHtml) +
+    tarjeta("comisiones",
+      '<div class="dinero">' +
+      caja("", "en juego", d.enJuego, "tratos vivos") +
+      caja("", "facturado", d.facturado, "emitido, sin cobrar") +
+      caja("cobrado", "cobrado", d.cobrado, "entró de verdad") +
+      caja("perdido", "perdido", d.perdido, "no se cobró") +
+      "</div>" + vencidas +
+      "<p>El estado de cobro se pone en la bitácora de cada oportunidad. " +
+      "Lo único que cuenta como ingreso es la columna de cobrado.</p>") +
     "</div>";
 }
 
@@ -2864,7 +3317,8 @@ function panelDocs(d) {
       '<span class="crece"></span>' +
       '<button class="btn chico" data-accion="doc:' + clave + '">' + (abierto ? "Ocultar" : "Ver") + "</button>" +
       '<button class="btn chico" data-accion="copiar-doc:' + clave + '">Copiar</button>' +
-      (bajar ? '<button class="btn chico" data-accion="bajar-doc:' + clave + '">Descargar</button>' : "") +
+      (bajar ? '<button class="btn chico" data-accion="imprimir-doc:' + clave + '">Papel con membrete</button>' : "") +
+      (bajar ? '<button class="btn fantasma chico" data-accion="bajar-doc:' + clave + '">.md</button>' : "") +
       '</header><div class="contenido"><p style="color:var(--tinta-suave);font-size:13.5px">' + esc(doc[2]) + "</p></div>" +
       (abierto ? '<pre class="doc">' + esc(texto) + "</pre>" : "") + "</section>";
   }).join("");
@@ -2883,10 +3337,11 @@ function panelDocs(d) {
     '<p style="color:var(--tinta-suave);font-size:13.5px">Si elegís una ficha del libro, el acuerdo sale con su razón social, número fiscal y representante ya puestos.' +
     ((estado.contactos || []).length ? "" : " Todavía no tenés a nadie fichado.") + "</p>");
   const todo = tarjeta("expediente completo",
-    '<p style="color:var(--tinta-suave);font-size:13.5px">Los cinco documentos en un solo archivo, para archivar el deal o mandárselo a tu abogado.</p>' +
+    '<p style="color:var(--tinta-suave);font-size:13.5px">Los cinco documentos en un solo archivo. El de membrete se abre en el navegador y se guarda como PDF desde ahí: es el que se manda a firmar.</p>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<button class="btn" data-accion="copiar-expediente">Copiar todo</button>' +
-    (bajar ? '<button class="btn" data-accion="bajar-expediente">Descargar .md</button>' : "") +
+    (bajar ? '<button class="btn primario" data-accion="imprimir-expediente">Expediente con membrete</button>' : "") +
+    (bajar ? '<button class="btn fantasma" data-accion="bajar-expediente">.md</button>' : "") +
     "</div>");
   return '<div class="panel">' + conQuien + todo +
     (perfilIncompleto ? tarjeta("antes de usar el acuerdo",
@@ -2919,12 +3374,53 @@ function panelBitacora(d) {
       (d.recontactar ? '<button class="btn fantasma chico" data-accion="recontactar-en:">quitar</button>' : "") +
       "</div>" +
       '<div><button class="btn fantasma chico" data-accion="borrar">Borrar esta oportunidad</button></div>') +
+    tarjeta("cobro de la comisión", tarjetaCobro(d)) +
     tarjeta("anotar",
       '<form data-accion="nota"><label class="campo"><span class="etiqueta">qué pasó</span>' +
       '<textarea name="texto" placeholder="Llamé a CONACADO. Piden la LOI antes de cotizar." required></textarea></label>' +
       '<div style="margin-top:10px"><button class="btn" type="submit">Guardar anotación</button></div></form>') +
     tarjeta("bitácora", notas) +
     "</div>";
+}
+
+// Una correduría sin registro de cobros no es un negocio: es una lista
+// de gente a la que le hiciste el favor.
+function tarjetaCobro(d) {
+  const sel = COBROS.map(function (c) {
+    return '<option value="' + c[0] + '"' + ((d.cobro || "") === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
+  }).join("");
+  const estadoCobro = d.cobro || "";
+  const fecha = function (rot, accion, valor) {
+    return '<label class="campo"><span class="etiqueta">' + rot + "</span>" +
+      '<input type="date" data-accion="' + accion + '" value="' + esc(valor || "") + '"></label>';
+  };
+
+  let detalle = "";
+  if (estadoCobro === "facturada") {
+    const limite = d.fechaFactura ? enFechaDesde(d.fechaFactura, 30) : "";
+    const dd = diasPara(limite);
+    detalle = fecha("fecha de la factura", "fecha-factura", d.fechaFactura) +
+      (dd === null ? "<p>Poné la fecha de la factura y te aviso si se pasa de 30 días.</p>"
+        : dd < 0 ? '<p style="color:var(--rojo)"><strong>Lleva ' + (30 + Math.abs(dd)) +
+            " días sin cobrar, " + Math.abs(dd) + " más del plazo.</strong> " +
+            "A los 30 días de una factura impaga se llama, no se espera.</p>"
+        : "<p>Vence el " + esc(limite) + ", en " + dd + " días.</p>");
+  } else if (estadoCobro === "cobrada") {
+    detalle = fecha("fecha del cobro", "fecha-cobro", d.fechaCobro) +
+      '<label class="campo"><span class="etiqueta">cuánto entró de verdad (USD)</span>' +
+      '<input type="number" step="any" min="0" data-accion="monto-cobrado" placeholder="' +
+      (num(d.fee) ? num(d.fee) : "0") + '" value="' + esc(d.montoCobrado || "") + '"></label>' +
+      "<p>Si entró menos que la comisión pactada, poné lo que entró. El panel suma esto, no lo pactado.</p>";
+  } else if (estadoCobro === "perdida") {
+    detalle = "<p>Anotá en la bitácora por qué se perdió. Es lo único que te hace cobrar la próxima.</p>";
+  } else {
+    detalle = num(d.fee)
+      ? "<p>Comisión pactada: " + usd(num(d.fee)) + ". Marcala facturada el día que mandés la factura.</p>"
+      : "<p>Todavía no hay comisión pactada. Ponela en Editar antes de presentar a nadie.</p>";
+  }
+
+  return '<label class="campo"><span class="etiqueta">en qué va el cobro</span>' +
+    '<select data-accion="cobro">' + sel + "</select></label>" + detalle;
 }
 
 function vistaCabezaContacto(c) {
@@ -3361,6 +3857,13 @@ function vistaAviso() {
 
 function render() {
   const movil = window.matchMedia("(max-width: 900px)").matches;
+  if (ui.seccion === "panel") {
+    document.getElementById("raiz").innerHTML =
+      '<div class="marco">' + vistaBarra() + vistaSecciones() + vistaAviso() +
+      '<div class="cuerpo solo" style="grid-template-columns:1fr">' + vistaPanel() + "</div></div>" +
+      (ui.modal ? vistaModal() : "");
+    return;
+  }
   const enDeals = ui.seccion === "deals";
   const abierto = enDeals ? ui.sel : ui.selContacto;
   const ocultaRail = movil && abierto ? " oculta" : "";
@@ -3611,6 +4114,7 @@ document.addEventListener("click", function (evento) {
       c.notas.push({ fecha: hoy, texto: SECUENCIA[actual].rotulo + ", por " + por + "." });
       if (c.estado === "nuevo") c.estado = "contactado";
       c.ultimoContacto = hoy;
+      anotarPrimerContacto(c, hoy);
       if (hayPasoSiguiente(c)) {
         c.paso = actual + 1;
         const espera = SECUENCIA[c.paso].dias - SECUENCIA[actual].dias;
@@ -3631,10 +4135,12 @@ document.addEventListener("click", function (evento) {
     case "marcar-respondio": {
       const c = contactoActual();
       if (!c) break;
+      const hoy = new Date().toISOString().slice(0, 10);
+      anotarRespuesta(c, hoy);
       c.estado = "respondio";
       c.recontactar = "";
       c.notas = c.notas || [];
-      c.notas.push({ fecha: new Date().toISOString().slice(0, 10), texto: "Respondió por correo." });
+      c.notas.push({ fecha: hoy, texto: "Respondió por correo." });
       tocar(); render();
       brindis("Marcada. La saqué de la secuencia: ahora la conversación la llevás vos.");
       break;
@@ -3699,6 +4205,23 @@ document.addEventListener("click", function (evento) {
     }
     case "copiar-expediente": copiar(expediente(dealActual(), estado.perfil)); break;
     case "bajar-expediente": descargar("expediente-" + dealActual().id + ".md", expediente(dealActual(), estado.perfil)); break;
+    case "imprimir-expediente": {
+      const d = dealActual();
+      if (!d) break;
+      const partes = DOCUMENTOS.map(function (doc) { return doc[3](d, estado.perfil); });
+      descargar(nombreArchivo("expediente " + (d.producto || ""), d),
+        hojaImprimible("Expediente", partes, estado.perfil));
+      brindis("Descargado. Abrilo y usá Imprimir para guardarlo como PDF.");
+      break;
+    }
+    case "imprimir-doc": {
+      const d = dealActual();
+      const doc = DOCUMENTOS.filter(function (x) { return x[0] === arg; })[0];
+      if (!d || !doc) break;
+      descargar(nombreArchivo(doc[1], d), hojaImprimible(doc[1], doc[3](d, estado.perfil), estado.perfil));
+      brindis("Descargado. Abrilo y usá Imprimir para guardarlo como PDF.");
+      break;
+    }
     case "guardar": guardar(); break;
     case "volver": if (ui.seccion === "deals") ui.sel = null; else ui.selContacto = null; render(); break;
     case "sel": ui.sel = arg; ui.tab = "riesgo"; ui.docAbierto = null; render(); break;
@@ -3887,7 +4410,11 @@ document.addEventListener("change", function (evento) {
   }
   if (verbo === "estado-contacto") {
     const c = contactoActual();
-    if (c) { c.estado = evento.target.value; tocar(); render(); }
+    if (c) {
+      c.estado = evento.target.value;
+      if (RESPONDIO.indexOf(c.estado) >= 0) anotarRespuesta(c);
+      tocar(); render();
+    }
     return;
   }
 
@@ -3897,6 +4424,17 @@ document.addEventListener("change", function (evento) {
   if (a.valor === "etapa") { d.etapa = evento.target.value; tocar(); render(); }
   if (a.valor === "recontactar") { d.recontactar = evento.target.value; tocar(); render(); }
   if (a.valor === "firmado") { d.acuerdoFirmado = evento.target.checked; tocar(); render(); }
+  if (a.valor === "cobro") {
+    d.cobro = evento.target.value;
+    const hoy = new Date().toISOString().slice(0, 10);
+    // La fecha es la mitad del dato: sin ella no hay vencimiento ni
+    // plata contada. Se pone sola y se puede corregir.
+    if (d.cobro === "facturada" && !d.fechaFactura) d.fechaFactura = hoy;
+    if (d.cobro === "cobrada" && !d.fechaCobro) d.fechaCobro = hoy;
+    tocar(); render();
+  }
+  if (a.valor === "fecha-factura") { d.fechaFactura = evento.target.value; tocar(); render(); }
+  if (a.valor === "fecha-cobro") { d.fechaCobro = evento.target.value; tocar(); render(); }
 });
 
 // En `input` y sin redibujar: el campo conserva el foco y el clic
@@ -3917,6 +4455,12 @@ document.addEventListener("input", function (evento) {
     cuerpo.innerHTML = enDeals ? cuerpoListaDeals(visibles) : cuerpoListaLibro(visibles);
     const cuenta = document.getElementById("cuenta-busqueda");
     if (cuenta) cuenta.textContent = textoCuenta(visibles.length, total);
+    return;
+  }
+
+  if (a.valor === "monto-cobrado") {
+    const d = dealActual();
+    if (d) { d.montoCobrado = evento.target.value; tocar(); }
     return;
   }
 

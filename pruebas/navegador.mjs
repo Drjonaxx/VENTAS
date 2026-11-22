@@ -501,6 +501,183 @@ await caso("el repaso del correo empareja y explica cada fallo", "/index.html", 
   if (!r.reintenta || r.noReintenta) throw new Error("mal clasificado qué se puede reintentar");
 });
 
+await caso("el embudo cuenta las etapas y la caída entre ellas", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [
+      { id: "a", lado: "proveedor", nombre: "A", estado: "nuevo" },
+      { id: "b", lado: "proveedor", nombre: "B", estado: "contactado", ultimoContacto: "2026-11-01",
+        primerContacto: "2026-11-01", origen: "feria" },
+      { id: "c", lado: "proveedor", nombre: "C", estado: "respondio", primerContacto: "2026-11-01",
+        respondioEl: "2026-11-05", pasoAlResponder: 1, origen: "feria" },
+      { id: "d", lado: "comprador", nombre: "D", estado: "activo", primerContacto: "2026-11-01",
+        respondioEl: "2026-11-03", pasoAlResponder: 0, origen: "referido" },
+    ];
+    const emb = embudoContactos(null);
+    return {
+      etapas: emb.map((x) => x.cuantos),
+      conv: emb.map((x) => x.conversion),
+      tiempos: tiempoHastaRespuesta(),
+      soloProv: embudoContactos("proveedor").map((x) => x.cuantos),
+      origenes: rendimientoPorOrigen().map((o) => o.rotulo + ":" + o.respondieron + "/" + o.contactados),
+    };
+  });
+  igual(r.etapas.join(","), "4,3,2,1", "fichados, contactados, respondieron, activos");
+  igual(r.conv[0], null, "la primera etapa no tiene de qué convertir");
+  igual(r.conv[1], 75, "3 de 4 contactados");
+  igual(r.tiempos.mediana, 3, "la mediana de días hasta la respuesta");
+  igual(r.soloProv.join(","), "3,2,1,0", "el embudo filtrado por lado");
+  if (r.origenes.some((x) => x.endsWith(":0/0"))) {
+    throw new Error("un canal sin nadie contactado no va en la lista: " + r.origenes.join(" | "));
+  }
+  if (!r.origenes.some((x) => x.includes("feria:1/2"))) {
+    throw new Error("el rendimiento por origen no cuadra: " + r.origenes.join(" | "));
+  }
+});
+
+await caso("anotar la respuesta guarda fecha y paso una sola vez", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const c = { id: "x", lado: "proveedor", nombre: "X", paso: 2 };
+    const primera = anotarRespuesta(c);
+    const fecha = c.respondioEl;
+    c.paso = 4;
+    const segunda = anotarRespuesta(c);
+    return { primera, segunda, paso: c.pasoAlResponder, mismaFecha: c.respondioEl === fecha };
+  });
+  if (!r.primera) throw new Error("la primera respuesta debería anotarse");
+  if (r.segunda) throw new Error("no debería sobrescribir la primera respuesta");
+  igual(r.paso, 2, "el paso en que respondió");
+  if (!r.mismaFecha) throw new Error("la fecha cambió al volver a marcar");
+});
+
+await caso("el libro de comisiones separa lo cobrado de lo pactado", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.deals = [
+      { id: "d1", etapa: "presentada", fee: 10000 },
+      { id: "d2", etapa: "cerrada", fee: 20000, cobro: "facturada", fechaFactura: "2026-01-01" },
+      { id: "d3", etapa: "cerrada", fee: 30000, cobro: "cobrada", montoCobrado: 25000 },
+      { id: "d4", etapa: "cerrada", fee: 40000, cobro: "perdida" },
+    ];
+    const d = dineroDelLibro();
+    return { enJuego: d.enJuego, facturado: d.facturado, cobrado: d.cobrado,
+      perdido: d.perdido, vencidas: d.vencidas.map((x) => x.id) };
+  });
+  igual(r.enJuego, 10000, "sólo los tratos vivos");
+  igual(r.facturado, 20000, "lo facturado sin cobrar");
+  igual(r.cobrado, 25000, "lo que entró de verdad, no lo pactado");
+  igual(r.perdido, 40000, "lo perdido");
+  igual(r.vencidas.join(","), "d2", "la factura pasada de 30 días");
+});
+
+await caso("el panel se dibuja sin datos y con datos", "/index.html", async (p) => {
+  await p.evaluate(() => { estado.contactos = []; estado.deals = []; ui.seccion = "panel"; render(); });
+  if (!(await p.locator('[data-accion="seccion:panel"]').count())) throw new Error("falta la pestaña del panel");
+  const vacio = await p.locator(".tramo").count();
+  if (vacio < 4) throw new Error("el embudo debería dibujar sus cuatro etapas igual sin datos");
+  await p.evaluate(() => {
+    estado.contactos = [{ id: "a", lado: "proveedor", nombre: "A", estado: "respondio",
+      primerContacto: "2026-11-01", respondioEl: "2026-11-04", pasoAlResponder: 1, origen: "feria" }];
+    estado.deals = [{ id: "d1", etapa: "cerrada", fee: 5000, cobro: "cobrada", montoCobrado: 5000 }];
+    render();
+  });
+  const texto = await p.locator(".dinero").innerText();
+  if (!texto.includes("$5,000")) throw new Error("el panel no muestra lo cobrado: " + texto);
+});
+
+await caso("el documento con membrete sale como HTML imprimible", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const md = [
+      "# Acuerdo NCND",
+      "",
+      "## 1. Partes",
+      "",
+      "Firma: ______________________   Nombre: Jonathan",
+      "",
+      "- Un punto con **negrita**",
+      "  que sigue en la línea de abajo",
+      "- Otro punto",
+      "",
+      "---",
+      "",
+      "Un párrafo con <script>alert(1)</script> adentro.",
+    ].join("\n");
+    const html = hojaImprimible("Acuerdo", md, { empresa: "JRN Sourcing", nombre: "Jonathan Rodriguez",
+      telefono: "939-254-4482", email: "x@y.com" });
+    return {
+      html,
+      archivo: nombreArchivo("Acuerdo NCND de no elusión", { id: "d-1" }),
+      iniciales: inicialesDe("JRN Sourcing"),
+      items: (html.match(/<li>/g) || []).length,
+    };
+  });
+  if (!r.html.startsWith("<!doctype html>")) throw new Error("no es un documento completo");
+  if (!r.html.includes("JRN Sourcing")) throw new Error("falta el membrete");
+  if (!r.html.includes("<h1>Acuerdo NCND</h1>")) throw new Error("no convirtió el título");
+  if (!r.html.includes("<strong>negrita</strong>")) throw new Error("no convirtió la negrita");
+  if (!r.html.includes('class="raya"')) throw new Error("la raya para firmar no salió");
+  if (r.html.includes("<script>alert")) throw new Error("INYECCIÓN: el HTML del texto no se escapó");
+  if (!r.html.includes("&lt;script&gt;")) throw new Error("el texto debería verse escapado");
+  igual(r.items, 2, "dos viñetas, con la línea sangrada unida a la primera");
+  if (!r.html.includes("que sigue en la línea de abajo")) throw new Error("se perdió la continuación");
+  igual(r.archivo, "acuerdo-ncnd-de-no-elusion-d-1.html", "el nombre del archivo");
+  igual(r.iniciales, "JRN", "el sello usa la sigla, no la inicial de cada palabra");
+});
+
+await caso("guardar reconstruye el documento entero", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const doc = documentoCompleto();
+    return { largo: doc.length, bloques: (doc.match(/<script id="[a-z]+" data-src>/g) || []).length,
+      cierra: (doc.match(/<\/script>/g) || []).length, estado: doc.includes('id="estado"'),
+      papel: doc.includes("CSS_PAPEL"), membrete: doc.includes("hojaImprimible") };
+  });
+  igual(r.bloques, 8, "los ocho bloques de código");
+  if (!r.estado) throw new Error("el documento guardado no lleva el estado");
+  if (!r.papel || !r.membrete) throw new Error("se perdió la papelería al reconstruir");
+  if (r.cierra !== r.bloques + 1) throw new Error("etiquetas </script> descuadradas: " + r.cierra);
+});
+
+await caso("el teléfono manda el seguimiento, no de nuevo la apertura", "/bolsillo.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const c = { id: "p-1", lado: "proveedor", nombre: "Rizek", telefono: "+18095551234",
+      productos: ["cacao"], ultimoContacto: "2026-11-01", paso: 1 };
+    estado.contactos = [c];
+    const seguimiento = mensajePaso(c, "whatsapp");
+    const asuntoSeguimiento = asuntoDe(c);
+    c.paso = 0;
+    return { seguimiento, apertura: mensajePaso(c, "whatsapp"),
+      asuntoSeguimiento, asuntoApertura: asuntoDe(c),
+      cierre: (() => { c.paso = 4; return mensajePaso(c, "whatsapp"); })() };
+  });
+  if (r.seguimiento === r.apertura) throw new Error("el paso 1 manda el mismo texto que el primer contacto");
+  if (!r.seguimiento.includes("2026-11-01")) throw new Error("el rebote no cita cuándo le escribiste");
+  if (!r.asuntoSeguimiento.startsWith("Re: ")) throw new Error("el seguimiento debería subir el hilo");
+  if (r.asuntoApertura.startsWith("Re: ")) throw new Error("el primer contacto no es una respuesta");
+  if (!r.cierre.includes("no te escribo más")) throw new Error("el cierre no cierra");
+});
+
+await caso("el teléfono avanza la secuencia con los días de la Mesa", "/bolsillo.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const c = { id: "p-1", lado: "proveedor", nombre: "Rizek", telefono: "+18095551234",
+      productos: ["cacao"], estado: "nuevo" };
+    estado.contactos = [c];
+    ui.abierto = "p-1"; render();
+    const boton = document.querySelector('[data-accion="ya"]');
+    if (!boton) throw new Error("no hay botón de “ya le escribí”");
+    boton.click();
+    const tras1 = { paso: c.paso, dias: diasPara(c.recontactar), primero: c.primerContacto,
+      estado: c.estado };
+    ui.abierto = "p-1"; render();
+    document.querySelector('[data-accion="ya"]').click();
+    return { tras1, paso2: c.paso, dias2: diasPara(c.recontactar), notas: (c.notas || []).length };
+  });
+  igual(r.tras1.paso, 1, "después del primer contacto queda en el paso 1");
+  igual(r.tras1.dias, 3, "el rebote es a los 3 días, no a los 7");
+  igual(r.tras1.estado, "contactado", "el estado");
+  if (!r.tras1.primero) throw new Error("no anotó la fecha del primer contacto");
+  igual(r.paso2, 2, "el segundo envío lo deja en el paso 2");
+  igual(r.dias2, 4, "del día 3 al día 7 hay 4 días");
+  igual(r.notas, 2, "una anotación por envío");
+});
+
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {
   await caso(`el plan ${plan} abre`, `/plan/${plan}.html`, async (p) => {
     if (!(await p.locator("h1").count())) throw new Error("sin título");

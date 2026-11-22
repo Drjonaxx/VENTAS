@@ -287,6 +287,75 @@ function vol(c) {
   return num(c.volumen) ? num(c.volumen).toLocaleString("es-DO") + " " + (c.unidad || "t") : "";
 }
 
+// La misma secuencia que la Mesa. Si acá fueran otros días o otro
+// texto, el teléfono le mandaría de nuevo el mensaje de apertura a
+// alguien que ya lo recibió.
+const SECUENCIA = [
+  { dias: 0, rotulo: "Primer contacto" },
+  { dias: 3, rotulo: "Rebote, día 3" },
+  { dias: 7, rotulo: "Algo nuevo, día 7" },
+  { dias: 14, rotulo: "Otra puerta, día 14" },
+  { dias: 30, rotulo: "Cierre, día 30" },
+];
+
+function pasoDe(c) {
+  return Math.max(0, Math.min(SECUENCIA.length - 1, parseInt((c || {}).paso, 10) || 0));
+}
+function hayPasoSiguiente(c) { return pasoDe(c) < SECUENCIA.length - 1; }
+
+function mensajePaso(c, canal) {
+  const paso = pasoDe(c);
+  return paso === 0 ? mensajeDe(c, canal) : seguimientoDe(c, paso);
+}
+
+function seguimientoDe(c, paso) {
+  const esProv = c.lado === "proveedor";
+  const cuando = (c.ultimoContacto || "").trim();
+  const desde = cuando ? " el " + cuando : "";
+
+  if (paso === 1) {
+    return [
+      saludo(c) + ", te escribí" + desde + " por lo de " + prod(c) + ".",
+      "",
+      "¿Te llegó? Si no es el momento decímelo y no insisto más, sin problema.",
+    ].join("\n");
+  }
+  if (paso === 2) {
+    const dato = esProv
+      ? "El comprador con el que trabajo pide " +
+        ((c.certificaciones || []).length ? c.certificaciones.join(" y ") : "trazabilidad y certificación vigente") +
+        ", y entrega directa a San Juan."
+      : "Entrada directa a San Juan desde " + ((c.mercados || [])[0] || "origen caribeño") +
+        ": al ser carga de origen extranjero no aplica la Jones Act, así que el flete no carga " +
+        "el sobrecosto de la mercancía ruteada por Florida.";
+    return [
+      saludo(c) + ". Vuelvo con algo concreto, no para insistir.",
+      "", dato, "",
+      esProv ? "¿Eso les encaja? Con un sí o un no ya sé si seguir."
+             : "¿Vale la pena que les mande la ficha técnica?",
+    ].join("\n");
+  }
+  if (paso === 3) {
+    return [
+      saludo(c) + ". Capaz no sos vos quien ve esto, y te estoy haciendo perder tiempo.",
+      "",
+      esProv
+        ? "¿Quién lleva las exportaciones ahí? Le escribo directo y te saco del medio."
+        : "¿Quién lleva las compras de " + prod(c) + " ahí? Le escribo directo y te saco del medio.",
+      "", "Gracias igual.",
+    ].join("\n");
+  }
+  return [
+    saludo(c) + ". Cierro el tema por ahora, no te escribo más.",
+    "",
+    esProv
+      ? "Si en algún momento les queda volumen libre de " + prod(c) + " y quieren colocarlo en " +
+        "Puerto Rico o Estados Unidos, escribime y lo movemos."
+      : "Si en algún momento necesitan " + prod(c) + " de origen caribeño, escribime y te consigo proveedor verificado.",
+    "", "Quedo por acá. Éxitos.",
+  ].join("\n");
+}
+
 function mensajeDe(c, canal) {
   const destino = (c.mercados || [])[0] || (c.lado === "proveedor" ? "Puerto Rico y Estados Unidos" : "República Dominicana");
   const certs = (c.certificaciones || []).join(", ");
@@ -353,6 +422,12 @@ function mensajeDe(c, canal) {
 }
 
 function asuntoDe(c) {
+  // Un seguimiento con asunto nuevo le aparece como otro correo y
+  // pierde el hilo. Sube el mismo.
+  if (pasoDe(c) > 0) return "Re: " + asuntoBase(c);
+  return asuntoBase(c);
+}
+function asuntoBase(c) {
   return c.lado === "proveedor"
     ? "Consulta de compra: " + prod(c) + " para Puerto Rico"
     : prod(c) + " de " + ((c.mercados || [])[0] || "origen caribeño") + ", entrega directa a San Juan";
@@ -499,7 +574,7 @@ function vistaMensaje() {
   const c = abierto();
   if (!c) return vistaLista();
   const canal = ui.canal || canalSugerido(c);
-  const texto = ui.borrador !== null && ui.borrador !== undefined ? ui.borrador : mensajeDe(c, canal);
+  const texto = ui.borrador !== null && ui.borrador !== undefined ? ui.borrador : mensajePaso(c, canal);
   const wa = enlaceWhatsApp(c, texto);
   const correo = enlaceCorreo(c, asuntoDe(c), texto);
   const puedeWA = !!telefonoWhatsApp(c.telefono);
@@ -520,7 +595,8 @@ function vistaMensaje() {
     '<button class="volver" data-accion="volver">‹ Lista</button>' +
     '<div class="crece" style="text-align:right"><h1 style="font-size:17px">' + esc(c.nombre || "Sin nombre") + "</h1>" +
     '<p class="sub">' + (c.lado === "proveedor" ? "Proveedor" : "Comprador") +
-    (c.persona ? " · " + esc(c.persona) : "") + "</p></div></header>" +
+    (c.persona ? " · " + esc(c.persona) : "") +
+    " · " + esc(SECUENCIA[pasoDe(c)].rotulo) + "</p></div></header>" +
     '<div class="cuerpo"><div class="seccion">' +
     '<div class="canales">' +
     '<button class="canal" data-accion="canal:whatsapp" aria-pressed="' + (canal === "whatsapp") + '">WhatsApp' +
@@ -595,7 +671,7 @@ document.addEventListener("click", function (evento) {
     case "restaurar": ui.borrador = null; render(); break;
     case "copiar": {
       const c = abierto();
-      if (c) copiar(ui.borrador != null ? ui.borrador : mensajeDe(c, ui.canal || canalSugerido(c)));
+      if (c) copiar(ui.borrador != null ? ui.borrador : mensajePaso(c, ui.canal || canalSugerido(c)));
       break;
     }
     case "hoja": ui.hoja = arg; render(); break;
@@ -617,14 +693,27 @@ document.addEventListener("click", function (evento) {
       const c = abierto();
       if (!c) break;
       const canal = ui.canal || canalSugerido(c);
+      const hoy = new Date().toISOString().slice(0, 10);
+      const actual = pasoDe(c);
       c.notas = c.notas || [];
-      c.notas.push({ fecha: new Date().toISOString().slice(0, 10),
-        texto: "Le escribí por " + (canal === "correo" ? "correo" : "WhatsApp") + "." });
+      c.notas.push({ fecha: hoy, texto: SECUENCIA[actual].rotulo + ", por " +
+        (canal === "correo" ? "correo" : "WhatsApp") + "." });
       if (!c.estado || c.estado === "nuevo") c.estado = "contactado";
-      c.recontactar = enFecha(7);
+      c.ultimoContacto = hoy;
+      if (!c.primerContacto) c.primerContacto = hoy;
+      let aviso;
+      if (hayPasoSiguiente(c)) {
+        c.paso = actual + 1;
+        const espera = SECUENCIA[c.paso].dias - SECUENCIA[actual].dias;
+        c.recontactar = enFecha(espera);
+        aviso = "Anotado. " + SECUENCIA[c.paso].rotulo + " en " + espera + " días.";
+      } else {
+        c.recontactar = "";
+        aviso = "Secuencia terminada. Ya no te lo recuerdo.";
+      }
       ui.abierto = null; ui.borrador = null;
       tocar(); render(); guardar();
-      brindis("Anotado. Te lo recuerdo en 7 días.");
+      brindis(aviso);
       break;
     }
   }

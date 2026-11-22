@@ -39,6 +39,13 @@ primer contacto: uno en español para el exportador, uno en inglés para quien
 publicó el anuncio. Los cinco salen juntos en un solo archivo con **Copiar
 todo** o **Descargar .md**.
 
+Y salen **con membrete**: cada documento y el expediente completo se bajan como
+una hoja con el sello de la empresa, los datos de contacto, la fecha y la línea
+de confidencialidad, con márgenes de carta y las rayas para firmar donde van. Se
+abre en el navegador y se guarda en PDF desde ahí, sin instalar nada. Un NCND en
+texto plano se lee como un favor entre conocidos; el mismo texto en papel con
+membrete se lee como una empresa, y es lo que te mandan firmado de vuelta.
+
 **5. Lleva la bitácora.** Etapa del embudo, siguiente paso concreto y las notas
 de cada llamada. Esa bitácora es la prueba de que vos originaste el contacto.
 
@@ -94,6 +101,29 @@ español o en inglés. La comisión que se publica no es la tuya: es la tajada q
 le pagás a quien te traiga el exportador, y la app la sugiere con una escala que
 baja cuando la carga sube (3% en cargas chicas, 0,25% arriba de veinte
 millones), porque nadie paga 2% sobre treinta millones.
+
+**14. Te dice en qué estás fallando.** La pestaña **Panel** es el tablero del
+negocio, no un adorno:
+
+- **El embudo**: fichados → contactados → respondieron → activos, con la caída
+  entre cada etapa. El manual dice que de cuarenta correos salen tres a cinco
+  conversaciones (8% a 12%). Abajo del embudo la app te dice si estás en ese
+  rango, por debajo, o si todavía no tenés muestra para sacar conclusiones, que
+  son tres problemas con arreglos opuestos.
+- **Qué paso destraba la respuesta**: de los cinco de la secuencia, cuál trajo
+  cada contestación. Si la mayoría contesta recién en el día 14, el mensaje de
+  apertura está de más y te ahorrás dos semanas por contacto.
+- **Qué canal rinde**: tasa de respuesta por origen de la ficha, para insistir
+  donde contestan y no donde más fichas conseguiste.
+- **Cuánto tardan en contestar**: mediana, mínimo y máximo de días.
+- **El libro de comisiones**: en juego, facturado, cobrado y perdido. Lo que
+  cuenta como ingreso es la columna de cobrado, no lo pactado, y si una factura
+  pasa de 30 días sin cobrar te lo dice en rojo con el nombre del trato. Una
+  correduría sin registro de cobros no es un negocio: es una lista de gente a la
+  que le hiciste el favor.
+
+Las fechas que alimentan todo esto se anotan solas: cuándo fue el primer
+contacto, cuándo respondió y en qué paso de la secuencia iba.
 
 Ese libro es el activo real del negocio. Un comprador con mandato firmado es lo
 escaso: proveedores se consiguen en una tarde, compradores con plata y una LOI
@@ -171,8 +201,16 @@ llevar el atributo `data-src`** o se pierde en el primer guardado.
 `index.html` es la Mesa: el escritorio donde filtrás, verificás, cruzás y
 generás los papeles. `bolsillo.html` es la versión de teléfono, para una sola
 cosa: abrirla, ver a quién toca escribirle hoy y mandarle el mensaje con el
-pulgar. Comparten el formato de respaldo, así que el mismo archivo JSON pasa de
-una a la otra.
+pulgar. Corre la misma secuencia de cinco pasos que la Mesa —los mismos días y
+los mismos textos— así que el teléfono nunca le manda de nuevo el mensaje de
+apertura a alguien que ya lo recibió, y el seguimiento por correo sube el hilo
+con un **Re:** en vez de abrir uno nuevo. Comparten el formato de respaldo, así
+que el mismo archivo JSON pasa de una a la otra.
+
+Las dos guardan su estado dentro de la propia página publicada. El repositorio
+guarda la plantilla vacía, así que **antes de publicar una desde el repo hay que
+pegarle el `#estado` de la versión viva**, o se borra lo trabajado desde el
+teléfono.
 
 `boletin.html` es la tercera: lo que una tarea programada escribe cada mañana
 sobre el precio del cacao, las empresas del libro, oportunidades publicadas y
