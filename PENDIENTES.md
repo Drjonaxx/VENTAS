@@ -80,6 +80,15 @@ marca `[x]`. Lo de **Para Jonathan** solo lo puede hacer él.
 - [x] La secuencia de cinco pasos también en el teléfono (22 nov 2026): antes
       el bolsillo mandaba de nuevo el mensaje de apertura a quien ya lo había
       recibido, y recordaba a 7 días en vez de seguir los días de la Mesa.
+- [x] Registros de importación (22 nov 2026): consultas armadas por producto,
+      partida y corredor; lector de los resultados pegados que saca empresa,
+      fecha y cantidad; alta al libro con revisión previa; y el mensaje de
+      segunda fuente que cita el embarque de ellos.
+- [ ] Verificar los tres importadores que salieron de los agregadores (Atlantic
+      Cocoa Co, Nederland S.A. y Barry Callebaut USA) antes de escribirles: son
+      capturas de sitios de terceros, no fuente oficial. Barry Callebaut es el
+      fabricante de chocolate más grande del mundo; no es el primer cliente de
+      nadie.
 - [ ] Revisar cada tanto que las cifras de los planes sigan vigentes. La fecha
       de MIDA ya cambió una vez (de junio a agosto de 2027).
 - [ ] Antes de publicar `bolsillo.html` o `index.html` desde el repo: leer el

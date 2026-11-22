@@ -654,6 +654,24 @@ await caso("el teléfono manda el seguimiento, no de nuevo la apertura", "/bolsi
   if (!r.cierre.includes("no te escribo más")) throw new Error("el cierre no cierra");
 });
 
+await caso("el teléfono también cita el registro de aduana", "/bolsillo.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const c = { id: "c-1", lado: "comprador", nombre: "ATLANTIC COCOA CO", email: "x@y.com",
+      productos: ["cacao en grano"], mercados: ["República Dominicana"],
+      importa: [{ producto: "cacao en grano", contraparte: "RIZEK CACAO S.A.S",
+        fecha: "2026-08-14", cantidad: "18 toneladas" }] };
+    estado.contactos = [c];
+    const con = mensajePaso(c, "correo");
+    const sin = mensajePaso({ ...c, importa: [] }, "correo");
+    return { con, sin, mes: mesLargo("2026-08") };
+  });
+  if (r.con === r.sin) throw new Error("manda el mismo mensaje sepa o no qué importan");
+  if (!r.con.includes("RIZEK CACAO S.A.S")) throw new Error("no cita al proveedor que ya usan");
+  if (!r.con.includes("agosto de 2026")) throw new Error("no cita cuándo: " + r.con);
+  if (!r.con.includes("segunda fuente")) throw new Error("no ofrece segunda fuente");
+  igual(r.mes, "agosto de 2026", "el mes en palabras");
+});
+
 await caso("el teléfono avanza la secuencia con los días de la Mesa", "/bolsillo.html", async (p) => {
   const r = await p.evaluate(() => {
     const c = { id: "p-1", lado: "proveedor", nombre: "Rizek", telefono: "+18095551234",
@@ -676,6 +694,103 @@ await caso("el teléfono avanza la secuencia con los días de la Mesa", "/bolsil
   igual(r.paso2, 2, "el segundo envío lo deja en el paso 2");
   igual(r.dias2, 4, "del día 3 al día 7 hay 4 días");
   igual(r.notas, 2, "una anotación por envío");
+});
+
+await caso("el lector de registros saca empresas, fecha y cantidad", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const texto = [
+      "ATLANTIC COCOA CO\tRIZEK CACAO S.A.S\t2026-08-14\t18 toneladas",
+      "NEDERLAND S.A. | JG GARCIA DOMINICAN CACAO SRL | 05/02/2024 | 25 tonnes",
+      "BARRY CALLEBAUT USA LLC   JRCA CACAO GROUP SRL   Aug 3, 2026   8 containers",
+      "Atlantic Cocoa Co",
+      "934 shipments",
+      "",
+    ].join("\n");
+    const leido = parsearRegistros(texto);
+    return {
+      filas: leido.filas.map((x) => [x.importador, x.proveedor, x.fecha, x.cantidad]),
+      sueltos: leido.sueltos.map((x) => x.nombre),
+      ignoradas: leido.ignoradas,
+      fechas: ["2026-08-14", "05/02/2024", "Aug 3, 2026", "mayo de 2024", "nada"].map(fechaDeTexto),
+      empresa: ["RIZEK CACAO S.A.S", "Atlantic Cocoa Co", "934", "18 toneladas", "cacao"].map(pareceEmpresa),
+    };
+  });
+  igual(r.filas.length, 3, "tres filas con las dos partes");
+  igual(r.filas[0].join("|"), "ATLANTIC COCOA CO|RIZEK CACAO S.A.S|2026-08-14|18 toneladas", "la fila de tabulaciones");
+  igual(r.filas[1][2], "2024-05-02", "la fecha de EEUU es mes primero");
+  igual(r.filas[2][1], "JRCA CACAO GROUP SRL", "la fila separada por espacios");
+  igual(r.filas[2][3], "8 containers", "los contenedores");
+  igual(r.sueltos.join(","), "Atlantic Cocoa Co", "la empresa sin contraparte");
+  igual(r.ignoradas.join(","), "934 shipments", "lo que no es una empresa se descarta");
+  igual(r.fechas[3], "2024-05", "un mes sin día sirve igual");
+  igual(r.fechas[4], "", "lo que no es fecha no inventa una");
+  igual(r.empresa.join(","), "true,true,false,false,false", "qué parece empresa y qué no");
+});
+
+await caso("fichar desde un registro llena las dos fichas y no duplica", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    estado.contactos = [];
+    ui.seccion = "registros";
+    ui.registro = { producto: "cacao en grano", origen: "República Dominicana", destino: "Puerto Rico" };
+    render();
+    document.querySelector('[data-accion="leer-registros"] textarea').value =
+      "ATLANTIC COCOA CO\tRIZEK CACAO S.A.S\t2026-08-14\t18 toneladas";
+    document.querySelector('[data-accion="leer-registros"]')
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    document.querySelector('[data-accion="fichar-reg:par.0.ambos"]').click();
+    // el mismo registro otra vez: no debe crear fichas nuevas
+    document.querySelector('[data-accion="leer-registros"] textarea').value =
+      "ATLANTIC COCOA CO\tRIZEK CACAO S.A.S\t2026-08-14\t18 toneladas";
+    document.querySelector('[data-accion="leer-registros"]')
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    document.querySelector('[data-accion="fichar-reg:par.0.ambos"]').click();
+
+    const comp = estado.contactos.find((c) => c.lado === "comprador");
+    const prov = estado.contactos.find((c) => c.lado === "proveedor");
+    return {
+      cuantos: estado.contactos.length,
+      comp: { nombre: comp.nombre, pais: comp.pais, origen: comp.origen,
+        importa: comp.importa.length, prod: comp.productos[0] },
+      prov: { nombre: prov.nombre, pais: prov.pais, importa: (prov.importa || []).length },
+      mensaje: mensajeDe(comp, "correo"),
+      corto: mensajeDe(comp, "whatsapp"),
+      resumen: resumenImporta(comp),
+    };
+  });
+  igual(r.cuantos, 2, "dos fichas, no cuatro: el segundo pegado no duplica");
+  igual(r.comp.nombre, "ATLANTIC COCOA CO", "el importador queda de comprador");
+  igual(r.comp.pais, "Puerto Rico", "el comprador va al país destino");
+  igual(r.comp.origen, "registro", "queda anotado de dónde salió la ficha");
+  igual(r.comp.importa, 1, "un solo dato de importación, no dos");
+  igual(r.prov.nombre, "RIZEK CACAO S.A.S", "el proveedor es la otra parte");
+  igual(r.prov.pais, "República Dominicana", "el proveedor va al país de origen");
+  igual(r.prov.importa, 0, "a un proveedor no se le anota qué importa");
+  if (!r.mensaje.includes("RIZEK CACAO S.A.S")) throw new Error("el correo no cita al proveedor que ya usan");
+  if (!r.mensaje.includes("agosto de 2026")) throw new Error("el correo no cita cuándo: " + r.mensaje);
+  if (!r.mensaje.includes("segunda fuente")) throw new Error("el correo debería ofrecer segunda fuente");
+  if (r.mensaje.includes("creo que puede encajar")) throw new Error("salió el mensaje genérico");
+  if (!r.corto.includes("registros de aduana")) throw new Error("el de WhatsApp no cita el registro");
+  if (!r.resumen.includes("RIZEK")) throw new Error("el resumen de la ficha no dice qué importa");
+});
+
+await caso("las fuentes de registros salen con enlace y partida", "/index.html", async (p) => {
+  const r = await p.evaluate(() => {
+    const f = consultasRegistro("cacao en grano", "República Dominicana", "Puerto Rico");
+    const sin = consultasRegistro("", "", "");
+    return {
+      nombres: f.map((x) => x.nombre),
+      urls: f.map((x) => x.url),
+      hs: partidaHS("cacao en grano"),
+      sinProducto: sin.length,
+      mesLargo: [mesLargo("2026-08"), mesLargo("2024-05"), mesLargo("nada")],
+    };
+  });
+  if (!r.nombres.some((n) => n.startsWith("ImportYeti"))) throw new Error("falta ImportYeti");
+  if (!r.nombres.some((n) => n.includes("USITC"))) throw new Error("falta la fuente oficial gratis");
+  if (r.urls.some((u) => !/^https:\/\//.test(u))) throw new Error("hay una URL que no es https");
+  igual(r.hs, "1801 — cacao en grano", "la partida del cacao");
+  if (r.sinProducto < 2) throw new Error("sin producto igual tiene que ofrecer las fuentes generales");
+  igual(r.mesLargo.join(","), "agosto de 2026,mayo de 2024,nada", "el mes en palabras");
 });
 
 for (const plan of ["primer-comprador", "corredor-sd-sju", "anatomia-de-un-trato"]) {

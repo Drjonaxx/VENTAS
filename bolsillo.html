@@ -305,7 +305,9 @@ function hayPasoSiguiente(c) { return pasoDe(c) < SECUENCIA.length - 1; }
 
 function mensajePaso(c, canal) {
   const paso = pasoDe(c);
-  return paso === 0 ? mensajeDe(c, canal) : seguimientoDe(c, paso);
+  if (paso > 0) return seguimientoDe(c, paso);
+  if (c.lado === "comprador" && (c.importa || []).length) return mensajeYaImporta(c);
+  return mensajeDe(c, canal);
 }
 
 function seguimientoDe(c, paso) {
@@ -353,6 +355,38 @@ function seguimientoDe(c, paso) {
         "Puerto Rico o Estados Unidos, escribime y lo movemos."
       : "Si en algún momento necesitan " + prod(c) + " de origen caribeño, escribime y te consigo proveedor verificado.",
     "", "Quedo por acá. Éxitos.",
+  ].join("\n");
+}
+
+// Igual que en la Mesa: si sabemos qué trae y de quién, ése es el
+// mensaje. Si el teléfono mandara el genérico, la ficha que trabajaste
+// con los registros se desperdicia justo al escribirle.
+const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+  "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function mesLargo(aaaamm) {
+  const partes = String(aaaamm || "").split("-");
+  const m = parseInt(partes[1], 10);
+  if (!partes[0] || !m || m < 1 || m > 12) return String(aaaamm || "");
+  return MESES_LARGOS[m - 1] + " de " + partes[0];
+}
+
+function mensajeYaImporta(c) {
+  const x = (c.importa || []).slice().sort(function (a, b) {
+    return (b.fecha || "").localeCompare(a.fecha || "");
+  })[0] || {};
+  const origen = (c.mercados || [])[0] || "República Dominicana";
+  const cuando = x.fecha ? " en " + mesLargo(x.fecha.slice(0, 7)) : "";
+  return [
+    saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
+    "",
+    "Vi en los registros de aduana que" + cuando + " trajeron " + (x.producto || prod(c)) +
+      (x.contraparte ? " de " + x.contraparte : "") + ".",
+    "",
+    "No es para que cambien de proveedor. Es por si les sirve una segunda fuente verificada " +
+      "en " + origen + " para cuando el volumen no alcance o el precio se mueva.",
+    "",
+    "¿Les mando ficha técnica y precio indicativo?",
   ].join("\n");
 }
 

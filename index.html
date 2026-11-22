@@ -194,6 +194,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .canales { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .barra-embudo { display: grid; gap: 9px; }
+.fuente-reg { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
+.fuente-reg:last-child { border-bottom: none; }
+.fuente-reg .cab { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.fuente-reg .cab a { font-weight: 600; }
+.fuente-reg p { font-size: 13.5px; color: var(--tinta-suave); margin: 0; }
+.filas-reg { display: grid; gap: 8px; }
+.fila-reg { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+  border: 1px solid var(--linea); border-radius: 3px; padding: 10px 12px; }
+.fila-reg .par { display: grid; gap: 2px; min-width: 0; }
+.fila-reg .par .quien { font-weight: 600; }
+.fila-reg .par .de { font-size: 13px; color: var(--tinta-suave); }
+.fila-reg .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.fila-reg.listo { background: var(--verde-tenue); border-color: transparent; }
+@media (max-width: 560px) { .fila-reg { grid-template-columns: 1fr; } }
 .cuerpo.solo .panel { margin-inline: auto; }
 .tramo { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; }
 .tramo .riel { background: var(--franja); border-radius: 999px; height: 22px; overflow: hidden; }
@@ -2465,7 +2479,87 @@ function mensajeDe(c, canal) {
   if (c.lado === "proveedor") {
     return canal === "correo" ? mensajeProveedorCorreo(c) : mensajeProveedorCorto(c);
   }
+  // Si sabemos qué trae y de quién, ése es el mensaje. Deja de ser
+  // "¿les interesa?" y pasa a ser una conversación sobre su operación.
+  if ((c.importa || []).length) {
+    return canal === "correo" ? mensajeYaImportaCorreo(c) : mensajeYaImportaCorto(c);
+  }
   return canal === "correo" ? mensajeCompradorCorreo(c) : mensajeCompradorCorto(c);
+}
+
+// La diferencia entre esto y el mensaje genérico es toda la diferencia:
+// no les pedís que cambien de proveedor, les ofrecés una segunda fuente.
+// Eso es lo único que un comprador con proveedor andando puede aceptar
+// sin arriesgar nada, y es la puerta por la que después entra todo.
+function citaRegistro(c) {
+  const x = (c.importa || []).slice().sort(function (a, b) {
+    return (b.fecha || "").localeCompare(a.fecha || "");
+  })[0] || {};
+  const cuando = x.fecha
+    ? (x.fecha.length === 7 ? " en " + mesLargo(x.fecha) : " en " + mesLargo(x.fecha.slice(0, 7)))
+    : "";
+  return {
+    que: x.producto || prod0(c),
+    dequien: x.contraparte || "",
+    cuando: cuando,
+    cuanto: x.cantidad || "",
+  };
+}
+
+const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+  "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function mesLargo(aaaamm) {
+  const partes = String(aaaamm || "").split("-");
+  const m = parseInt(partes[1], 10);
+  if (!partes[0] || !m || m < 1 || m > 12) return String(aaaamm || "");
+  return MESES_LARGOS[m - 1] + " de " + partes[0];
+}
+
+function mensajeYaImportaCorreo(c) {
+  const r = citaRegistro(c);
+  const origen = (c.mercados || [])[0] || "República Dominicana";
+  return [
+    saludo(c) + ",",
+    "",
+    "Soy " + yo() + ", intermediario comercial radicado en Puerto Rico.",
+    "",
+    "En los registros públicos de aduana vi que" + r.cuando + " recibieron " + r.que +
+      (r.dequien ? " de " + r.dequien : " de " + origen) +
+      (r.cuanto ? " (" + r.cuanto + ")" : "") + ".",
+    "",
+    "No les escribo para que cambien de proveedor: les escribo por si les sirve tener una " +
+      "segunda fuente verificada para cuando el volumen no alcance, el precio se mueva o " +
+      "una cosecha venga corta. Trabajo con exportadores de " + origen +
+      " a los que verifico yo antes de presentar: registro fiscal, registro mercantil y " +
+      "registro de exportador ante la aduana.",
+    "",
+    "Entrega directa a San Juan. Al ser carga de origen extranjero no aplica la Jones Act, " +
+      "así que no carga el sobrecosto que sí tiene la mercancía ruteada por Florida.",
+    "",
+    "¿Les mando ficha técnica y precio indicativo, para que lo tengan de referencia aunque " +
+      "hoy no lo necesiten?",
+    "",
+    "Quedo atento,",
+    (estado.perfil || {}).nombre || "",
+    [(estado.perfil || {}).empresa, (estado.perfil || {}).telefono].filter(Boolean).join(" · "),
+  ].join("\n");
+}
+
+function mensajeYaImportaCorto(c) {
+  const r = citaRegistro(c);
+  const origen = (c.mercados || [])[0] || "República Dominicana";
+  return [
+    saludo(c) + ". Soy " + yo() + ", intermediario comercial en Puerto Rico.",
+    "",
+    "Vi en los registros de aduana que" + r.cuando + " trajeron " + r.que +
+      (r.dequien ? " de " + r.dequien : "") + ".",
+    "",
+    "No es para que cambien de proveedor. Es por si les sirve una segunda fuente verificada " +
+      "en " + origen + " para cuando el volumen no alcance o el precio se mueva.",
+    "",
+    "¿Les mando ficha técnica y precio indicativo?",
+  ].join("\n");
 }
 
 /* Cuál conviene. No es lo mismo una cooperativa dominicana que el
@@ -2587,6 +2681,193 @@ function docPresentacion(comprador, proveedor) {
     "· Anotá en la bitácora de los dos qué pasó después. Esa bitácora y el NCND son",
     "  lo único que tenés si después hay pleito.",
   ].join("\n");
+}
+
+/* ---------------- registros de importación ----------------
+   La única parte de la app que encuentra nombres nuevos en vez de
+   ordenar los que ya tenés. Los manifiestos de carga que entran a
+   Estados Unidos son públicos desde 2015: quién importó qué, de qué
+   exportador, cuándo y cuánto. Eso convierte un mensaje frío en uno
+   que cita la operación de ellos. */
+
+// Las que cambian de URL interna cada tanto se consultan por buscador:
+// un enlace directo que se rompe en seis meses es peor que ninguno.
+function porBuscador(q) {
+  return "https://www.google.com/search?q=" + encodeURIComponent(q);
+}
+function talon(texto) {
+  return String(texto || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function consultasRegistro(producto, paisOrigen, paisDestino) {
+  const prod = (producto || "").trim();
+  const origen = (paisOrigen || "").trim();
+  const destino = (paisDestino || "").trim() || "Puerto Rico";
+  const hs = (partidaHS(prod) || "").split(" ")[0] || "";
+  const fuentes = [];
+
+  fuentes.push(["ImportYeti", "Gratis. Manifiestos marítimos a Estados Unidos desde 2015. " +
+    "Buscá por el nombre legal de la empresa, no el comercial. Pide cuenta pasadas unas " +
+    "consultas por día.", "https://www.importyeti.com/", true]);
+
+  if (prod) {
+    fuentes.push(["ImportYeti · " + prod, "La misma base, filtrada por buscador: a veces trae " +
+      "la ficha directa sin pelear con el buscador interno.",
+      porBuscador('site:importyeti.com ' + prod + (origen ? " " + origen : "")), true]);
+  }
+
+  if (origen && prod) {
+    fuentes.push(["ImportGenius · exportadores de " + origen,
+      "La ficha de cada exportador muestra gratis un resumen de sus embarques recientes y a " +
+      "quién se los mandó. Lo que está detrás del muro es el detalle, no el nombre.",
+      porBuscador('site:importgenius.com/suppliers ' + prod + " " + origen), true]);
+    fuentes.push(["ImportGenius · importadores de " + destino,
+      "Lo mismo del otro lado: quién recibe en destino.",
+      porBuscador('site:importgenius.com/importers ' + prod + " " + destino), true]);
+  }
+
+  if (prod) {
+    fuentes.push(["Volza · importaciones en " + destino,
+      "Da el conteo total: cuántos embarques, cuántos importadores y cuántos proveedores hay " +
+      "en ese corredor. Sirve para saber si el mercado tiene tamaño antes de trabajarlo.",
+      "https://www.volza.com/p/" + talon(prod) + "/import/import-in-" + talon(destino) + "/", true]);
+  }
+
+  if (hs) {
+    fuentes.push(["USITC DataWeb · partida " + hs,
+      "Oficial y gratis, del gobierno de Estados Unidos. No da nombres de empresa: da volumen " +
+      "y valor por producto y país. Es con lo que comprobás si una cifra que te dijeron es posible.",
+      "https://dataweb.usitc.gov/", true]);
+    fuentes.push(["UN Comtrade · partida " + hs,
+      "Comercio mundial por partida. Para ver a qué países le vende de verdad " +
+      (origen || "el origen") + ", y por lo tanto con quién ya sabe trabajar.",
+      "https://comtradeplus.un.org/", true]);
+  }
+
+  fuentes.push(["Censo de EEUU · USA Trade Online",
+    "Estadística oficial de importación por partida, país y distrito aduanero. San Juan es un " +
+    "distrito propio, así que acá ves cuánto entra directo a la isla y cuánto llega ruteado.",
+    "https://usatrade.census.gov/", true]);
+
+  return fuentes.map(function (f) {
+    return { nombre: f[0], nota: f[1], url: f[2], gratis: f[3] };
+  });
+}
+
+// Una empresa se reconoce por la forma jurídica: estos registros están
+// llenos de SRL, S.A.S, LLC y C POR A.
+const SUFIJOS_EMPRESA = ["srl", "s r l", "sa", "s a", "sas", "s a s", "sac", "ca", "c a",
+  "cxa", "c x a", "c por a", "eirl", "llc", "l l c", "inc", "corp", "corporation", "co",
+  "company", "ltd", "ltda", "limited", "gmbh", "bv", "nv", "spa", "sl", "plc", "lp", "llp",
+  "pte", "sdn", "ag", "kg", "oy", "ab", "as"];
+
+const MESES_TEXTO = {
+  ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7,
+  ago: 8, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dic: 12, dec: 12,
+};
+
+function pareceEmpresa(texto) {
+  const s = String(texto || "").trim();
+  if (s.length < 3 || s.length > 90) return false;
+  if (/^[\d\s.,:/-]+$/.test(s)) return false;          // sólo números o fechas
+  const limpio = norm(s);
+  const palabras = limpio.split(/\s+/).filter(Boolean);
+  if (!palabras.length) return false;
+  if (SUFIJOS_EMPRESA.indexOf(palabras[palabras.length - 1]) >= 0) return true;
+  if (palabras.length >= 2 && /[a-z]/i.test(s)) {
+    // "BARRY CALLEBAUT USA" o "Atlantic Cocoa Co": mayúsculas o Capitalizado
+    const mayus = s === s.toUpperCase();
+    const titulo = /^[A-ZÁÉÍÓÚÑ][^\s]*(\s+[A-ZÁÉÍÓÚÑ&][^\s]*)+$/.test(s);
+    return mayus || titulo;
+  }
+  return false;
+}
+
+function fechaDeTexto(s) {
+  const t = String(s || "").trim();
+  let m = t.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if (m) return m[1] + "-" + ("0" + m[2]).slice(-2) + "-" + ("0" + m[3]).slice(-2);
+  m = t.match(/\b(\d{1,2})[/](\d{1,2})[/](\d{4})\b/);
+  // Los registros vienen de Estados Unidos: mes primero.
+  if (m) return m[3] + "-" + ("0" + m[1]).slice(-2) + "-" + ("0" + m[2]).slice(-2);
+  m = t.match(/\b([a-zA-Z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})\b/);
+  if (m && MESES_TEXTO[m[1].slice(0, 3).toLowerCase()]) {
+    const mes = MESES_TEXTO[m[1].slice(0, 3).toLowerCase()];
+    return m[3] + "-" + ("0" + mes).slice(-2) + "-" + ("0" + m[2]).slice(-2);
+  }
+  m = t.match(/\b([a-zA-Z]{3,9})\.?\s+(?:de\s+)?(\d{4})\b/);
+  if (m && MESES_TEXTO[m[1].slice(0, 3).toLowerCase()]) {
+    const mes = MESES_TEXTO[m[1].slice(0, 3).toLowerCase()];
+    return m[2] + "-" + ("0" + mes).slice(-2);
+  }
+  return "";
+}
+
+function cantidadDeTexto(s) {
+  const m = String(s || "").match(
+    /\b([\d]+(?:[.,]\d+)?)\s*(kgs?|kilos?|toneladas?|tons?|tonnes?|mt|lbs?|contenedores?|containers?|teus?|sacos?|bags?|cartons?|ctns?)\b/i);
+  if (!m) return "";
+  return m[1] + " " + m[2].toLowerCase();
+}
+
+// Se parte por lo más fuerte que haya: tabulación, barra, dos espacios
+// o coma. Una coma sola parte mal "Rizek Cacao, S.A.S".
+function celdasDe(linea) {
+  for (const sep of [/\t+/, /\s*\|\s*/, /\s{2,}/]) {
+    if (sep.test(linea)) {
+      const c = linea.split(sep).map(function (x) { return x.trim(); }).filter(Boolean);
+      if (c.length > 1) return c;
+    }
+  }
+  return [linea.trim()].filter(Boolean);
+}
+
+function parsearRegistros(texto) {
+  const filas = [], sueltos = [], ignoradas = [];
+  (texto || "").split(/\r?\n/).forEach(function (linea) {
+    const cruda = linea.trim();
+    if (!cruda) return;
+    const celdas = celdasDe(cruda);
+    const empresas = celdas.filter(pareceEmpresa);
+    const fecha = fechaDeTexto(cruda);
+    const cantidad = cantidadDeTexto(cruda);
+    if (empresas.length >= 2) {
+      filas.push({ importador: empresas[0], proveedor: empresas[1], fecha: fecha,
+        cantidad: cantidad, crudo: cruda });
+    } else if (empresas.length === 1) {
+      sueltos.push({ nombre: empresas[0], fecha: fecha, cantidad: cantidad, crudo: cruda });
+    } else {
+      ignoradas.push(cruda);
+    }
+  });
+  return { filas: filas, sueltos: sueltos, ignoradas: ignoradas };
+}
+
+// Un nombre que ya está en el libro no se vuelve a fichar: se le suma
+// el dato de importación a la ficha que ya tiene.
+function yaFichado(nombre) {
+  const n = norm(nombre);
+  return (estado.contactos || []).find(function (c) { return norm(c.nombre) === n; }) || null;
+}
+
+function anotarImportacion(contacto, dato) {
+  contacto.importa = contacto.importa || [];
+  const igual = contacto.importa.some(function (x) {
+    return norm(x.contraparte || "") === norm(dato.contraparte || "") &&
+      (x.fecha || "") === (dato.fecha || "");
+  });
+  if (!igual) contacto.importa.push(dato);
+  return contacto;
+}
+
+function resumenImporta(c) {
+  const xs = (c.importa || []);
+  if (!xs.length) return "";
+  const ult = xs.slice().sort(function (a, b) { return (b.fecha || "").localeCompare(a.fecha || ""); })[0];
+  return [ult.producto || "mercancía", ult.contraparte ? "de " + ult.contraparte : "",
+    ult.fecha ? "(" + ult.fecha + ")" : "", ult.cantidad ? "· " + ult.cantidad : ""]
+    .filter(Boolean).join(" ");
 }
 
 /* ---------------- el embudo ----------------
@@ -2968,7 +3249,7 @@ function vistaBarra() {
     : ui.sucio
       ? '<span class="etiqueta" id="estado-guardado" style="color:var(--ambar)">cambios sin guardar</span>'
       : '<span class="etiqueta" id="estado-guardado">al día</span>';
-  const alta = ui.seccion === "panel"
+  const alta = ui.seccion === "panel" || ui.seccion === "registros"
     ? ""
     : ui.seccion === "deals"
     ? '<button class="btn primario" data-accion="nuevo">Nueva oportunidad</button>'
@@ -2990,6 +3271,7 @@ function vistaSecciones() {
   };
   return '<nav class="secciones">' +
     item("panel", "Panel", "") +
+    item("registros", "Registros", "") +
     item("deals", "Oportunidades", estado.deals.length) +
     item("comprador", "Compradores", contactosDe("comprador").length) +
     item("proveedor", "Proveedores", contactosDe("proveedor").length) +
@@ -3008,6 +3290,100 @@ function vistaResumen() {
     cifra("comisión en juego", potencial ? usd(potencial).replace("USD ", "$") : "—") +
     cifra("en rojo", rojos) +
     cifra("por contactar", pendientesDe(vivos)) +
+    "</div>";
+}
+
+function vistaRegistros() {
+  const r = ui.registro || {};
+  const prod = r.producto || "cacao en grano";
+  const origen = r.origen || "República Dominicana";
+  const destino = r.destino || "Puerto Rico";
+
+  const campo = function (rot, clave, valor, sugerencia) {
+    return '<label class="campo"><span class="etiqueta">' + rot + "</span>" +
+      '<input data-accion="reg-' + clave + '" value="' + esc(valor) +
+      '" placeholder="' + esc(sugerencia) + '"></label>';
+  };
+
+  const fuentes = consultasRegistro(prod, origen, destino).map(function (f) {
+    return '<div class="fuente-reg"><div class="cab">' +
+      '<a href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + esc(f.nombre) + "</a>" +
+      '<span class="etiqueta">' + (f.gratis ? "gratis" : "de pago") + "</span></div>" +
+      "<p>" + esc(f.nota) + "</p></div>";
+  }).join("");
+
+  const leido = r.leido || null;
+  let revision = "";
+  if (leido) {
+    const fila = function (x, i, tipo) {
+      const hecho = (r.fichadas || []).indexOf(tipo + ":" + i) >= 0;
+      const titulo = tipo === "par" ? x.importador : x.nombre;
+      const bajo = tipo === "par"
+        ? "compra a " + (x.proveedor || "?") + [x.fecha ? " · " + x.fecha : "",
+            x.cantidad ? " · " + x.cantidad : ""].join("")
+        : [x.fecha, x.cantidad].filter(Boolean).join(" · ") || "sin fecha ni cantidad";
+      const yaEsta = yaFichado(titulo);
+      return '<div class="fila-reg' + (hecho ? " listo" : "") + '">' +
+        '<span class="par"><span class="quien">' + esc(titulo) + "</span>" +
+        '<span class="de">' + esc(bajo) + (yaEsta ? " · ya está en el libro" : "") + "</span></span>" +
+        '<span class="acciones">' +
+        (hecho
+          ? '<span class="etiqueta">fichado</span>'
+          : '<button class="btn chico" data-accion="fichar-reg:' + tipo + "." + i + '.comprador">Comprador</button>' +
+            '<button class="btn chico" data-accion="fichar-reg:' + tipo + "." + i + '.proveedor">Proveedor</button>' +
+            (tipo === "par"
+              ? '<button class="btn primario chico" data-accion="fichar-reg:' + tipo + "." + i + '.ambos">Los dos</button>'
+              : "")) +
+        "</span></div>";
+    };
+    const pares = leido.filas.map(function (x, i) { return fila(x, i, "par"); }).join("");
+    const solos = leido.sueltos.map(function (x, i) { return fila(x, i, "solo"); }).join("");
+    revision =
+      tarjeta("lo que entendí · " + leido.filas.length + " con las dos partes, " +
+        leido.sueltos.length + " sueltos",
+        (pares ? '<div class="filas-reg">' + pares + "</div>" : "") +
+        (pares && solos ? '<p class="etiqueta" style="margin-top:14px">sin contraparte identificada</p>' : "") +
+        (solos ? '<div class="filas-reg">' + solos + "</div>" : "") +
+        (!pares && !solos ? "<p>No reconocí ninguna empresa en eso. Pegá las filas con los " +
+          "nombres completos, incluyendo la forma jurídica (SRL, S.A.S, LLC).</p>" : "") +
+        (leido.ignoradas.length
+          ? '<p class="etiqueta" style="margin-top:14px">' + leido.ignoradas.length +
+            " línea(s) sin empresa reconocible, descartadas</p>"
+          : ""),
+        '<span class="crece"></span><button class="btn fantasma chico" data-accion="limpiar-reg">Limpiar</button>');
+  }
+
+  return '<div class="panel">' +
+    tarjeta("qué buscás",
+      '<div class="rejilla">' +
+      campo("producto", "producto", prod, "cacao en grano") +
+      campo("origen", "origen", origen, "República Dominicana") +
+      campo("destino", "destino", destino, "Puerto Rico") +
+      "</div>" +
+      (partidaHS(prod) ? '<p>Partida arancelaria: <strong>' + esc(partidaHS(prod)) +
+        "</strong>. Buscá por ese número, que es el mismo en todos los países.</p>"
+        : "<p>No tengo la partida de ese producto. Buscá por nombre, en inglés también.</p>")) +
+    tarjeta("dónde mirar", fuentes) +
+    tarjeta("pegá lo que encontraste",
+      '<form data-accion="leer-registros">' +
+      '<label class="campo"><span class="etiqueta">filas de resultados</span>' +
+      '<textarea name="texto" data-accion="reg-texto" rows="7" required placeholder="ATLANTIC COCOA CO&#9;RIZEK CACAO S.A.S&#9;2026-08-14&#9;18 toneladas&#10;NEDERLAND S.A.&#9;JG GARCIA DOMINICAN CACAO SRL&#9;2024-05-02&#9;25 toneladas">' +
+      esc(r.texto || "") + "</textarea></label>" +
+      '<p style="color:var(--tinta-suave);font-size:13.5px">Pegá tal cual, con tabulaciones o ' +
+      "como venga. Saco los nombres de empresa, la fecha y la cantidad, y vos decidís qué " +
+      "entra al libro. Nada se ficha solo.</p>" +
+      '<div style="margin-top:10px"><button class="btn primario" type="submit">Leer</button></div></form>') +
+    revision +
+    tarjeta("por qué esto vale más que buscar en Google",
+      "<p>Un mensaje que dice «represento exportadores de cacao, ¿les interesa?» compite con " +
+      "los otros veinte que recibieron esta semana. Uno que dice «vi que en mayo trajeron " +
+      "25 toneladas de Jg García» demuestra que hiciste la tarea y, sobre todo, le estás " +
+      "escribiendo a alguien que <strong>ya compra lo que vendés</strong>: no hay que " +
+      "convencerlo de la categoría, sólo de vos.</p>" +
+      "<p>Cuando fichás a un comprador con su dato de importación, el mensaje de la app " +
+      "cambia solo: deja de ofrecerle que cambie de proveedor y le ofrece ser " +
+      "<strong>segunda fuente</strong>, que es lo único que alguien con proveedor andando " +
+      "puede aceptar sin arriesgar nada.</p>") +
     "</div>";
 }
 
@@ -3857,10 +4233,11 @@ function vistaAviso() {
 
 function render() {
   const movil = window.matchMedia("(max-width: 900px)").matches;
-  if (ui.seccion === "panel") {
+  if (ui.seccion === "panel" || ui.seccion === "registros") {
     document.getElementById("raiz").innerHTML =
       '<div class="marco">' + vistaBarra() + vistaSecciones() + vistaAviso() +
-      '<div class="cuerpo solo" style="grid-template-columns:1fr">' + vistaPanel() + "</div></div>" +
+      '<div class="cuerpo solo" style="grid-template-columns:1fr">' +
+      (ui.seccion === "panel" ? vistaPanel() : vistaRegistros()) + "</div></div>" +
       (ui.modal ? vistaModal() : "");
     return;
   }
@@ -4131,6 +4508,61 @@ document.addEventListener("click", function (evento) {
     }
     case "paso": ui.paso = parseInt(arg, 10) || 0; render(); break;
     case "revisar-correo": revisarCorreo(); break;
+    case "limpiar-reg":
+      ui.registro = Object.assign({}, ui.registro, { leido: null, fichadas: [] });
+      render();
+      break;
+    case "fichar-reg": {
+      const [tipo, indice, como] = (arg || "").split(".");
+      const r = ui.registro || {};
+      const leido = r.leido;
+      if (!leido) break;
+      const x = tipo === "par" ? leido.filas[+indice] : leido.sueltos[+indice];
+      if (!x) break;
+
+      const prod = (r.producto || "").trim();
+      const origen = (r.origen || "").trim();
+      const destino = (r.destino || "").trim();
+      const hoy = new Date().toISOString().slice(0, 10);
+      const puestos = [];
+
+      // Se ficha, o se le suma el dato a la que ya estaba. Dos fichas
+      // del mismo importador serían dos secuencias al mismo buzón.
+      const poner = function (nombre, lado, contraparte) {
+        if (!nombre) return;
+        let c = yaFichado(nombre);
+        const nuevo = !c;
+        if (nuevo) {
+          c = Object.assign(contactoNuevo(lado), {
+            id: nuevoIdContacto(nombre, lado), nombre: nombre,
+            pais: lado === "proveedor" ? origen : destino,
+            productos: prod ? [prod] : [],
+            mercados: lado === "proveedor" ? (destino ? [destino] : []) : (origen ? [origen] : []),
+            origen: "registro", creado: hoy, notas: [],
+          });
+          estado.contactos.push(c);
+        }
+        if (lado === "comprador") {
+          anotarImportacion(c, { producto: prod || "mercancía", contraparte: contraparte || "",
+            fecha: x.fecha || "", cantidad: x.cantidad || "" });
+        }
+        c.notas = c.notas || [];
+        c.notas.push({ fecha: hoy, texto: "De registros de importación: " + x.crudo });
+        puestos.push((nuevo ? "" : "ya estaba: ") + nombre);
+      };
+
+      if (tipo === "par") {
+        if (como === "comprador" || como === "ambos") poner(x.importador, "comprador", x.proveedor);
+        if (como === "proveedor" || como === "ambos") poner(x.proveedor, "proveedor", x.importador);
+      } else {
+        poner(x.nombre, como === "proveedor" ? "proveedor" : "comprador", "");
+      }
+
+      ui.registro = Object.assign({}, r, { fichadas: (r.fichadas || []).concat(tipo + ":" + indice) });
+      tocar(); render();
+      brindis(puestos.length ? "Al libro: " + puestos.join(", ") : "No se fichó nada.");
+      break;
+    }
     case "cerrar-bandeja": ui.bandeja = null; render(); break;
     case "marcar-respondio": {
       const c = contactoActual();
@@ -4340,6 +4772,21 @@ document.addEventListener("submit", function (evento) {
     return;
   }
 
+  if (a.valor === "leer-registros") {
+    evento.preventDefault();
+    const datos = Object.fromEntries(new FormData(evento.target).entries());
+    const leido = parsearRegistros(datos.texto);
+    // Se conserva lo pegado: si la lectura salió mal, corregir una fila
+    // es mejor que volver a copiar todo del otro lado.
+    ui.registro = Object.assign({}, ui.registro,
+      { leido: leido, fichadas: [], texto: datos.texto });
+    render();
+    const total = leido.filas.length + leido.sueltos.length;
+    brindis(total ? "Leí " + total + " empresa(s). Revisá antes de fichar." :
+      "No reconocí ninguna empresa ahí.");
+    return;
+  }
+
   if (a.valor === "guardar-lote") {
     const lado = ui.modalLado;
     const leido = parsearLote(datos.lote, lado);
@@ -4408,6 +4855,13 @@ document.addEventListener("change", function (evento) {
     if (duenio) { duenio.recontactar = evento.target.value; tocar(); render(); }
     return;
   }
+  if (verbo.indexOf("reg-") === 0) {
+    const campo = verbo.slice(4);
+    ui.registro = Object.assign({}, ui.registro);
+    ui.registro[campo] = evento.target.value;
+    render();
+    return;
+  }
   if (verbo === "estado-contacto") {
     const c = contactoActual();
     if (c) {
@@ -4455,6 +4909,15 @@ document.addEventListener("input", function (evento) {
     cuerpo.innerHTML = enDeals ? cuerpoListaDeals(visibles) : cuerpoListaLibro(visibles);
     const cuenta = document.getElementById("cuenta-busqueda");
     if (cuenta) cuenta.textContent = textoCuenta(visibles.length, total);
+    return;
+  }
+
+  if (a.valor.indexOf("reg-") === 0) {
+    const campo = a.valor.slice(4);
+    ui.registro = Object.assign({}, ui.registro);
+    ui.registro[campo] = evento.target.value;
+    // Sin redibujar: el campo pierde el foco en la primera letra. Las
+    // fuentes de abajo se refrescan al salir del campo.
     return;
   }
 

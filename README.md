@@ -125,6 +125,26 @@ negocio, no un adorno:
 Las fechas que alimentan todo esto se anotan solas: cuándo fue el primer
 contacto, cuándo respondió y en qué paso de la secuencia iba.
 
+**15. Encuentra nombres nuevos, no sólo ordena los que tenés.** La pestaña
+**Registros** es la única parte de la app que sale a buscar. Los manifiestos de
+carga que entran a Estados Unidos son públicos desde 2015: quién importó qué, de
+qué exportador, cuándo y cuánto. La app te arma las consultas por producto,
+partida arancelaria y corredor —ImportYeti, ImportGenius, Volza, y las oficiales
+gratis de USITC, Comtrade y el Censo— y después le pegás los resultados.
+
+De ahí saca nombres de empresa, fecha y cantidad, y te muestra lo que entendió
+antes de tocar nada: vos decidís cuál entra al libro como comprador, cuál como
+proveedor, y cuál no entra. Nada se ficha solo. Si el nombre ya estaba, le suma
+el dato a la ficha que había en vez de duplicarla.
+
+Lo que lo hace valer: **el mensaje cambia solo**. Un comprador fichado con su
+dato de importación ya no recibe «represento exportadores de cacao, ¿les
+interesa?» sino «vi que en agosto trajeron 18 toneladas de Rizek; no es para que
+cambien de proveedor, es por si les sirve una segunda fuente». Le estás
+escribiendo a alguien que ya compra lo que vendés —no hay que convencerlo de la
+categoría, sólo de vos— y le ofrecés lo único que alguien con proveedor andando
+puede aceptar sin arriesgar nada.
+
 Ese libro es el activo real del negocio. Un comprador con mandato firmado es lo
 escaso: proveedores se consiguen en una tarde, compradores con plata y una LOI
 no. Por eso los dos lados se fichan aparte y el comprador tiene su campo de
